@@ -7,6 +7,8 @@ import {
   usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures,
   usePublicBlueBills, usePublicGallery, usePublicDressCode, usePublicGiftItems, usePublicFaqs,
 } from "../hooks/usePublicInvitation";
+import { usePublicBlocks } from "@/features/blocks/hooks/useBlocks";
+import { BlockViewRenderer } from "@/features/blocks/components/BlockViewRenderer";
 import { useViewTracking } from "../hooks/useViewTracking";
 import { InvitationThemeProvider } from "../components/ThemeProvider";
 import { StoryNavigation } from "../components/StoryNavigation";

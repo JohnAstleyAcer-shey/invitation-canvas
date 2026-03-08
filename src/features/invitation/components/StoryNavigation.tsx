@@ -1,14 +1,37 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
 
 interface StoryNavigationProps {
   children: React.ReactNode[];
   pageLabels: string[];
 }
 
+// Page transition variants for cinematic feel
+const pageVariants = {
+  enter: (direction: number) => ({
+    opacity: 0,
+    y: direction > 0 ? 80 : -80,
+    scale: 0.95,
+    filter: "blur(8px)",
+  }),
+  center: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    filter: "blur(0px)",
+  },
+  exit: (direction: number) => ({
+    opacity: 0,
+    y: direction > 0 ? -80 : 80,
+    scale: 0.95,
+    filter: "blur(8px)",
+  }),
+};
+
 export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) {
   const [current, setCurrent] = useState(0);
+  const [direction, setDirection] = useState(1);
   const total = children.length;
   const touchStartY = useRef(0);
   const isAnimating = useRef(false);
@@ -16,9 +39,10 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
   const goTo = useCallback((idx: number) => {
     if (isAnimating.current || idx < 0 || idx >= total) return;
     isAnimating.current = true;
+    setDirection(idx > current ? 1 : -1);
     setCurrent(idx);
-    setTimeout(() => { isAnimating.current = false; }, 600);
-  }, [total]);
+    setTimeout(() => { isAnimating.current = false; }, 650);
+  }, [total, current]);
 
   const next = useCallback(() => goTo(current + 1), [current, goTo]);
   const prev = useCallback(() => goTo(current - 1), [current, goTo]);
@@ -59,23 +83,35 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
 
   return (
     <div className="relative h-screen w-full overflow-hidden" role="region" aria-label="Invitation pages" aria-roledescription="carousel">
-      {/* Top progress bar */}
+      {/* Top progress bar with glow */}
       <div className="fixed top-0 left-0 right-0 z-50 h-0.5 bg-black/10">
         <motion.div
-          className="h-full"
+          className="h-full relative"
           style={{ background: "var(--inv-primary, #000)" }}
           animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.4, ease: "easeOut" }}
-        />
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        >
+          <div className="absolute right-0 top-0 w-4 h-full blur-sm" style={{ background: "var(--inv-primary, #000)" }} />
+        </motion.div>
       </div>
 
-      {/* Page counter */}
-      <div className="fixed top-3 left-4 z-50 text-xs px-2 py-1 rounded-full bg-black/20 backdrop-blur-md text-white font-medium tabular-nums">
+      {/* Page counter with fade */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="fixed top-3 left-4 z-50 text-xs px-2.5 py-1 rounded-full bg-black/20 backdrop-blur-md text-white font-medium tabular-nums"
+      >
         {current + 1} / {total}
-      </div>
+      </motion.div>
 
-      {/* Progress dots */}
-      <div className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2">
+      {/* Progress dots with hover tooltips */}
+      <motion.div
+        initial={{ opacity: 0, x: 20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.8 }}
+        className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2"
+      >
         {pageLabels.map((label, i) => (
           <button
             key={i}
@@ -84,50 +120,77 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
             aria-label={`Go to ${label}`}
             aria-current={i === current ? "step" : undefined}
           >
-            <span className="absolute right-6 whitespace-nowrap text-xs px-2 py-1 rounded bg-black/70 text-white opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+            <motion.span
+              initial={{ opacity: 0, x: 10 }}
+              whileHover={{ opacity: 1, x: 0 }}
+              className="absolute right-6 whitespace-nowrap text-xs px-2.5 py-1 rounded-lg bg-black/70 backdrop-blur-sm text-white pointer-events-none shadow-lg"
+            >
               {label}
-            </span>
-            <div
-              className={`rounded-full transition-all duration-300 ${
-                i === current ? "w-2.5 h-2.5 scale-125" : "w-2 h-2 hover:scale-110"
-              }`}
+            </motion.span>
+            <motion.div
+              animate={{
+                width: i === current ? 10 : 8,
+                height: i === current ? 10 : 8,
+                scale: i === current ? 1.2 : 1,
+              }}
+              whileHover={{ scale: 1.3 }}
+              transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              className="rounded-full transition-colors duration-300"
               style={{
                 background: i === current ? "var(--inv-primary, #000)" : "var(--inv-text, #000)",
                 opacity: i === current ? 1 : 0.3,
+                boxShadow: i === current ? "0 0 8px var(--inv-primary, rgba(0,0,0,0.3))" : "none",
               }}
             />
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Nav arrows */}
-      {current > 0 && (
-        <button
-          onClick={prev}
-          className="fixed top-4 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white hover:bg-black/40 transition-colors"
-          aria-label="Previous page"
-        >
-          <ChevronUp className="w-5 h-5" />
-        </button>
-      )}
-      {current < total - 1 && (
-        <button
-          onClick={next}
-          className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white hover:bg-black/40 transition-colors animate-bounce"
-          aria-label="Next page"
-        >
-          <ChevronDown className="w-5 h-5" />
-        </button>
-      )}
+      {/* Nav arrows with enhanced hover */}
+      <AnimatePresence>
+        {current > 0 && (
+          <motion.button
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
+            whileTap={{ scale: 0.9 }}
+            onClick={prev}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white transition-colors"
+            aria-label="Previous page"
+          >
+            <ChevronUp className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
+      <AnimatePresence>
+        {current < total - 1 && (
+          <motion.button
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: [0, 6, 0] }}
+            exit={{ opacity: 0, y: 10 }}
+            transition={{ y: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } }}
+            whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
+            whileTap={{ scale: 0.9 }}
+            onClick={next}
+            className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 p-2 rounded-full bg-black/20 backdrop-blur-sm text-white transition-colors"
+            aria-label="Next page"
+          >
+            <ChevronDown className="w-5 h-5" />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
-      {/* Pages */}
-      <AnimatePresence mode="wait">
+      {/* Pages with cinematic transitions */}
+      <AnimatePresence mode="wait" custom={direction}>
         <motion.div
           key={current}
-          initial={{ opacity: 0, y: 60 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -60 }}
-          transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
+          custom={direction}
+          variants={pageVariants}
+          initial="enter"
+          animate="center"
+          exit="exit"
+          transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
           className="h-screen w-full"
           role="tabpanel"
           aria-label={pageLabels[current]}

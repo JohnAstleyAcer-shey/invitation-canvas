@@ -48,6 +48,12 @@ const App = () => (
             <Route path="help" element={<HelpPage />} />
           </Route>
           <Route path="/invite/:slug" element={<InvitationViewPage />} />
+          <Route path="/customer-admin" element={<CustomerAdminProvider><CustomerLoginPage /></CustomerAdminProvider>} />
+          <Route path="/customer-admin/*" element={<CustomerAdminProvider><CustomerPortalLayout /></CustomerAdminProvider>}>
+            <Route path="dashboard" element={<CustomerDashboardPage />} />
+            <Route path="guests" element={<CustomerGuestsPage />} />
+            <Route path="messages" element={<CustomerMessagesPage />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

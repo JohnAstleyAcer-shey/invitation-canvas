@@ -138,6 +138,21 @@ export default function InvitationViewPage() {
     }
   });
 
+  // Block-based rendering
+  if (useBlockMode && publicBlocks) {
+    return (
+      <InvitationThemeProvider theme={theme}>
+        <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
+        <ParticleCanvas effect={theme?.particle_effect} />
+        <FloatingShareButton slug={invitation.slug} title={invitation.title} />
+        {theme?.music_url && (
+          <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
+        )}
+        <BlockViewRenderer blocks={publicBlocks} />
+      </InvitationThemeProvider>
+    );
+  }
+
   return (
     <InvitationThemeProvider theme={theme}>
       <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />

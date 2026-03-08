@@ -116,7 +116,7 @@ export default function CreateInvitationPage() {
       <AnimatePresence mode="wait">
         {/* Step 1: Event Type */}
         {step === 0 && (
-          <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(Object.entries(EVENT_TYPE_LABELS) as [EventType, string][]).map(([type, label]) => {
                 const Icon = eventIcons[type];
@@ -140,7 +140,7 @@ export default function CreateInvitationPage() {
 
         {/* Step 2: Details */}
         {step === 1 && (
-          <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-4">
+          <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-4">
             <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label>Event Title *</Label>
@@ -181,7 +181,7 @@ export default function CreateInvitationPage() {
 
         {/* Step 3: Review */}
         {step === 2 && (
-          <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
             <div className="glass-card p-6 space-y-4">
               <h3 className="font-display font-bold text-lg">Review Your Invitation</h3>
               <div className="grid grid-cols-2 gap-4 text-sm">

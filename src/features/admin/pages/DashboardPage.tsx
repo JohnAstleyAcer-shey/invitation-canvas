@@ -23,13 +23,17 @@ import { formatDistanceToNow } from "date-fns";
 
 function StatCard({ label, value, icon }: { label: string; value: number; icon: React.ReactNode }) {
   return (
-    <div className="glass-card p-4 flex items-center gap-3">
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="glass-card p-4 flex items-center gap-3"
+    >
       <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">{icon}</div>
       <div>
         <p className="text-2xl font-display font-bold">{value}</p>
         <p className="text-xs text-muted-foreground">{label}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -76,7 +80,7 @@ export default function DashboardPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input placeholder="Search invitations..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 rounded-xl" />
         </div>
-        <Select value={eventType} onValueChange={(v) => setEventType(v as any)}>
+        <Select value={eventType} onValueChange={(v) => setEventType(v as EventType | "all")}>
           <SelectTrigger className="w-40 rounded-xl"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Types</SelectItem>
@@ -85,7 +89,7 @@ export default function DashboardPage() {
             ))}
           </SelectContent>
         </Select>
-        <Select value={sort} onValueChange={(v) => setSort(v as any)}>
+        <Select value={sort} onValueChange={(v) => setSort(v as "newest" | "oldest" | "alpha")}>
           <SelectTrigger className="w-36 rounded-xl"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="newest">Newest</SelectItem>
@@ -100,7 +104,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs value={status} onValueChange={(v) => setStatus(v as any)}>
+      <Tabs value={status} onValueChange={(v) => setStatus(v as "all" | "published" | "draft" | "trash")}>
         <TabsList>
           <TabsTrigger value="all">All</TabsTrigger>
           <TabsTrigger value="published">Published</TabsTrigger>
@@ -130,23 +134,21 @@ export default function DashboardPage() {
           )}
         </motion.div>
       ) : (
-        <AnimatePresence mode="popLayout">
-          <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"}>
-            {invitations.map((inv, i) => (
-              <InvitationCard
-                key={inv.id}
-                invitation={inv}
-                view={view}
-                index={i}
-                isTrash={status === "trash"}
-                onTogglePublish={() => togglePublish.mutate({ id: inv.id, is_published: !inv.is_published })}
-                onDuplicate={() => duplicate.mutate(inv.id)}
-                onDelete={() => setDeleteDialog({ id: inv.id, permanent: status === "trash" })}
-                onRestore={() => restore.mutate(inv.id)}
-              />
-            ))}
-          </div>
-        </AnimatePresence>
+        <div className={view === "grid" ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" : "space-y-3"}>
+          {invitations.map((inv, i) => (
+            <InvitationCard
+              key={inv.id}
+              invitation={inv}
+              view={view}
+              index={i}
+              isTrash={status === "trash"}
+              onTogglePublish={() => togglePublish.mutate({ id: inv.id, is_published: !inv.is_published })}
+              onDuplicate={() => duplicate.mutate(inv.id)}
+              onDelete={() => setDeleteDialog({ id: inv.id, permanent: status === "trash" })}
+              onRestore={() => restore.mutate(inv.id)}
+            />
+          ))}
+        </div>
       )}
 
       {/* Delete confirmation */}
@@ -207,7 +209,6 @@ function InvitationCard({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, scale: 0.95 }}
       transition={{ delay: index * 0.05 }}
       className={`glass-card overflow-hidden ${view === "list" ? "flex items-center gap-4 p-4" : ""}`}
     >

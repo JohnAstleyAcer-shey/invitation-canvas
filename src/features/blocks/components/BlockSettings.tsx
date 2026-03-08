@@ -109,17 +109,30 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
   const updateListItem = (key: string, index: number, field: string, value: any) => { const arr = [...(content[key] || [])]; arr[index] = { ...arr[index], [field]: value }; updateContent(key, arr); };
 
   return (
-    <div className="w-72 sm:w-80 border-l border-border bg-card flex flex-col h-full shrink-0">
+    <motion.div
+      initial={{ x: 20, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      exit={{ x: 20, opacity: 0 }}
+      transition={{ type: "spring", stiffness: 300, damping: 25 }}
+      className="w-72 sm:w-80 border-l border-border bg-card flex flex-col h-full shrink-0"
+    >
       <div className="p-3 border-b border-border flex items-center justify-between">
-        <h3 className="font-display font-bold text-sm">{def?.label || "Settings"}</h3>
+        <div className="flex items-center gap-2">
+          <Badge variant="secondary" className="text-[9px]">{block.block_type}</Badge>
+          <h3 className="font-display font-bold text-sm">{def?.label || "Settings"}</h3>
+        </div>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}><X className="h-4 w-4" /></Button>
       </div>
 
       <Tabs defaultValue="content" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-3 mt-2 h-7">
           <TabsTrigger value="content" className="text-[10px] h-6">Content</TabsTrigger>
-          <TabsTrigger value="style" className="text-[10px] h-6">Style</TabsTrigger>
-          <TabsTrigger value="advanced" className="text-[10px] h-6">Advanced</TabsTrigger>
+          <TabsTrigger value="style" className="text-[10px] h-6">
+            <Palette className="h-2.5 w-2.5 mr-1" /> Style
+          </TabsTrigger>
+          <TabsTrigger value="advanced" className="text-[10px] h-6">
+            <Layers className="h-2.5 w-2.5 mr-1" /> Advanced
+          </TabsTrigger>
         </TabsList>
 
         <ScrollArea className="flex-1">
@@ -138,7 +151,7 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
       </Tabs>
 
       <input ref={fileRef} type="file" accept="image/*" className="hidden" />
-    </div>
+    </motion.div>
   );
 }
 

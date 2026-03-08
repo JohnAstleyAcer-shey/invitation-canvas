@@ -17,6 +17,12 @@ import TemplatesPage from "./features/admin/pages/TemplatesPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import HelpPage from "./features/admin/pages/HelpPage";
 import InvitationViewPage from "./features/invitation/pages/InvitationViewPage";
+import { CustomerAdminProvider } from "./features/customer-portal/hooks/useCustomerAdmin";
+import CustomerLoginPage from "./features/customer-portal/pages/CustomerLoginPage";
+import { CustomerPortalLayout } from "./features/customer-portal/components/CustomerPortalLayout";
+import CustomerDashboardPage from "./features/customer-portal/pages/CustomerDashboardPage";
+import CustomerGuestsPage from "./features/customer-portal/pages/CustomerGuestsPage";
+import CustomerMessagesPage from "./features/customer-portal/pages/CustomerMessagesPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -42,6 +48,12 @@ const App = () => (
             <Route path="help" element={<HelpPage />} />
           </Route>
           <Route path="/invite/:slug" element={<InvitationViewPage />} />
+          <Route path="/customer-admin" element={<CustomerAdminProvider><CustomerLoginPage /></CustomerAdminProvider>} />
+          <Route path="/customer-admin/*" element={<CustomerAdminProvider><CustomerPortalLayout /></CustomerAdminProvider>}>
+            <Route path="dashboard" element={<CustomerDashboardPage />} />
+            <Route path="guests" element={<CustomerGuestsPage />} />
+            <Route path="messages" element={<CustomerMessagesPage />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

@@ -75,10 +75,7 @@ export function Hero() {
           style={{ x: springX, y: springY }}
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl"
         />
-        <motion.div
-          style={{ x: useTransform(springX, v => -v * 1.5), y: useTransform(springY, v => -v * 1.5) }}
-          className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/30 blur-3xl"
-        />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/30 blur-3xl" />
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/3 blur-[100px]" />
       </motion.div>
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { SectionWrapper } from "./SectionWrapper";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import type { Tables } from "@/integrations/supabase/types";
 
 type Invitation = Tables<"invitations">;
@@ -38,24 +38,35 @@ function CountdownUnit({ value, label, variant, index }: { value: number; label:
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 30, scale: 0.9, filter: "blur(4px)" }}
+      whileInView={{ opacity: 1, y: 0, scale: 1, filter: "blur(0px)" }}
       viewport={{ once: true }}
-      transition={{ delay: index * 0.1, type: "spring", damping: 15 }}
-      className={boxStyles[variant]}
+      transition={{ delay: index * 0.12, type: "spring", damping: 15, stiffness: 150 }}
+      whileHover={{ y: -4, scale: 1.05 }}
+      className={`${boxStyles[variant]} transition-all duration-300`}
       style={{ borderColor: "var(--inv-accent)" }}
     >
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={value}
+          initial={{ y: -15, opacity: 0, scale: 0.8 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: 15, opacity: 0, scale: 0.8 }}
+          transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+          className="text-3xl sm:text-4xl md:text-5xl font-bold tabular-nums"
+          style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}
+        >
+          {String(value).padStart(2, "0")}
+        </motion.div>
+      </AnimatePresence>
       <motion.div
-        key={value}
-        initial={{ scale: 1.1, opacity: 0.5 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ duration: 0.3 }}
-        className="text-3xl sm:text-4xl md:text-5xl font-bold tabular-nums"
-        style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}
-      >
-        {String(value).padStart(2, "0")}
-      </motion.div>
-      <div className="text-[10px] sm:text-xs mt-2 uppercase tracking-widest" style={{ color: "var(--inv-text-secondary)" }}>{label}</div>
+        initial={{ opacity: 0, y: 5 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: index * 0.12 + 0.3 }}
+        className="text-[10px] sm:text-xs mt-2 uppercase tracking-widest"
+        style={{ color: "var(--inv-text-secondary)" }}
+      >{label}</motion.div>
     </motion.div>
   );
 }
@@ -72,10 +83,19 @@ export function CountdownSection({ invitation, variant = "classic" }: { invitati
   if (passed) {
     return (
       <SectionWrapper>
-        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring" }}>
-          <h2 className="text-3xl sm:text-4xl" style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}>
+        <motion.div
+          initial={{ scale: 0.5, opacity: 0, rotate: -10 }}
+          animate={{ scale: 1, opacity: 1, rotate: 0 }}
+          transition={{ type: "spring", damping: 10, stiffness: 100 }}
+        >
+          <motion.h2
+            animate={{ scale: [1, 1.02, 1] }}
+            transition={{ repeat: Infinity, duration: 3, ease: "easeInOut" }}
+            className="text-3xl sm:text-4xl"
+            style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}
+          >
             The celebration has begun! 🎉
-          </h2>
+          </motion.h2>
         </motion.div>
       </SectionWrapper>
     );
@@ -83,9 +103,16 @@ export function CountdownSection({ invitation, variant = "classic" }: { invitati
 
   return (
     <SectionWrapper>
-      <h2 className="text-2xl sm:text-3xl mb-8 sm:mb-10" style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}>
+      <motion.h2
+        initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="text-2xl sm:text-3xl mb-8 sm:mb-10"
+        style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}
+      >
         {variant === "bold" ? "COUNTING DOWN" : "Save the Date"}
-      </h2>
+      </motion.h2>
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 md:gap-6">
         {units.map((u, i) => (
           <CountdownUnit key={u.label} value={u.value} label={u.label} variant={variant} index={i} />

@@ -18,17 +18,37 @@ export function MessageSection({ invitation, variant = "classic" }: { invitation
 
   return (
     <SectionWrapper>
-      <motion.div initial={{ opacity: 0, scale: 0.8 }} whileInView={{ opacity: 0.15, scale: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+      <motion.div
+        initial={{ opacity: 0, scale: 0.7, rotate: -10 }}
+        whileInView={{ opacity: 0.15, scale: 1, rotate: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+      >
         <Quote className="w-12 h-12 mx-auto mb-2" style={{ color: "var(--inv-accent)" }} />
       </motion.div>
-      <h2 className="text-2xl sm:text-3xl mb-6 sm:mb-8" style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}>
-        {variant === "modern" ? "Our Story" : variant === "bold" ? "THE MESSAGE" : "A Special Message"}
-      </h2>
-      <motion.p
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
+      <motion.h2
+        initial={{ opacity: 0, y: 20, filter: "blur(6px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
         viewport={{ once: true }}
-        transition={{ delay: 0.2, duration: 0.6 }}
+        transition={{ delay: 0.1, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+        className="text-2xl sm:text-3xl mb-6 sm:mb-8"
+        style={{ fontFamily: "var(--inv-font-title)", color: "var(--inv-text)" }}
+      >
+        {variant === "modern" ? "Our Story" : variant === "bold" ? "THE MESSAGE" : "A Special Message"}
+      </motion.h2>
+      <motion.div
+        initial={{ scaleX: 0 }}
+        whileInView={{ scaleX: 1 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.3, duration: 0.6 }}
+        className="w-12 h-px mx-auto mb-6 origin-center"
+        style={{ background: "var(--inv-accent)" }}
+      />
+      <motion.p
+        initial={{ opacity: 0, y: 25, filter: "blur(4px)" }}
+        whileInView={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
         className={`${styles[variant]} whitespace-pre-wrap max-w-lg mx-auto`}
         style={{ color: "var(--inv-text-secondary)" }}
       >

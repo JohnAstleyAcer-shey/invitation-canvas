@@ -1,6 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Plus, Trash2, Upload, Palette, Wand2, AlignLeft, AlignCenter, AlignRight, RotateCcw, Layers, Eye } from "lucide-react";
+import { X, Plus, Trash2, Upload, Palette, Wand2, AlignLeft, AlignCenter, AlignRight, RotateCcw, Layers, Eye, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -226,7 +226,7 @@ function StylePresetsPanel({ style, updateStyle, onUpdate, onCopyStyle, onPasteS
   );
 }
 
-
+function StyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
   return (
     <>
       {/* Text Alignment - Canva-style toggle */}

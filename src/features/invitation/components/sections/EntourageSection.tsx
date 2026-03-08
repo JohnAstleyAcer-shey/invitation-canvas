@@ -27,7 +27,7 @@ const staggerContainer = {
 
 const staggerItem = {
   hidden: { opacity: 0, scale: 0.8, y: 20, filter: "blur(4px)" },
-  visible: { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+  visible: { opacity: 1, scale: 1, y: 0, filter: "blur(0px)", transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
 export function EntourageSection({ title, icon, people, variant = "classic", descKey = "role_description" }: EntourageSectionProps) {

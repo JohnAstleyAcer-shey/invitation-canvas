@@ -1,6 +1,6 @@
-import { useState, useCallback } from "react";
-import { motion, Reorder } from "framer-motion";
-import { GripVertical, Eye, EyeOff, Copy, Trash2, ChevronUp, ChevronDown, Plus, Settings2 } from "lucide-react";
+import { useState, useCallback, useRef } from "react";
+import { motion, Reorder, AnimatePresence } from "framer-motion";
+import { GripVertical, Eye, EyeOff, Copy, Trash2, ChevronUp, ChevronDown, Plus, Lock, Unlock, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -30,6 +30,8 @@ export function BlockCanvas({
   onMoveUp, onMoveDown, onInsertBlock, previewMode,
 }: BlockCanvasProps) {
   const [hoveredInsertIndex, setHoveredInsertIndex] = useState<number | null>(null);
+  const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleReorder = useCallback((newOrder: InvitationBlock[]) => {
     onReorder(newOrder.map(b => b.id));
@@ -38,14 +40,14 @@ export function BlockCanvas({
   if (!blocks.length) {
     return (
       <div className="flex-1 flex items-center justify-center p-8">
-        <div className="text-center space-y-4 max-w-sm">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            className="w-20 h-20 mx-auto rounded-2xl bg-accent/50 flex items-center justify-center"
-          >
-            <Plus className="h-10 w-10 text-muted-foreground/50" />
-          </motion.div>
+        <motion.div
+          initial={{ scale: 0.8, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          className="text-center space-y-4 max-w-sm"
+        >
+          <div className="w-20 h-20 mx-auto rounded-2xl bg-accent/50 flex items-center justify-center">
+            <Layers className="h-10 w-10 text-muted-foreground/40" />
+          </div>
           <div>
             <h3 className="font-display font-semibold text-lg">Start Building Your Invitation</h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -60,7 +62,7 @@ export function BlockCanvas({
                   key={type}
                   variant="outline"
                   size="sm"
-                  className="text-xs rounded-full"
+                  className="text-xs rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
                   onClick={() => onInsertBlock(type as BlockType, 0)}
                 >
                   <Plus className="h-3 w-3 mr-1" /> {def.label}
@@ -68,15 +70,25 @@ export function BlockCanvas({
               );
             })}
           </div>
-        </div>
+        </motion.div>
       </div>
     );
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+    <div className="flex-1 overflow-y-auto p-2 sm:p-4" ref={scrollRef}>
       <div className={`mx-auto ${previewMode === "mobile" ? "max-w-[375px]" : "max-w-[800px]"} transition-all duration-300 w-full`}>
-        <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden min-h-[600px]">
+        {/* Device frame */}
+        <div className={`bg-background border border-border rounded-xl shadow-sm overflow-hidden min-h-[600px] ${
+          previewMode === "mobile" ? "ring-4 ring-border/50 rounded-[2rem]" : ""
+        }`}>
+          {/* Mobile notch simulation */}
+          {previewMode === "mobile" && (
+            <div className="flex justify-center py-1.5 bg-border/20">
+              <div className="w-20 h-1 rounded-full bg-border/50" />
+            </div>
+          )}
+
           {/* Insert zone at top */}
           <InsertZone index={0} isHovered={hoveredInsertIndex === 0}
             onHover={() => setHoveredInsertIndex(0)} onLeave={() => setHoveredInsertIndex(null)}
@@ -86,39 +98,68 @@ export function BlockCanvas({
             {blocks.map((block, index) => {
               const def = BLOCK_REGISTRY[block.block_type as keyof typeof BLOCK_REGISTRY];
               const isSelected = selectedBlockId === block.id;
+              const isDragging = draggedBlockId === block.id;
 
               return (
-                <Reorder.Item key={block.id} value={block}>
+                <Reorder.Item
+                  key={block.id}
+                  value={block}
+                  onDragStart={() => setDraggedBlockId(block.id)}
+                  onDragEnd={() => setDraggedBlockId(null)}
+                >
                   <motion.div
                     layout
-                    className={`group relative border-2 transition-colors ${
+                    className={`group relative border-2 transition-all duration-200 ${
                       isSelected
-                        ? "border-primary ring-2 ring-primary/20"
-                        : "border-transparent hover:border-primary/20"
+                        ? "border-primary ring-2 ring-primary/20 shadow-lg"
+                        : isDragging
+                          ? "border-primary/50 shadow-xl scale-[1.02]"
+                          : "border-transparent hover:border-primary/20"
                     } ${!block.is_visible ? "opacity-30" : ""}`}
                     onClick={() => onSelectBlock(isSelected ? null : block.id)}
                   >
-                    {/* Block toolbar - sticky at top */}
-                    <div className={`absolute top-0 left-0 right-0 flex items-center justify-between px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] z-10 ${
-                      isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
-                    } transition-opacity rounded-t-sm`}>
-                      <div className="flex items-center gap-1.5">
-                        <GripVertical className="h-3 w-3 cursor-grab active:cursor-grabbing" />
-                        <span className="font-medium">{def?.label || block.block_type}</span>
-                        <span className="opacity-50">#{index + 1}</span>
-                        {!block.is_visible && (
-                          <Badge variant="outline" className="h-3.5 text-[7px] border-primary-foreground/30 py-0">Hidden</Badge>
-                        )}
+                    {/* Block toolbar */}
+                    <AnimatePresence>
+                      {(isSelected || isDragging) && (
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -5 }}
+                          className="absolute -top-0.5 left-0 right-0 flex items-center justify-between px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] z-10 rounded-t-sm"
+                        >
+                          <div className="flex items-center gap-1.5">
+                            <GripVertical className="h-3 w-3 cursor-grab active:cursor-grabbing" />
+                            <span className="font-medium">{def?.label || block.block_type}</span>
+                            <span className="opacity-50">#{index + 1}</span>
+                            {!block.is_visible && (
+                              <Badge variant="outline" className="h-3.5 text-[7px] border-primary-foreground/30 py-0">Hidden</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center">
+                            <ToolbarButton icon={<ChevronUp className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveUp(index); }} disabled={index === 0} />
+                            <ToolbarButton icon={<ChevronDown className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveDown(index); }} disabled={index === blocks.length - 1} />
+                            <ToolbarButton icon={block.is_visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
+                              onClick={e => { e.stopPropagation(); onToggleVisibility(block.id, !block.is_visible); }} />
+                            <ToolbarButton icon={<Copy className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onDuplicate(block.id); }} />
+                            <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+
+                    {/* Hover toolbar (simplified) */}
+                    {!isSelected && !isDragging && (
+                      <div className="absolute top-0 left-0 right-0 flex items-center justify-between px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] z-10 opacity-0 group-hover:opacity-100 transition-opacity rounded-t-sm">
+                        <div className="flex items-center gap-1.5">
+                          <GripVertical className="h-3 w-3 cursor-grab active:cursor-grabbing" />
+                          <span className="font-medium">{def?.label || block.block_type}</span>
+                        </div>
+                        <div className="flex items-center">
+                          <ToolbarButton icon={<Copy className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onDuplicate(block.id); }} />
+                          <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger />
+                        </div>
                       </div>
-                      <div className="flex items-center">
-                        <ToolbarButton icon={<ChevronUp className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveUp(index); }} disabled={index === 0} />
-                        <ToolbarButton icon={<ChevronDown className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveDown(index); }} disabled={index === blocks.length - 1} />
-                        <ToolbarButton icon={block.is_visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
-                          onClick={e => { e.stopPropagation(); onToggleVisibility(block.id, !block.is_visible); }} />
-                        <ToolbarButton icon={<Copy className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onDuplicate(block.id); }} />
-                        <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger />
-                      </div>
-                    </div>
+                    )}
 
                     {/* Block content preview */}
                     <div className="pointer-events-none select-none">
@@ -141,8 +182,11 @@ export function BlockCanvas({
         </div>
 
         {/* Bottom info */}
-        <div className="text-center mt-3">
-          <p className="text-[10px] text-muted-foreground">{blocks.length} block{blocks.length !== 1 ? "s" : ""} · {blocks.filter(b => b.is_visible).length} visible</p>
+        <div className="text-center mt-3 space-y-1">
+          <p className="text-[10px] text-muted-foreground">
+            {blocks.length} block{blocks.length !== 1 ? "s" : ""} · {blocks.filter(b => b.is_visible).length} visible · {blocks.filter(b => !b.is_visible).length} hidden
+          </p>
+          <p className="text-[9px] text-muted-foreground/50">Click a block to edit · Drag to reorder</p>
         </div>
       </div>
     </div>
@@ -179,30 +223,38 @@ function InsertZone({ index, isHovered, onHover, onLeave, onInsert }: {
       <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-0.5 transition-all ${
         isHovered ? "bg-primary" : "bg-transparent group-hover/insert:bg-primary/30"
       }`} />
-      <div className={`absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 transition-all ${
-        isHovered ? "opacity-100 scale-100" : "opacity-0 scale-75"
-      }`}>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
-              <Plus className="h-3 w-3" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="center" className="max-h-64 overflow-y-auto w-48">
-            {BLOCK_CATEGORIES.map(cat => (
-              <div key={cat.key}>
-                <DropdownMenuSeparator />
-                <p className="px-2 py-1 text-[9px] font-semibold uppercase text-muted-foreground">{cat.label}</p>
-                {getBlocksByCategory(cat.key).map(block => (
-                  <DropdownMenuItem key={block.type} onClick={() => onInsert(block.type)} className="text-xs">
-                    {block.label}
-                  </DropdownMenuItem>
+      <AnimatePresence>
+        {isHovered && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.5 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.5 }}
+            className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+          >
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="h-5 w-5 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-md hover:scale-110 transition-transform">
+                  <Plus className="h-3 w-3" />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="max-h-72 overflow-y-auto w-52">
+                {BLOCK_CATEGORIES.map(cat => (
+                  <div key={cat.key}>
+                    <DropdownMenuSeparator />
+                    <p className="px-2 py-1 text-[9px] font-semibold uppercase text-muted-foreground tracking-wider">{cat.label}</p>
+                    {getBlocksByCategory(cat.key).map(block => (
+                      <DropdownMenuItem key={block.type} onClick={() => onInsert(block.type)} className="text-xs cursor-pointer">
+                        <span className="flex-1">{block.label}</span>
+                        <span className="text-[9px] text-muted-foreground/50 ml-2">{block.category}</span>
+                      </DropdownMenuItem>
+                    ))}
+                  </div>
                 ))}
-              </div>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

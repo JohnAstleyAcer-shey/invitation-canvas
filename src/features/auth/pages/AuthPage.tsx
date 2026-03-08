@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Eye, EyeOff, CheckCircle, ArrowLeft, Mail, Lock, User } from "lucide-react";
+import { Eye, EyeOff, CheckCircle, ArrowLeft, Mail, Lock, User, Shield, Star, Zap, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -21,7 +21,14 @@ function getPasswordStrength(password: string) {
 }
 
 const strengthLabels = ["Weak", "Fair", "Good", "Strong"];
-const strengthColors = ["bg-destructive", "bg-destructive/60", "bg-muted-foreground", "bg-foreground"];
+const strengthColors = ["bg-destructive", "bg-destructive/60", "bg-muted-foreground", "bg-primary"];
+
+const benefits = [
+  { icon: Zap, text: "Create in under 5 minutes" },
+  { icon: Users, text: "Manage unlimited guests" },
+  { icon: Star, text: "Premium templates included" },
+  { icon: Shield, text: "Secure & private" },
+];
 
 export default function AuthPage() {
   const [tab, setTab] = useState<"login" | "signup">("login");
@@ -98,10 +105,13 @@ export default function AuthPage() {
             {/* Logo */}
             <div className="text-center mb-8">
               <div className="flex justify-center mb-3">
-                <div className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center shadow-lg">
+                <motion.div
+                  whileHover={{ scale: 1.05, rotate: 3 }}
+                  className="w-14 h-14 rounded-2xl bg-card border border-border flex items-center justify-center shadow-lg"
+                >
                   <img src={logoDark} alt="" className="hidden dark:block h-8 w-8" />
                   <img src={logoLight} alt="" className="block dark:hidden h-8 w-8" />
-                </div>
+                </motion.div>
               </div>
               <h1 className="font-display text-2xl font-bold">LynxInvitation</h1>
               <p className="text-sm text-muted-foreground mt-1">
@@ -117,9 +127,14 @@ export default function AuthPage() {
                   animate={{ opacity: 1, scale: 1 }}
                   className="text-center glass-card p-8"
                 >
-                  <div className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    transition={{ type: "spring", stiffness: 200, delay: 0.1 }}
+                    className="w-16 h-16 rounded-full bg-primary/10 mx-auto mb-4 flex items-center justify-center"
+                  >
                     <CheckCircle className="h-8 w-8 text-foreground" />
-                  </div>
+                  </motion.div>
                   <h2 className="font-display text-xl font-bold mb-2">Check Your Email</h2>
                   <p className="text-sm text-muted-foreground mb-6">
                     We sent a verification link to <strong className="text-foreground">{email}</strong>. Please verify your email before signing in.
@@ -157,22 +172,30 @@ export default function AuthPage() {
                   </div>
 
                   <form onSubmit={tab === "login" ? handleLogin : handleSignup} className="space-y-4">
-                    {tab === "signup" && (
-                      <div className="space-y-2">
-                        <Label htmlFor="name" className="text-sm">Full Name</Label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                          <Input
-                            id="name"
-                            value={fullName}
-                            onChange={(e) => setFullName(e.target.value)}
-                            placeholder="John Doe"
-                            required
-                            className="rounded-xl pl-10"
-                          />
-                        </div>
-                      </div>
-                    )}
+                    <AnimatePresence mode="wait">
+                      {tab === "signup" && (
+                        <motion.div
+                          key="name-field"
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="space-y-2 overflow-hidden"
+                        >
+                          <Label htmlFor="name" className="text-sm">Full Name</Label>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                            <Input
+                              id="name"
+                              value={fullName}
+                              onChange={(e) => setFullName(e.target.value)}
+                              placeholder="John Doe"
+                              required
+                              className="rounded-xl pl-10"
+                            />
+                          </div>
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
 
                     <div className="space-y-2">
                       <Label htmlFor="email" className="text-sm">Email</Label>
@@ -214,28 +237,70 @@ export default function AuthPage() {
                       </div>
 
                       {tab === "signup" && password.length > 0 && (
-                        <div className="space-y-1.5">
+                        <motion.div
+                          initial={{ opacity: 0, y: -5 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="space-y-1.5"
+                        >
                           <div className="flex gap-1">
                             {[0, 1, 2, 3].map((i) => (
-                              <div
+                              <motion.div
                                 key={i}
-                                className={`h-1 flex-1 rounded-full transition-colors ${
+                                initial={{ scaleX: 0 }}
+                                animate={{ scaleX: 1 }}
+                                className={`h-1 flex-1 rounded-full transition-colors origin-left ${
                                   i < strength ? strengthColors[strength - 1] : "bg-border"
                                 }`}
                               />
                             ))}
                           </div>
                           <p className="text-xs text-muted-foreground">
-                            {strength > 0 ? strengthLabels[strength - 1] : "Too short"}
+                            {strength > 0 ? strengthLabels[strength - 1] : "Too short — use 8+ characters"}
                           </p>
-                        </div>
+                        </motion.div>
                       )}
                     </div>
 
-                    <Button type="submit" disabled={loading} className="w-full rounded-full" size="lg">
-                      {loading ? "Please wait..." : tab === "login" ? "Sign In" : "Create Account"}
+                    <Button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full rounded-full shadow-md hover:shadow-lg transition-shadow"
+                      size="lg"
+                    >
+                      {loading ? (
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                          className="w-5 h-5 border-2 border-primary-foreground/30 border-t-primary-foreground rounded-full"
+                        />
+                      ) : (
+                        tab === "login" ? "Sign In" : "Create Account"
+                      )}
                     </Button>
                   </form>
+
+                  {/* Benefits for signup */}
+                  {tab === "signup" && (
+                    <motion.div
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.2 }}
+                      className="mt-6 grid grid-cols-2 gap-2"
+                    >
+                      {benefits.map((b, i) => (
+                        <motion.div
+                          key={b.text}
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.3 + i * 0.08 }}
+                          className="flex items-center gap-2 text-xs text-muted-foreground p-2 rounded-lg bg-accent/30"
+                        >
+                          <b.icon className="h-3.5 w-3.5 text-foreground shrink-0" />
+                          {b.text}
+                        </motion.div>
+                      ))}
+                    </motion.div>
+                  )}
                 </motion.div>
               )}
             </AnimatePresence>

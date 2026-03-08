@@ -160,6 +160,10 @@ export function BlockSettings({ block, onUpdate, onClose, onCopyStyle, onPasteSt
             {renderContentSettings(block.block_type, content, updateContent, addListItem, removeListItem, updateListItem, handleImageUpload, fileRef)}
           </TabsContent>
 
+          <TabsContent value="presets" className="p-3 space-y-4 mt-0">
+            <StylePresetsPanel style={style} updateStyle={updateStyle} onUpdate={onUpdate} onCopyStyle={onCopyStyle} onPasteStyle={onPasteStyle} hasCopiedStyle={hasCopiedStyle} />
+          </TabsContent>
+
           <TabsContent value="style" className="p-3 space-y-4 mt-0">
             <StyleSettings style={style} updateStyle={updateStyle} />
           </TabsContent>

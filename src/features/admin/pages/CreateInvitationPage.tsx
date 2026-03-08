@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 import { useCreateInvitation } from "../hooks/useInvitations";
 import { useAuth } from "../hooks/useAuth";
 import { EVENT_TYPE_LABELS, type EventType } from "../types";
+import { SEOHead } from "@/components/SEOHead";
 
 const eventIcons: Record<EventType, React.ElementType> = {
   debut: PartyPopper,
@@ -24,6 +26,14 @@ const eventDescriptions: Record<EventType, string> = {
   birthday: "Fun birthday party celebration",
   christening: "Baby dedication and christening ceremony",
   corporate: "Professional corporate event or gala",
+};
+
+const eventColors: Record<EventType, string> = {
+  debut: "from-pink-500/10 to-purple-500/10 hover:border-pink-500/30",
+  wedding: "from-rose-500/10 to-pink-500/10 hover:border-rose-500/30",
+  birthday: "from-amber-500/10 to-orange-500/10 hover:border-amber-500/30",
+  christening: "from-sky-500/10 to-blue-500/10 hover:border-sky-500/30",
+  corporate: "from-slate-500/10 to-gray-500/10 hover:border-slate-500/30",
 };
 
 export default function CreateInvitationPage() {
@@ -75,21 +85,34 @@ export default function CreateInvitationPage() {
   const canProceed = step === 0 ? !!eventType : step === 1 ? !!title && !!slug : true;
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <h1 className="font-display text-2xl font-bold mb-2">Create Invitation</h1>
+    <div className="max-w-2xl mx-auto w-full">
+      <SEOHead title="Create Invitation" />
+      <motion.h1
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        className="font-display text-2xl sm:text-3xl font-black mb-2"
+      >
+        Create Invitation
+      </motion.h1>
       <p className="text-sm text-muted-foreground mb-8">Set up your new event invitation</p>
 
       {/* Step indicator */}
       <div className="flex items-center gap-2 mb-8">
         {["Event Type", "Details", "Review"].map((label, i) => (
           <div key={label} className="flex items-center gap-2 flex-1">
-            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
-              i <= step ? "bg-primary text-primary-foreground" : "bg-accent text-muted-foreground"
-            }`}>
+            <motion.div
+              animate={{
+                scale: i === step ? 1.1 : 1,
+                backgroundColor: i <= step ? "hsl(var(--primary))" : "hsl(var(--accent))",
+              }}
+              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-colors ${
+                i <= step ? "text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
               {i < step ? <Check className="h-4 w-4" /> : i + 1}
-            </div>
+            </motion.div>
             <span className="text-xs font-medium hidden sm:block">{label}</span>
-            {i < 2 && <div className={`flex-1 h-px ${i < step ? "bg-primary" : "bg-border"}`} />}
+            {i < 2 && <div className={`flex-1 h-px transition-colors ${i < step ? "bg-primary" : "bg-border"}`} />}
           </div>
         ))}
       </div>
@@ -102,98 +125,116 @@ export default function CreateInvitationPage() {
           className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur"
         >
           <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
+            initial={{ scale: 0.5, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
+            transition={{ type: "spring", stiffness: 200 }}
             className="text-center"
           >
-            <Sparkles className="h-16 w-16 mx-auto mb-4 text-foreground" />
-            <h2 className="font-display text-2xl font-bold mb-2">Invitation Created! 🎉</h2>
+            <Sparkles className="h-16 w-16 mx-auto mb-4 text-primary" />
+            <h2 className="font-display text-2xl font-black mb-2">Invitation Created! 🎉</h2>
             <p className="text-muted-foreground">Redirecting to editor...</p>
           </motion.div>
         </motion.div>
       )}
 
       <AnimatePresence mode="wait">
-        {/* Step 1: Event Type */}
         {step === 0 && (
           <motion.div key="step0" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {(Object.entries(EVENT_TYPE_LABELS) as [EventType, string][]).map(([type, label]) => {
                 const Icon = eventIcons[type];
+                const isSelected = eventType === type;
                 return (
-                  <button
+                  <motion.button
                     key={type}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => setEventType(type)}
-                    className={`glass-card p-6 text-left transition-all hover:shadow-lg ${
-                      eventType === type ? "ring-2 ring-foreground border-foreground/30" : ""
+                    className={`rounded-2xl border-2 bg-gradient-to-br ${eventColors[type]} p-6 text-left transition-all ${
+                      isSelected ? "border-primary ring-2 ring-primary/20 shadow-lg" : "border-border"
                     }`}
                   >
-                    <Icon className="h-8 w-8 mb-3" />
-                    <h3 className="font-display font-semibold mb-1">{label}</h3>
-                    <p className="text-xs text-muted-foreground">{eventDescriptions[type]}</p>
-                  </button>
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-12 h-12 rounded-xl bg-background/60 flex items-center justify-center">
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      {isSelected && <Badge className="text-[9px]">Selected</Badge>}
+                    </div>
+                    <h3 className="font-display font-bold mb-1">{label}</h3>
+                    <p className="text-xs text-muted-foreground leading-relaxed">{eventDescriptions[type]}</p>
+                  </motion.button>
                 );
               })}
             </div>
           </motion.div>
         )}
 
-        {/* Step 2: Details */}
         {step === 1 && (
           <motion.div key="step1" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }} className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Event Title *</Label>
-                <Input value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="Sofia's 18th Birthday" className="rounded-xl" />
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Event Title *</Label>
+                  <Input value={title} onChange={(e) => handleTitleChange(e.target.value)} placeholder="Sofia's 18th Birthday" className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Celebrant Name</Label>
+                  <Input value={celebrantName} onChange={(e) => setCelebrantName(e.target.value)} placeholder="Sofia Martinez" className="rounded-xl" />
+                </div>
               </div>
               <div className="space-y-2">
-                <Label>Celebrant Name</Label>
-                <Input value={celebrantName} onChange={(e) => setCelebrantName(e.target.value)} placeholder="Sofia Martinez" className="rounded-xl" />
+                <Label className="text-xs font-medium">URL Slug *</Label>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-muted-foreground shrink-0">/invite/</span>
+                  <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="sofias-18th" className="rounded-xl" />
+                </div>
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>URL Slug *</Label>
-              <div className="flex items-center gap-2">
-                <span className="text-xs text-muted-foreground">/invite/</span>
-                <Input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="sofias-18th" className="rounded-xl" />
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Event Date</Label>
+                  <Input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="rounded-xl" />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-medium">Venue Name</Label>
+                  <Input value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Grand Ballroom" className="rounded-xl" />
+                </div>
               </div>
-            </div>
-            <div className="grid sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label>Event Date</Label>
-                <Input type="datetime-local" value={eventDate} onChange={(e) => setEventDate(e.target.value)} className="rounded-xl" />
+                <Label className="text-xs font-medium">Venue Address</Label>
+                <Input value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="123 Main St, Manila" className="rounded-xl" />
               </div>
               <div className="space-y-2">
-                <Label>Venue Name</Label>
-                <Input value={venueName} onChange={(e) => setVenueName(e.target.value)} placeholder="Grand Ballroom" className="rounded-xl" />
+                <Label className="text-xs font-medium">Invitation Message</Label>
+                <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="You are cordially invited..." className="rounded-xl min-h-[100px]" />
               </div>
-            </div>
-            <div className="space-y-2">
-              <Label>Venue Address</Label>
-              <Input value={venueAddress} onChange={(e) => setVenueAddress(e.target.value)} placeholder="123 Main St, Manila" className="rounded-xl" />
-            </div>
-            <div className="space-y-2">
-              <Label>Invitation Message</Label>
-              <Textarea value={message} onChange={(e) => setMessage(e.target.value)} placeholder="You are cordially invited..." className="rounded-xl min-h-[100px]" />
             </div>
           </motion.div>
         )}
 
-        {/* Step 3: Review */}
         {step === 2 && (
           <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} transition={{ duration: 0.2 }}>
-            <div className="glass-card p-6 space-y-4">
-              <h3 className="font-display font-bold text-lg">Review Your Invitation</h3>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div><p className="text-muted-foreground">Event Type</p><p className="font-medium">{eventType ? EVENT_TYPE_LABELS[eventType] : "-"}</p></div>
-                <div><p className="text-muted-foreground">Title</p><p className="font-medium">{title || "-"}</p></div>
-                <div><p className="text-muted-foreground">Celebrant</p><p className="font-medium">{celebrantName || "-"}</p></div>
-                <div><p className="text-muted-foreground">Slug</p><p className="font-medium font-mono text-xs">/invite/{slug}</p></div>
-                <div><p className="text-muted-foreground">Date</p><p className="font-medium">{eventDate ? new Date(eventDate).toLocaleDateString() : "-"}</p></div>
-                <div><p className="text-muted-foreground">Venue</p><p className="font-medium">{venueName || "-"}</p></div>
+            <div className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-4">
+              <h3 className="font-display font-black text-lg">Review Your Invitation</h3>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                {[
+                  { label: "Event Type", value: eventType ? EVENT_TYPE_LABELS[eventType] : "-" },
+                  { label: "Title", value: title || "-" },
+                  { label: "Celebrant", value: celebrantName || "-" },
+                  { label: "Slug", value: `/invite/${slug}`, mono: true },
+                  { label: "Date", value: eventDate ? new Date(eventDate).toLocaleDateString() : "-" },
+                  { label: "Venue", value: venueName || "-" },
+                ].map(item => (
+                  <div key={item.label} className="p-3 rounded-xl bg-accent/30">
+                    <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">{item.label}</p>
+                    <p className={`text-sm font-medium ${item.mono ? "font-mono text-xs" : ""}`}>{item.value}</p>
+                  </div>
+                ))}
               </div>
               {message && (
-                <div><p className="text-muted-foreground text-sm">Message</p><p className="text-sm">{message}</p></div>
+                <div className="p-3 rounded-xl bg-accent/30">
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider mb-0.5">Message</p>
+                  <p className="text-sm">{message}</p>
+                </div>
               )}
             </div>
           </motion.div>
@@ -210,7 +251,7 @@ export default function CreateInvitationPage() {
             Next <ArrowRight className="h-4 w-4 ml-2" />
           </Button>
         ) : (
-          <Button onClick={handleCreate} disabled={createInvitation.isPending} className="rounded-full">
+          <Button onClick={handleCreate} disabled={createInvitation.isPending} className="rounded-full shadow-md">
             {createInvitation.isPending ? "Creating..." : "Create Invitation"} <Sparkles className="h-4 w-4 ml-2" />
           </Button>
         )}

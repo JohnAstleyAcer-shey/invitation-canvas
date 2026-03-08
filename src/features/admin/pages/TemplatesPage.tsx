@@ -1,12 +1,16 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Heart, Cake, Baby, Building2, PartyPopper, ArrowRight, Sparkles, Crown, Star } from "lucide-react";
+import { Heart, Cake, Baby, Building2, PartyPopper, ArrowRight, Sparkles, Crown, Star, Search, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useCreateInvitation } from "../hooks/useInvitations";
 import { useAuth } from "../hooks/useAuth";
 import { EventType, EVENT_TYPE_LABELS } from "../types";
 import { toast } from "sonner";
+import { SEOHead } from "@/components/SEOHead";
 
 const templates = [
   {
@@ -15,6 +19,7 @@ const templates = [
     description: "Complete debut celebration with 18 roses, candles, treasures, blue bills, gallery, and RSVP",
     icon: PartyPopper,
     popular: true,
+    color: "from-pink-500/10 to-purple-500/10",
     preset: { title: "My Grand Debut", celebrant_name: "", invitation_message: "You are cordially invited to celebrate a beautiful milestone — my 18th birthday." },
   },
   {
@@ -22,7 +27,8 @@ const templates = [
     type: "wedding" as EventType,
     description: "Timeless wedding invitation with ceremony details, timeline, gallery, and RSVP management",
     icon: Heart,
-    popular: false,
+    popular: true,
+    color: "from-rose-500/10 to-pink-500/10",
     preset: { title: "Our Wedding", celebrant_name: "", invitation_message: "Together with our families, we invite you to celebrate our union." },
   },
   {
@@ -31,6 +37,7 @@ const templates = [
     description: "Clean, modern wedding with essential pages — cover, message, location, and RSVP",
     icon: Crown,
     popular: false,
+    color: "from-slate-500/10 to-gray-500/10",
     preset: { title: "We're Getting Married", celebrant_name: "", invitation_message: "Join us as we say I do." },
   },
   {
@@ -39,6 +46,7 @@ const templates = [
     description: "Colorful birthday celebration with countdown, gallery, dress code, and gift guide",
     icon: Cake,
     popular: false,
+    color: "from-amber-500/10 to-orange-500/10",
     preset: { title: "Birthday Bash", celebrant_name: "", invitation_message: "Let's celebrate another year of life, love, and laughter!" },
   },
   {
@@ -47,6 +55,7 @@ const templates = [
     description: "Gentle christening ceremony invitation with timeline, guest management, and photos",
     icon: Baby,
     popular: false,
+    color: "from-sky-500/10 to-blue-500/10",
     preset: { title: "Christening Celebration", celebrant_name: "", invitation_message: "Join us as we celebrate a blessed beginning." },
   },
   {
@@ -55,6 +64,7 @@ const templates = [
     description: "Professional event with schedule, dress code, FAQ, and RSVP — perfect for galas and conferences",
     icon: Building2,
     popular: false,
+    color: "from-indigo-500/10 to-blue-500/10",
     preset: { title: "Annual Gala", celebrant_name: "", invitation_message: "You are invited to an evening of excellence." },
   },
   {
@@ -63,6 +73,7 @@ const templates = [
     description: "A celestial-themed debut with sparkle effects, elegant fonts, and full debut ceremony sections",
     icon: Star,
     popular: false,
+    color: "from-violet-500/10 to-indigo-500/10",
     preset: { title: "Under the Stars", celebrant_name: "", invitation_message: "Join me as I dance under the starlit sky on my 18th birthday." },
   },
   {
@@ -71,6 +82,7 @@ const templates = [
     description: "Nature-inspired wedding with soft palette, gallery focus, and outdoor venue details",
     icon: Sparkles,
     popular: false,
+    color: "from-emerald-500/10 to-green-500/10",
     preset: { title: "Garden of Love", celebrant_name: "", invitation_message: "Surrounded by nature's beauty, we invite you to witness our love story." },
   },
 ];
@@ -79,6 +91,14 @@ export default function TemplatesPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const createInvitation = useCreateInvitation();
+  const [search, setSearch] = useState("");
+  const [filterType, setFilterType] = useState<EventType | "all">("all");
+
+  const filtered = templates.filter(t => {
+    const matchSearch = !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase());
+    const matchType = filterType === "all" || t.type === filterType;
+    return matchSearch && matchType;
+  });
 
   const handleUseTemplate = async (template: typeof templates[0]) => {
     if (!user) return;
@@ -98,43 +118,78 @@ export default function TemplatesPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-7xl mx-auto">
+      <SEOHead title="Templates" />
       <div>
-        <h1 className="font-display text-2xl font-bold">Templates</h1>
-        <p className="text-sm text-muted-foreground">Quick-start templates for every event type. Click to create instantly.</p>
+        <motion.h1 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="font-display text-2xl sm:text-3xl font-black">
+          Templates
+        </motion.h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Quick-start templates for every event type. Click to create instantly.</p>
       </div>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {templates.map((t, i) => (
-          <motion.div
-            key={`${t.name}-${i}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.06 }}
-            className="glass-card p-6 flex flex-col relative"
-          >
-            {t.popular && (
-              <Badge className="absolute top-3 right-3 text-[10px]">Popular</Badge>
-            )}
-            <div className="flex items-center gap-3 mb-3">
-              <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center">
-                <t.icon className="h-5 w-5" />
-              </div>
-              <Badge variant="outline" className="text-[10px]">{EVENT_TYPE_LABELS[t.type]}</Badge>
-            </div>
-            <h3 className="font-display font-semibold mb-1">{t.name}</h3>
-            <p className="text-xs text-muted-foreground mb-4 flex-1">{t.description}</p>
-            <Button
-              variant="outline"
-              className="rounded-full w-full"
-              onClick={() => handleUseTemplate(t)}
-              disabled={createInvitation.isPending}
+      {/* Search & filter */}
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }} className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search templates..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+            className="pl-9 rounded-xl bg-muted/50 border-transparent focus:border-border focus:bg-background"
+          />
+        </div>
+        <Tabs value={filterType} onValueChange={v => setFilterType(v as EventType | "all")}>
+          <TabsList className="w-full sm:w-auto overflow-x-auto">
+            <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+            {Object.entries(EVENT_TYPE_LABELS).map(([k, v]) => (
+              <TabsTrigger key={k} value={k} className="text-xs">{v}</TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
+      </motion.div>
+
+      {/* Results count */}
+      <p className="text-xs text-muted-foreground">{filtered.length} template{filtered.length !== 1 ? "s" : ""} found</p>
+
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <Filter className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">No templates match your search</p>
+        </div>
+      ) : (
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {filtered.map((t, i) => (
+            <motion.div
+              key={`${t.name}-${i}`}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 25 }}
+              className={`group relative rounded-2xl border border-border bg-gradient-to-br ${t.color} p-5 flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-300`}
             >
-              {createInvitation.isPending ? "Creating..." : "Use Template"} <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
-          </motion.div>
-        ))}
-      </div>
+              {t.popular && (
+                <Badge className="absolute top-3 right-3 text-[9px] shadow-sm">Popular</Badge>
+              )}
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-11 h-11 rounded-xl bg-background/60 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
+                  <t.icon className="h-5 w-5" />
+                </div>
+                <Badge variant="outline" className="text-[10px] bg-background/50">{EVENT_TYPE_LABELS[t.type]}</Badge>
+              </div>
+              <h3 className="font-display font-bold mb-1">{t.name}</h3>
+              <p className="text-xs text-muted-foreground mb-4 flex-1 leading-relaxed">{t.description}</p>
+              <Button
+                variant="outline"
+                className="rounded-full w-full bg-background/60 hover:bg-background transition-colors"
+                onClick={() => handleUseTemplate(t)}
+                disabled={createInvitation.isPending}
+              >
+                {createInvitation.isPending ? "Creating..." : "Use Template"} <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

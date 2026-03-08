@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { motion } from "framer-motion";
-import { ArrowLeft, Plus, Search, Download, Edit, Trash2, UserPlus, Users, CheckCircle, XCircle, HelpCircle, Clock } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ArrowLeft, Plus, Search, Download, Edit, Trash2, UserPlus, Users, CheckCircle, XCircle, HelpCircle, Clock, Copy, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -10,10 +10,13 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { useGuests, useRsvps } from "../hooks/useInvitationData";
 import { useInvitation } from "../hooks/useInvitations";
 import { RSVP_STATUS_LABELS, type RsvpStatus } from "../types";
+import { GuestManagementSkeleton } from "@/components/LoadingSkeletons";
 import { SEOHead } from "@/components/SEOHead";
+import { toast } from "sonner";
 
 const statusConfig: Record<RsvpStatus, { color: string; icon: React.ElementType }> = {
   pending: { color: "bg-muted text-muted-foreground", icon: Clock },
@@ -24,7 +27,7 @@ const statusConfig: Record<RsvpStatus, { color: string; icon: React.ElementType 
 
 export default function GuestManagementPage() {
   const { id } = useParams<{ id: string }>();
-  const { data: invitation } = useInvitation(id!);
+  const { data: invitation, isLoading: invLoading } = useInvitation(id!);
   const guests = useGuests(id!);
   const rsvps = useRsvps(id!);
 
@@ -35,6 +38,9 @@ export default function GuestManagementPage() {
   const [bulkText, setBulkText] = useState("");
   const [editGuest, setEditGuest] = useState<any>(null);
   const [newGuest, setNewGuest] = useState({ full_name: "", email: "", phone: "", max_companions: 0 });
+  const [copiedCode, setCopiedCode] = useState<string | null>(null);
+
+  const isLoading = invLoading || guests.isLoading;
 
   const rsvpMap = new Map<string, { status: RsvpStatus; num_companions: number; message: string | null }>();
   rsvps.data?.forEach(r => {
@@ -48,7 +54,6 @@ export default function GuestManagementPage() {
     return matchSearch && matchStatus;
   }) || [];
 
-  // Stats
   const totalGuests = guests.data?.length || 0;
   const attending = guests.data?.filter(g => rsvpMap.get(g.id)?.status === "attending").length || 0;
   const declined = guests.data?.filter(g => rsvpMap.get(g.id)?.status === "not_attending").length || 0;
@@ -69,6 +74,13 @@ export default function GuestManagementPage() {
     setShowBulk(false);
   };
 
+  const handleCopyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    setCopiedCode(code);
+    toast.success("Code copied!");
+    setTimeout(() => setCopiedCode(null), 2000);
+  };
+
   const exportCSV = () => {
     if (!guests.data?.length) return;
     const headers = ["Name", "Email", "Phone", "Code", "RSVP Status", "Companions"];
@@ -83,7 +95,10 @@ export default function GuestManagementPage() {
     a.href = url;
     a.download = `guests-${invitation?.slug || id}.csv`;
     a.click();
+    toast.success("CSV exported");
   };
+
+  if (isLoading) return <GuestManagementSkeleton />;
 
   return (
     <div className="space-y-6 w-full max-w-6xl mx-auto">
@@ -112,8 +127,9 @@ export default function GuestManagementPage() {
             key={stat.label}
             initial={{ opacity: 0, y: 12 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className={`rounded-xl border border-border bg-gradient-to-br ${stat.color} p-3 sm:p-4`}
+            transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 25 }}
+            whileHover={{ scale: 1.02, y: -2 }}
+            className={`rounded-xl border border-border bg-gradient-to-br ${stat.color} p-3 sm:p-4 cursor-default transition-shadow hover:shadow-md`}
           >
             <div className="flex items-center gap-2 text-muted-foreground mb-1">
               <stat.icon className="h-3.5 w-3.5" />
@@ -125,7 +141,12 @@ export default function GuestManagementPage() {
       </div>
 
       {/* Actions bar */}
-      <div className="flex flex-col sm:flex-row gap-3">
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="flex flex-col sm:flex-row gap-3"
+      >
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
@@ -147,54 +168,66 @@ export default function GuestManagementPage() {
           <Button variant="outline" onClick={() => setShowBulk(true)} size="sm" className="rounded-full flex-1 sm:flex-initial"><UserPlus className="h-4 w-4 mr-1" /> Bulk</Button>
           <Button variant="outline" onClick={exportCSV} size="sm" className="rounded-full flex-1 sm:flex-initial"><Download className="h-4 w-4 mr-1" /> CSV</Button>
         </div>
-      </div>
+      </motion.div>
 
       {/* Results */}
       <p className="text-xs text-muted-foreground">{filtered.length} of {totalGuests} guests</p>
 
-      {/* Mobile cards + Desktop table */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
           <Users className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">No guests found</p>
-        </div>
+        </motion.div>
       ) : (
         <>
           {/* Mobile cards */}
           <div className="sm:hidden space-y-2">
-            {filtered.map(g => {
-              const rsvp = rsvpMap.get(g.id);
-              const status = (rsvp?.status || "pending") as RsvpStatus;
-              const config = statusConfig[status];
-              return (
-                <motion.div
-                  key={g.id}
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl border border-border bg-card p-4 space-y-2"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <p className="font-bold text-sm">{g.full_name}</p>
-                      {g.email && <p className="text-xs text-muted-foreground">{g.email}</p>}
+            <AnimatePresence>
+              {filtered.map((g, i) => {
+                const rsvp = rsvpMap.get(g.id);
+                const status = (rsvp?.status || "pending") as RsvpStatus;
+                const config = statusConfig[status];
+                return (
+                  <motion.div
+                    key={g.id}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -20 }}
+                    transition={{ delay: i * 0.03 }}
+                    whileTap={{ scale: 0.98 }}
+                    className="rounded-xl border border-border bg-card p-4 space-y-2"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <p className="font-bold text-sm">{g.full_name}</p>
+                        {g.email && <p className="text-xs text-muted-foreground">{g.email}</p>}
+                      </div>
+                      <Badge className={`text-[10px] ${config.color}`}>{RSVP_STATUS_LABELS[status]}</Badge>
                     </div>
-                    <Badge className={`text-[10px] ${config.color}`}>{RSVP_STATUS_LABELS[status]}</Badge>
-                  </div>
-                  <div className="flex items-center justify-between text-xs text-muted-foreground">
-                    <code className="bg-accent px-1.5 py-0.5 rounded text-[10px]">{g.invitation_code}</code>
-                    <span>{rsvp?.num_companions || 0} companion(s)</span>
-                  </div>
-                  <div className="flex gap-1 pt-1">
-                    <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 rounded-lg" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3 mr-1" /> Edit</Button>
-                    <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive flex-1 rounded-lg" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3 mr-1" /> Delete</Button>
-                  </div>
-                </motion.div>
-              );
-            })}
+                    <div className="flex items-center justify-between text-xs text-muted-foreground">
+                      <button onClick={() => handleCopyCode(g.invitation_code)} className="bg-accent px-1.5 py-0.5 rounded text-[10px] flex items-center gap-1 hover:bg-accent/80 transition-colors">
+                        {copiedCode === g.invitation_code ? <Check className="h-2.5 w-2.5" /> : <Copy className="h-2.5 w-2.5" />}
+                        {g.invitation_code}
+                      </button>
+                      <span>{rsvp?.num_companions || 0} companion(s)</span>
+                    </div>
+                    <div className="flex gap-1 pt-1">
+                      <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 rounded-lg" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3 mr-1" /> Edit</Button>
+                      <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive flex-1 rounded-lg" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3 mr-1" /> Delete</Button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </AnimatePresence>
           </div>
 
           {/* Desktop table */}
-          <div className="hidden sm:block rounded-xl border border-border bg-card overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="hidden sm:block rounded-xl border border-border bg-card overflow-hidden"
+          >
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -209,33 +242,52 @@ export default function GuestManagementPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filtered.map(g => {
-                    const rsvp = rsvpMap.get(g.id);
-                    const status = (rsvp?.status || "pending") as RsvpStatus;
-                    const config = statusConfig[status];
-                    return (
-                      <TableRow key={g.id}>
-                        <TableCell className="font-medium">{g.full_name}</TableCell>
-                        <TableCell className="text-muted-foreground">{g.email || "—"}</TableCell>
-                        <TableCell className="text-muted-foreground">{g.phone || "—"}</TableCell>
-                        <TableCell><code className="text-xs bg-accent px-1.5 py-0.5 rounded">{g.invitation_code}</code></TableCell>
-                        <TableCell>
-                          <Badge className={`text-[10px] ${config.color}`}>{RSVP_STATUS_LABELS[status]}</Badge>
-                        </TableCell>
-                        <TableCell>{rsvp?.num_companions || 0}</TableCell>
-                        <TableCell>
-                          <div className="flex gap-1">
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3" /></Button>
-                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3" /></Button>
-                          </div>
-                        </TableCell>
-                      </TableRow>
-                    );
-                  })}
+                  <AnimatePresence>
+                    {filtered.map((g, i) => {
+                      const rsvp = rsvpMap.get(g.id);
+                      const status = (rsvp?.status || "pending") as RsvpStatus;
+                      const config = statusConfig[status];
+                      return (
+                        <motion.tr
+                          key={g.id}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0, x: -10 }}
+                          transition={{ delay: i * 0.02 }}
+                          className="border-b border-border hover:bg-accent/30 transition-colors"
+                        >
+                          <TableCell className="font-medium">{g.full_name}</TableCell>
+                          <TableCell className="text-muted-foreground">{g.email || "—"}</TableCell>
+                          <TableCell className="text-muted-foreground">{g.phone || "—"}</TableCell>
+                          <TableCell>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <button onClick={() => handleCopyCode(g.invitation_code)} className="text-xs bg-accent px-1.5 py-0.5 rounded flex items-center gap-1 hover:bg-accent/80 transition-colors">
+                                  {copiedCode === g.invitation_code ? <Check className="h-2.5 w-2.5 text-green-500" /> : <Copy className="h-2.5 w-2.5" />}
+                                  {g.invitation_code}
+                                </button>
+                              </TooltipTrigger>
+                              <TooltipContent>Click to copy</TooltipContent>
+                            </Tooltip>
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={`text-[10px] ${config.color}`}>{RSVP_STATUS_LABELS[status]}</Badge>
+                          </TableCell>
+                          <TableCell>{rsvp?.num_companions || 0}</TableCell>
+                          <TableCell>
+                            <div className="flex gap-1">
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3" /></Button>
+                              <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3" /></Button>
+                            </div>
+                          </TableCell>
+                        </motion.tr>
+                      );
+                    })}
+                  </AnimatePresence>
                 </TableBody>
               </Table>
             </div>
-          </div>
+          </motion.div>
         </>
       )}
 

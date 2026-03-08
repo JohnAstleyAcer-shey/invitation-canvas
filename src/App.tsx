@@ -57,6 +57,7 @@ const App = () => (
               <Route path="templates" element={<TemplatesPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="help" element={<HelpPage />} />
+              <Route path="blocks/:id" element={<BlockEditorPage />} />
             </Route>
             <Route path="/invite/:slug" element={<InvitationViewPage />} />
             <Route path="/customer-admin" element={<CustomerAdminProvider><CustomerLoginPage /></CustomerAdminProvider>} />

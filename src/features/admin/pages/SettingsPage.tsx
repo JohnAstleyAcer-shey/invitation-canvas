@@ -52,7 +52,7 @@ function SettingsRow({ label, description, children }: { label: string; descript
 }
 
 export default function SettingsPage() {
-  const { user, profile, isLoading } = useAuth();
+  const { user, profile, loading: isLoading } = useAuth();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);

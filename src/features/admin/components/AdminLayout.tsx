@@ -5,6 +5,7 @@ import { MobileNav } from "./MobileNav";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ChevronRight, Home } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 
 const breadcrumbMap: Record<string, string> = {
   admin: "Dashboard",
@@ -60,9 +61,19 @@ export function AdminLayout() {
             </div>
           </header>
 
-          {/* Main content */}
+          {/* Main content with page transitions */}
           <main className="flex-1 p-4 md:p-6 pb-24 md:pb-6">
-            <Outlet />
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={location.pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.2, ease: "easeInOut" }}
+              >
+                <Outlet />
+              </motion.div>
+            </AnimatePresence>
           </main>
 
           {/* Mobile bottom nav */}

@@ -198,7 +198,7 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
   const previewWidths = { mobile: "375px", tablet: "768px", desktop: "100%" };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-4rem)]">
+    <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card gap-2">
         {/* Left: Back + title */}

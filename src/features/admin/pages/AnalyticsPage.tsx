@@ -4,7 +4,8 @@ import { motion } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
 import { useRsvpStats, useGuestsPerInvitation, useRsvpTimeline } from "../hooks/useInvitationData";
 import { useInvitationStats } from "../hooks/useInvitations";
-import { TrendingUp, Users, CheckCircle, XCircle, HelpCircle, Clock, Eye, Smartphone, Monitor, Tablet } from "lucide-react";
+import { TrendingUp, Users, CheckCircle, XCircle, HelpCircle, Clock, Eye, Smartphone, Monitor, Tablet, ArrowUpRight, Activity } from "lucide-react";
+import { SEOHead } from "@/components/SEOHead";
 
 const COLORS = ["hsl(var(--foreground))", "hsl(var(--destructive))", "hsl(var(--muted-foreground))", "hsl(var(--border))"];
 const DEVICE_ICONS: Record<string, React.ReactNode> = {
@@ -13,22 +14,50 @@ const DEVICE_ICONS: Record<string, React.ReactNode> = {
   tablet: <Tablet className="w-4 h-4" />,
 };
 
-function AnimatedNumber({ value, label, icon, suffix }: { value: number; label: string; icon: React.ReactNode; suffix?: string }) {
+const statConfigs = [
+  { key: "total", label: "Total Invitations", icon: TrendingUp, gradient: "from-primary/10 to-primary/5" },
+  { key: "totalGuests", label: "Total Guests", icon: Users, gradient: "from-blue-500/10 to-blue-500/5" },
+  { key: "attending", label: "Attending", icon: CheckCircle, gradient: "from-green-500/10 to-green-500/5" },
+  { key: "views", label: "Page Views", icon: Eye, gradient: "from-purple-500/10 to-purple-500/5" },
+  { key: "conversion", label: "RSVP Conversion", icon: ArrowUpRight, gradient: "from-amber-500/10 to-amber-500/5", suffix: "%" },
+];
+
+function AnimatedNumber({ value, label, icon: Icon, suffix, gradient, index }: { value: number; label: string; icon: React.ElementType; suffix?: string; gradient: string; index: number }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
-      className="glass-card p-5 text-center"
+      transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 25 }}
+      className={`rounded-2xl border border-border bg-gradient-to-br ${gradient} p-4 sm:p-5`}
     >
-      <div className="flex justify-center mb-2 text-muted-foreground">{icon}</div>
+      <div className="flex items-center gap-2 mb-2 text-muted-foreground">
+        <Icon className="h-4 w-4" />
+        <span className="text-[10px] font-medium uppercase tracking-wider">{label}</span>
+      </div>
       <motion.p
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        className="font-display text-3xl font-black"
+        transition={{ delay: index * 0.06 + 0.15 }}
+        className="font-display text-2xl sm:text-3xl font-black"
       >
         {value}{suffix}
       </motion.p>
-      <p className="text-xs text-muted-foreground mt-1">{label}</p>
+    </motion.div>
+  );
+}
+
+function ChartCard({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      className={`rounded-2xl border border-border bg-card p-5 sm:p-6 ${className}`}
+    >
+      <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
+        <Activity className="h-4 w-4 text-muted-foreground" />
+        {title}
+      </h3>
+      {children}
     </motion.div>
   );
 }
@@ -39,7 +68,6 @@ export default function AnalyticsPage() {
   const { data: guestsPerInv } = useGuestsPerInvitation();
   const { data: rsvpTimeline } = useRsvpTimeline();
 
-  // View analytics
   const { data: totalViews } = useQuery({
     queryKey: ["analytics-total-views"],
     queryFn: async () => {
@@ -84,75 +112,99 @@ export default function AnalyticsPage() {
   const totalRsvps = pieData.reduce((a, b) => a + b.value, 0);
   const conversionRate = totalViews && totalViews > 0 ? Math.round((totalRsvps / totalViews) * 100) : 0;
 
+  const statValues = [
+    stats?.total || 0,
+    stats?.totalGuests || 0,
+    rsvpStats?.attending || 0,
+    totalViews || 0,
+    conversionRate,
+  ];
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-7xl mx-auto">
+      <SEOHead title="Analytics" />
       <div>
-        <h1 className="font-display text-2xl font-bold">Analytics</h1>
-        <p className="text-sm text-muted-foreground">Overview of your invitation performance</p>
+        <motion.h1 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="font-display text-2xl sm:text-3xl font-black">
+          Analytics
+        </motion.h1>
+        <p className="text-sm text-muted-foreground mt-0.5">Overview of your invitation performance</p>
       </div>
 
-      {/* Stat cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <AnimatedNumber value={stats?.total || 0} label="Total Invitations" icon={<TrendingUp className="h-5 w-5" />} />
-        <AnimatedNumber value={stats?.totalGuests || 0} label="Total Guests" icon={<Users className="h-5 w-5" />} />
-        <AnimatedNumber value={rsvpStats?.attending || 0} label="Attending" icon={<CheckCircle className="h-5 w-5" />} />
-        <AnimatedNumber value={totalViews || 0} label="Page Views" icon={<Eye className="h-5 w-5" />} />
-        <AnimatedNumber value={conversionRate} label="RSVP Conversion" icon={<TrendingUp className="h-5 w-5" />} suffix="%" />
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+        {statConfigs.map((config, i) => (
+          <AnimatedNumber
+            key={config.key}
+            value={statValues[i]}
+            label={config.label}
+            icon={config.icon}
+            gradient={config.gradient}
+            suffix={config.suffix}
+            index={i}
+          />
+        ))}
       </div>
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* RSVP Donut */}
-        <div className="glass-card p-6">
-          <h3 className="font-display font-semibold mb-4">RSVP Breakdown</h3>
+        <ChartCard title="RSVP Breakdown">
           {totalRsvps === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No RSVPs yet</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <HelpCircle className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No RSVPs yet</p>
+              <p className="text-xs mt-1 opacity-60">RSVPs will appear once guests respond</p>
+            </div>
           ) : (
-            <div className="flex items-center justify-center">
-              <ResponsiveContainer width={250} height={250}>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+              <ResponsiveContainer width={200} height={200}>
                 <PieChart>
-                  <Pie data={pieData} innerRadius={60} outerRadius={100} dataKey="value" stroke="none">
+                  <Pie data={pieData} innerRadius={55} outerRadius={90} dataKey="value" stroke="none">
                     {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="space-y-2 ml-4">
+              <div className="space-y-2.5">
                 {pieData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-2 text-xs">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS[i] }} />
-                    <span>{d.name}: {d.value}</span>
+                  <div key={d.name} className="flex items-center gap-2.5 text-sm">
+                    <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[i] }} />
+                    <span className="text-muted-foreground">{d.name}</span>
+                    <span className="font-bold ml-auto">{d.value}</span>
                   </div>
                 ))}
               </div>
             </div>
           )}
-        </div>
+        </ChartCard>
 
         {/* Device breakdown */}
-        <div className="glass-card p-6">
-          <h3 className="font-display font-semibold mb-4">Views by Device</h3>
+        <ChartCard title="Views by Device">
           {!viewsByDevice?.length ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No views yet</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Monitor className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No views yet</p>
+              <p className="text-xs mt-1 opacity-60">View data will appear once visitors access your invitations</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {viewsByDevice.map(d => {
                 const total = viewsByDevice.reduce((a, b) => a + b.value, 0);
                 const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
                 return (
-                  <div key={d.name} className="space-y-1">
+                  <div key={d.name} className="space-y-1.5">
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2 capitalize">
                         {DEVICE_ICONS[d.name] || <Monitor className="w-4 h-4" />}
                         {d.name}
                       </div>
-                      <span className="font-semibold">{d.value} ({pct}%)</span>
+                      <span className="font-bold">{d.value} <span className="text-muted-foreground font-normal">({pct}%)</span></span>
                     </div>
-                    <div className="h-2 rounded-full bg-accent">
+                    <div className="h-2.5 rounded-full bg-accent overflow-hidden">
                       <motion.div
                         className="h-full rounded-full bg-foreground"
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.6 }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
                       />
                     </div>
                   </div>
@@ -160,58 +212,71 @@ export default function AnalyticsPage() {
               })}
             </div>
           )}
-        </div>
+        </ChartCard>
       </div>
 
       {/* Views over time */}
       {viewsTimeline && viewsTimeline.length > 0 && (
-        <div className="glass-card p-6">
-          <h3 className="font-display font-semibold mb-4">Page Views Over Time</h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <AreaChart data={viewsTimeline}>
-              <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} />
-              <Tooltip />
-              <Area type="monotone" dataKey="views" stroke="hsl(var(--foreground))" fill="hsl(var(--foreground))" fillOpacity={0.1} strokeWidth={2} />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
+        <ChartCard title="Page Views Over Time">
+          <div className="w-full overflow-x-auto -mx-2">
+            <div className="min-w-[400px] px-2">
+              <ResponsiveContainer width="100%" height={250}>
+                <AreaChart data={viewsTimeline}>
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                  <YAxis tick={{ fontSize: 11 }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="views" stroke="hsl(var(--foreground))" fill="hsl(var(--foreground))" fillOpacity={0.08} strokeWidth={2} />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </ChartCard>
       )}
 
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Guests per invitation */}
-        <div className="glass-card p-6">
-          <h3 className="font-display font-semibold mb-4">Guests per Invitation</h3>
+      <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
+        <ChartCard title="Guests per Invitation">
           {!guestsPerInv?.length ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No data</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Users className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No data</p>
+            </div>
           ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={guestsPerInv}>
-                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Bar dataKey="guests" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            <div className="w-full overflow-x-auto -mx-2">
+              <div className="min-w-[300px] px-2">
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={guestsPerInv}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Bar dataKey="guests" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
-        </div>
+        </ChartCard>
 
-        {/* RSVP Timeline */}
-        <div className="glass-card p-6">
-          <h3 className="font-display font-semibold mb-4">RSVPs Over Time</h3>
+        <ChartCard title="RSVPs Over Time">
           {!rsvpTimeline?.length ? (
-            <p className="text-sm text-muted-foreground text-center py-8">No RSVP data yet</p>
+            <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
+              <Clock className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm">No RSVP data yet</p>
+            </div>
           ) : (
-            <ResponsiveContainer width="100%" height={250}>
-              <LineChart data={rsvpTimeline}>
-                <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                <YAxis tick={{ fontSize: 11 }} />
-                <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 4 }} />
-              </LineChart>
-            </ResponsiveContainer>
+            <div className="w-full overflow-x-auto -mx-2">
+              <div className="min-w-[300px] px-2">
+                <ResponsiveContainer width="100%" height={250}>
+                  <LineChart data={rsvpTimeline}>
+                    <XAxis dataKey="date" tick={{ fontSize: 10 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Line type="monotone" dataKey="count" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
           )}
-        </div>
+        </ChartCard>
       </div>
     </div>
   );

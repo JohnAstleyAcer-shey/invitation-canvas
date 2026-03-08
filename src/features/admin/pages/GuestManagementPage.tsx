@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, Plus, Search, Download, Edit, Trash2, X, UserPlus } from "lucide-react";
+import { motion } from "framer-motion";
+import { ArrowLeft, Plus, Search, Download, Edit, Trash2, UserPlus, Users, CheckCircle, XCircle, HelpCircle, Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -12,12 +13,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useGuests, useRsvps } from "../hooks/useInvitationData";
 import { useInvitation } from "../hooks/useInvitations";
 import { RSVP_STATUS_LABELS, type RsvpStatus } from "../types";
+import { SEOHead } from "@/components/SEOHead";
 
-const statusColors: Record<RsvpStatus, string> = {
-  pending: "bg-muted text-muted-foreground",
-  attending: "bg-primary/10 text-foreground",
-  not_attending: "bg-destructive/10 text-destructive",
-  maybe: "bg-accent text-accent-foreground",
+const statusConfig: Record<RsvpStatus, { color: string; icon: React.ElementType }> = {
+  pending: { color: "bg-muted text-muted-foreground", icon: Clock },
+  attending: { color: "bg-green-500/10 text-green-700 dark:text-green-400", icon: CheckCircle },
+  not_attending: { color: "bg-destructive/10 text-destructive", icon: XCircle },
+  maybe: { color: "bg-amber-500/10 text-amber-700 dark:text-amber-400", icon: HelpCircle },
 };
 
 export default function GuestManagementPage() {
@@ -32,10 +34,8 @@ export default function GuestManagementPage() {
   const [showBulk, setShowBulk] = useState(false);
   const [bulkText, setBulkText] = useState("");
   const [editGuest, setEditGuest] = useState<any>(null);
-
   const [newGuest, setNewGuest] = useState({ full_name: "", email: "", phone: "", max_companions: 0 });
 
-  // Build guest-rsvp map
   const rsvpMap = new Map<string, { status: RsvpStatus; num_companions: number; message: string | null }>();
   rsvps.data?.forEach(r => {
     rsvpMap.set(r.guest_id, { status: r.status as RsvpStatus, num_companions: r.num_companions || 0, message: r.message });
@@ -47,6 +47,12 @@ export default function GuestManagementPage() {
     const matchStatus = statusFilter === "all" || (rsvp?.status === statusFilter) || (!rsvp && statusFilter === "pending");
     return matchSearch && matchStatus;
   }) || [];
+
+  // Stats
+  const totalGuests = guests.data?.length || 0;
+  const attending = guests.data?.filter(g => rsvpMap.get(g.id)?.status === "attending").length || 0;
+  const declined = guests.data?.filter(g => rsvpMap.get(g.id)?.status === "not_attending").length || 0;
+  const pending = totalGuests - attending - declined - (guests.data?.filter(g => rsvpMap.get(g.id)?.status === "maybe").length || 0);
 
   const handleAddGuest = () => {
     if (!newGuest.full_name.trim()) return;
@@ -80,99 +86,170 @@ export default function GuestManagementPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <Button variant="ghost" size="icon" asChild><Link to="/admin"><ArrowLeft className="h-4 w-4" /></Link></Button>
-        <div>
-          <h1 className="font-display text-xl font-bold">Guest Management</h1>
-          <p className="text-xs text-muted-foreground">{invitation?.title}</p>
+    <div className="space-y-6 w-full max-w-6xl mx-auto">
+      <SEOHead title="Guest Management" />
+
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+        <Button variant="ghost" size="icon" asChild className="shrink-0 self-start"><Link to="/admin"><ArrowLeft className="h-4 w-4" /></Link></Button>
+        <div className="flex-1 min-w-0">
+          <motion.h1 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="font-display text-xl sm:text-2xl font-black truncate">
+            Guest Management
+          </motion.h1>
+          <p className="text-xs text-muted-foreground truncate">{invitation?.title}</p>
         </div>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        {[
+          { label: "Total Guests", value: totalGuests, icon: Users, color: "from-primary/10 to-primary/5" },
+          { label: "Attending", value: attending, icon: CheckCircle, color: "from-green-500/10 to-green-500/5" },
+          { label: "Declined", value: declined, icon: XCircle, color: "from-red-500/10 to-red-500/5" },
+          { label: "Pending", value: pending, icon: Clock, color: "from-amber-500/10 to-amber-500/5" },
+        ].map((stat, i) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className={`rounded-xl border border-border bg-gradient-to-br ${stat.color} p-3 sm:p-4`}
+          >
+            <div className="flex items-center gap-2 text-muted-foreground mb-1">
+              <stat.icon className="h-3.5 w-3.5" />
+              <span className="text-[10px] font-medium uppercase tracking-wider">{stat.label}</span>
+            </div>
+            <p className="font-display text-xl sm:text-2xl font-black">{stat.value}</p>
+          </motion.div>
+        ))}
       </div>
 
       {/* Actions bar */}
       <div className="flex flex-col sm:flex-row gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input placeholder="Search guests..." value={search} onChange={(e) => setSearch(e.target.value)} className="pl-9 rounded-xl" />
+          <Input
+            placeholder="Search guests..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-9 rounded-xl bg-muted/50 border-transparent focus:border-border focus:bg-background"
+          />
         </div>
         <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as any)}>
-          <SelectTrigger className="w-36 rounded-xl"><SelectValue /></SelectTrigger>
+          <SelectTrigger className="w-full sm:w-36 rounded-xl"><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Status</SelectItem>
             {Object.entries(RSVP_STATUS_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
           </SelectContent>
         </Select>
-        <Button onClick={() => setShowAddGuest(true)} className="rounded-full" size="sm"><Plus className="h-4 w-4 mr-1" /> Add Guest</Button>
-        <Button variant="outline" onClick={() => setShowBulk(true)} size="sm" className="rounded-full"><UserPlus className="h-4 w-4 mr-1" /> Bulk Import</Button>
-        <Button variant="outline" onClick={exportCSV} size="sm" className="rounded-full"><Download className="h-4 w-4 mr-1" /> CSV</Button>
-      </div>
-
-      {/* Stats */}
-      <div className="flex gap-4 text-sm">
-        <span className="text-muted-foreground">Total: <span className="font-semibold text-foreground">{guests.data?.length || 0}</span></span>
-        <span className="text-muted-foreground">Filtered: <span className="font-semibold text-foreground">{filtered.length}</span></span>
-      </div>
-
-      {/* Table */}
-      <div className="glass-card overflow-hidden">
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead className="hidden sm:table-cell">Email</TableHead>
-                <TableHead className="hidden sm:table-cell">Phone</TableHead>
-                <TableHead>Code</TableHead>
-                <TableHead>RSVP</TableHead>
-                <TableHead className="hidden sm:table-cell">Companions</TableHead>
-                <TableHead className="w-16" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filtered.length === 0 ? (
-                <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-8">No guests found</TableCell></TableRow>
-              ) : (
-                filtered.map(g => {
-                  const rsvp = rsvpMap.get(g.id);
-                  const status = rsvp?.status || "pending";
-                  return (
-                    <TableRow key={g.id}>
-                      <TableCell className="font-medium">{g.full_name}</TableCell>
-                      <TableCell className="hidden sm:table-cell text-muted-foreground">{g.email || "—"}</TableCell>
-                      <TableCell className="hidden sm:table-cell text-muted-foreground">{g.phone || "—"}</TableCell>
-                      <TableCell><code className="text-xs bg-accent px-1.5 py-0.5 rounded">{g.invitation_code}</code></TableCell>
-                      <TableCell>
-                        <Badge className={`text-[10px] ${statusColors[status as RsvpStatus]}`}>
-                          {RSVP_STATUS_LABELS[status as RsvpStatus]}
-                        </Badge>
-                      </TableCell>
-                      <TableCell className="hidden sm:table-cell">{rsvp?.num_companions || 0}</TableCell>
-                      <TableCell>
-                        <div className="flex gap-1">
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3" /></Button>
-                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  );
-                })
-              )}
-            </TableBody>
-          </Table>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowAddGuest(true)} className="rounded-full flex-1 sm:flex-initial" size="sm"><Plus className="h-4 w-4 mr-1" /> Add</Button>
+          <Button variant="outline" onClick={() => setShowBulk(true)} size="sm" className="rounded-full flex-1 sm:flex-initial"><UserPlus className="h-4 w-4 mr-1" /> Bulk</Button>
+          <Button variant="outline" onClick={exportCSV} size="sm" className="rounded-full flex-1 sm:flex-initial"><Download className="h-4 w-4 mr-1" /> CSV</Button>
         </div>
       </div>
+
+      {/* Results */}
+      <p className="text-xs text-muted-foreground">{filtered.length} of {totalGuests} guests</p>
+
+      {/* Mobile cards + Desktop table */}
+      {filtered.length === 0 ? (
+        <div className="text-center py-16">
+          <Users className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
+          <p className="text-sm text-muted-foreground">No guests found</p>
+        </div>
+      ) : (
+        <>
+          {/* Mobile cards */}
+          <div className="sm:hidden space-y-2">
+            {filtered.map(g => {
+              const rsvp = rsvpMap.get(g.id);
+              const status = (rsvp?.status || "pending") as RsvpStatus;
+              const config = statusConfig[status];
+              return (
+                <motion.div
+                  key={g.id}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="rounded-xl border border-border bg-card p-4 space-y-2"
+                >
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className="font-bold text-sm">{g.full_name}</p>
+                      {g.email && <p className="text-xs text-muted-foreground">{g.email}</p>}
+                    </div>
+                    <Badge className={`text-[10px] ${config.color}`}>{RSVP_STATUS_LABELS[status]}</Badge>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-muted-foreground">
+                    <code className="bg-accent px-1.5 py-0.5 rounded text-[10px]">{g.invitation_code}</code>
+                    <span>{rsvp?.num_companions || 0} companion(s)</span>
+                  </div>
+                  <div className="flex gap-1 pt-1">
+                    <Button variant="ghost" size="sm" className="h-7 text-xs flex-1 rounded-lg" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3 mr-1" /> Edit</Button>
+                    <Button variant="ghost" size="sm" className="h-7 text-xs text-destructive flex-1 rounded-lg" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3 mr-1" /> Delete</Button>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
+
+          {/* Desktop table */}
+          <div className="hidden sm:block rounded-xl border border-border bg-card overflow-hidden">
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Name</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Code</TableHead>
+                    <TableHead>RSVP</TableHead>
+                    <TableHead>Companions</TableHead>
+                    <TableHead className="w-20" />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filtered.map(g => {
+                    const rsvp = rsvpMap.get(g.id);
+                    const status = (rsvp?.status || "pending") as RsvpStatus;
+                    const config = statusConfig[status];
+                    return (
+                      <TableRow key={g.id}>
+                        <TableCell className="font-medium">{g.full_name}</TableCell>
+                        <TableCell className="text-muted-foreground">{g.email || "—"}</TableCell>
+                        <TableCell className="text-muted-foreground">{g.phone || "—"}</TableCell>
+                        <TableCell><code className="text-xs bg-accent px-1.5 py-0.5 rounded">{g.invitation_code}</code></TableCell>
+                        <TableCell>
+                          <Badge className={`text-[10px] ${config.color}`}>{RSVP_STATUS_LABELS[status]}</Badge>
+                        </TableCell>
+                        <TableCell>{rsvp?.num_companions || 0}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setEditGuest(g)}><Edit className="h-3 w-3" /></Button>
+                            <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => guests.remove.mutate(g.id)}><Trash2 className="h-3 w-3" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          </div>
+        </>
+      )}
 
       {/* Add guest dialog */}
       <Dialog open={showAddGuest} onOpenChange={setShowAddGuest}>
         <DialogContent>
           <DialogHeader><DialogTitle>Add Guest</DialogTitle></DialogHeader>
-          <div className="space-y-3">
-            <div className="space-y-1"><Label className="text-sm">Full Name *</Label><Input value={newGuest.full_name} onChange={(e) => setNewGuest(p => ({ ...p, full_name: e.target.value }))} className="rounded-xl" /></div>
+          <div className="space-y-4">
+            <div className="space-y-2"><Label className="text-xs">Full Name *</Label><Input value={newGuest.full_name} onChange={(e) => setNewGuest(p => ({ ...p, full_name: e.target.value }))} className="rounded-xl" /></div>
             <div className="grid grid-cols-2 gap-3">
-              <div className="space-y-1"><Label className="text-sm">Email</Label><Input value={newGuest.email} onChange={(e) => setNewGuest(p => ({ ...p, email: e.target.value }))} className="rounded-xl" /></div>
-              <div className="space-y-1"><Label className="text-sm">Phone</Label><Input value={newGuest.phone} onChange={(e) => setNewGuest(p => ({ ...p, phone: e.target.value }))} className="rounded-xl" /></div>
+              <div className="space-y-2"><Label className="text-xs">Email</Label><Input value={newGuest.email} onChange={(e) => setNewGuest(p => ({ ...p, email: e.target.value }))} className="rounded-xl" /></div>
+              <div className="space-y-2"><Label className="text-xs">Phone</Label><Input value={newGuest.phone} onChange={(e) => setNewGuest(p => ({ ...p, phone: e.target.value }))} className="rounded-xl" /></div>
             </div>
-            <div className="space-y-1"><Label className="text-sm">Max Companions</Label><Input type="number" min={0} value={newGuest.max_companions} onChange={(e) => setNewGuest(p => ({ ...p, max_companions: parseInt(e.target.value) || 0 }))} className="rounded-xl" /></div>
+            <div className="space-y-2"><Label className="text-xs">Max Companions</Label><Input type="number" min={0} value={newGuest.max_companions} onChange={(e) => setNewGuest(p => ({ ...p, max_companions: parseInt(e.target.value) || 0 }))} className="rounded-xl" /></div>
             <Button onClick={handleAddGuest} className="w-full rounded-full">Add Guest</Button>
           </div>
         </DialogContent>
@@ -193,13 +270,13 @@ export default function GuestManagementPage() {
         <DialogContent>
           <DialogHeader><DialogTitle>Edit Guest</DialogTitle></DialogHeader>
           {editGuest && (
-            <div className="space-y-3">
-              <div className="space-y-1"><Label className="text-sm">Full Name</Label><Input value={editGuest.full_name} onChange={(e) => setEditGuest((p: any) => ({ ...p, full_name: e.target.value }))} className="rounded-xl" /></div>
+            <div className="space-y-4">
+              <div className="space-y-2"><Label className="text-xs">Full Name</Label><Input value={editGuest.full_name} onChange={(e) => setEditGuest((p: any) => ({ ...p, full_name: e.target.value }))} className="rounded-xl" /></div>
               <div className="grid grid-cols-2 gap-3">
-                <div className="space-y-1"><Label className="text-sm">Email</Label><Input value={editGuest.email || ""} onChange={(e) => setEditGuest((p: any) => ({ ...p, email: e.target.value }))} className="rounded-xl" /></div>
-                <div className="space-y-1"><Label className="text-sm">Phone</Label><Input value={editGuest.phone || ""} onChange={(e) => setEditGuest((p: any) => ({ ...p, phone: e.target.value }))} className="rounded-xl" /></div>
+                <div className="space-y-2"><Label className="text-xs">Email</Label><Input value={editGuest.email || ""} onChange={(e) => setEditGuest((p: any) => ({ ...p, email: e.target.value }))} className="rounded-xl" /></div>
+                <div className="space-y-2"><Label className="text-xs">Phone</Label><Input value={editGuest.phone || ""} onChange={(e) => setEditGuest((p: any) => ({ ...p, phone: e.target.value }))} className="rounded-xl" /></div>
               </div>
-              <div className="space-y-1"><Label className="text-sm">Max Companions</Label><Input type="number" min={0} value={editGuest.max_companions || 0} onChange={(e) => setEditGuest((p: any) => ({ ...p, max_companions: parseInt(e.target.value) || 0 }))} className="rounded-xl" /></div>
+              <div className="space-y-2"><Label className="text-xs">Max Companions</Label><Input type="number" min={0} value={editGuest.max_companions || 0} onChange={(e) => setEditGuest((p: any) => ({ ...p, max_companions: parseInt(e.target.value) || 0 }))} className="rounded-xl" /></div>
               <Button onClick={() => { guests.update.mutate({ id: editGuest.id, full_name: editGuest.full_name, email: editGuest.email, phone: editGuest.phone, max_companions: editGuest.max_companions }); setEditGuest(null); }} className="w-full rounded-full">Save Changes</Button>
             </div>
           )}

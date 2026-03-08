@@ -15,12 +15,13 @@ const itemVariants = {
 
 export function SectionWrapper({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`h-screen w-full flex items-center justify-center overflow-y-auto ${className}`}>
+    <div className={`min-h-screen w-full flex items-center justify-center overflow-y-auto snap-start ${className}`}>
       <motion.div
         variants={containerVariants}
         initial="hidden"
-        animate="visible"
-        className="w-full max-w-2xl mx-auto px-6 py-12 text-center"
+        whileInView="visible"
+        viewport={{ once: true, amount: 0.3 }}
+        className="w-full max-w-2xl mx-auto px-4 sm:px-6 py-12 sm:py-16 text-center"
       >
         {children}
       </motion.div>

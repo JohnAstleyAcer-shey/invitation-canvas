@@ -1,7 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Share2, MessageCircle } from "lucide-react";
+import { Share2, MessageCircle, ArrowLeft } from "lucide-react";
 import { Flower2, Flame, Crown, Banknote } from "lucide-react";
+import { motion } from "framer-motion";
 import {
   usePublicInvitation, usePublicTheme, usePublicPages,
   usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures,
@@ -49,13 +50,16 @@ function FloatingShareButton({ slug, title }: { slug: string; title: string }) {
   };
 
   return (
-    <button
+    <motion.button
+      initial={{ opacity: 0, scale: 0.8 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 1 }}
       onClick={share}
-      className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-all"
+      className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-all hover:scale-110 active:scale-95"
       aria-label="Share invitation"
     >
       <Share2 className="w-5 h-5" />
-    </button>
+    </motion.button>
   );
 }
 
@@ -66,7 +70,6 @@ export default function InvitationViewPage() {
   const useBlockMode = (invitation as any)?.use_blocks === true;
   const [unlocked, setUnlocked] = useState(false);
 
-  // Track views
   useViewTracking(invitation?.id);
 
   const { data: theme } = usePublicTheme(invId);
@@ -86,18 +89,21 @@ export default function InvitationViewPage() {
 
   if (error || !invitation) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground gap-4 px-6 text-center">
-        <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center mb-2">
-          <MessageCircle className="w-8 h-8 text-muted-foreground" />
-        </div>
-        <h1 className="text-3xl font-bold font-display">Invitation Not Found</h1>
-        <p className="text-muted-foreground max-w-sm">This invitation may have been removed, is not yet published, or the link may be incorrect.</p>
-        <a href="/" className="text-sm text-primary hover:underline mt-2">Go to homepage</a>
+      <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground gap-4 px-6 text-center">
+        <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="space-y-4">
+          <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center mb-2 mx-auto">
+            <MessageCircle className="w-8 h-8 text-muted-foreground" />
+          </div>
+          <h1 className="text-2xl sm:text-3xl font-bold font-display">Invitation Not Found</h1>
+          <p className="text-sm sm:text-base text-muted-foreground max-w-sm">This invitation may have been removed, is not yet published, or the link may be incorrect.</p>
+          <a href="/" className="inline-flex items-center gap-2 text-sm text-primary hover:underline mt-2">
+            <ArrowLeft className="w-4 h-4" /> Go to homepage
+          </a>
+        </motion.div>
       </div>
     );
   }
 
-  // Password protection check
   if (invitation.is_password_protected && invitation.password_hash && !unlocked) {
     return (
       <InvitationThemeProvider theme={theme}>
@@ -148,7 +154,9 @@ export default function InvitationViewPage() {
         {theme?.music_url && (
           <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
         )}
-        <BlockViewRenderer blocks={publicBlocks} />
+        <div className="w-full overflow-x-hidden">
+          <BlockViewRenderer blocks={publicBlocks} />
+        </div>
       </InvitationThemeProvider>
     );
   }
@@ -164,8 +172,8 @@ export default function InvitationViewPage() {
       {sections.length > 0 ? (
         <StoryNavigation pageLabels={labels}>{sections}</StoryNavigation>
       ) : (
-        <div className="h-screen flex items-center justify-center">
-          <p style={{ color: "var(--inv-text-secondary)" }}>This invitation has no pages configured yet.</p>
+        <div className="min-h-screen flex items-center justify-center px-6">
+          <p className="text-center" style={{ color: "var(--inv-text-secondary)" }}>This invitation has no pages configured yet.</p>
         </div>
       )}
     </InvitationThemeProvider>

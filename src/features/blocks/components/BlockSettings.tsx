@@ -70,13 +70,30 @@ const RADIUS_PRESETS = [
   { value: "9999px", label: "Full" },
 ];
 
+// Style presets for one-click application
+const STYLE_PRESETS = [
+  { name: "Clean White", style: { backgroundColor: "#FFFFFF", textColor: "#1a1a1a", padding: "2rem 1rem", shadow: "none" as const, borderRadius: "0" } },
+  { name: "Soft Blush", style: { backgroundColor: "#FFF5F5", textColor: "#4a1a2a", padding: "2rem 1rem", shadow: "sm" as const, borderRadius: "0.75rem" } },
+  { name: "Midnight", style: { backgroundColor: "#1a1a2e", textColor: "#e0e0e0", padding: "3rem 1rem", shadow: "xl" as const } },
+  { name: "Golden Hour", style: { backgroundColor: "#fef3c7", textColor: "#78350f", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #fef3c7, #fde68a)" } },
+  { name: "Ocean Breeze", style: { backgroundColor: "#ecfeff", textColor: "#164e63", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #ecfeff, #cffafe)" } },
+  { name: "Rose Garden", style: { backgroundColor: "#fdf2f8", textColor: "#831843", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #fdf2f8, #fce7f3)" } },
+  { name: "Frosted Glass", style: { glassmorphism: true, padding: "2rem 1rem", borderRadius: "1rem", shadow: "lg" as const } },
+  { name: "Bold Dark", style: { backgroundColor: "#0f172a", textColor: "#f8fafc", padding: "3rem 2rem", shadow: "2xl" as const, borderRadius: "1rem" } },
+  { name: "Forest", style: { backgroundColor: "#ecfdf5", textColor: "#064e3b", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #ecfdf5, #d1fae5)" } },
+  { name: "Lavender Dreams", style: { backgroundColor: "#f5f3ff", textColor: "#4c1d95", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #f5f3ff, #ede9fe)" } },
+];
+
 interface BlockSettingsProps {
   block: InvitationBlock;
   onUpdate: (content?: BlockContent, style?: BlockStyle) => void;
   onClose: () => void;
+  onCopyStyle?: () => void;
+  onPasteStyle?: () => void;
+  hasCopiedStyle?: boolean;
 }
 
-export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) {
+export function BlockSettings({ block, onUpdate, onClose, onCopyStyle, onPasteStyle, hasCopiedStyle }: BlockSettingsProps) {
   const [content, setContent] = useState<any>(block.content);
   const [style, setStyle] = useState<any>(block.style);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -127,6 +144,9 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
       <Tabs defaultValue="content" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-3 mt-2 h-7">
           <TabsTrigger value="content" className="text-[10px] h-6">Content</TabsTrigger>
+          <TabsTrigger value="presets" className="text-[10px] h-6">
+            <Wand2 className="h-2.5 w-2.5 mr-1" /> Presets
+          </TabsTrigger>
           <TabsTrigger value="style" className="text-[10px] h-6">
             <Palette className="h-2.5 w-2.5 mr-1" /> Style
           </TabsTrigger>
@@ -138,6 +158,10 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
         <ScrollArea className="flex-1">
           <TabsContent value="content" className="p-3 space-y-4 mt-0">
             {renderContentSettings(block.block_type, content, updateContent, addListItem, removeListItem, updateListItem, handleImageUpload, fileRef)}
+          </TabsContent>
+
+          <TabsContent value="presets" className="p-3 space-y-4 mt-0">
+            <StylePresetsPanel style={style} updateStyle={updateStyle} onUpdate={onUpdate} onCopyStyle={onCopyStyle} onPasteStyle={onPasteStyle} hasCopiedStyle={hasCopiedStyle} />
           </TabsContent>
 
           <TabsContent value="style" className="p-3 space-y-4 mt-0">
@@ -155,7 +179,54 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
   );
 }
 
-function StyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
+function StylePresetsPanel({ style, updateStyle, onUpdate, onCopyStyle, onPasteStyle, hasCopiedStyle }: {
+  style: any; updateStyle: (k: string, v: any) => void;
+  onUpdate: (content?: BlockContent, style?: BlockStyle) => void;
+  onCopyStyle?: () => void; onPasteStyle?: () => void; hasCopiedStyle?: boolean;
+}) {
+  return (
+    <>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick Style Presets</p>
+      <div className="grid grid-cols-2 gap-1.5">
+        {STYLE_PRESETS.map(preset => (
+          <button
+            key={preset.name}
+            onClick={() => onUpdate(undefined, { ...style, ...preset.style } as BlockStyle)}
+            className="p-2 rounded-lg border border-border hover:border-primary/50 hover:shadow-sm transition-all text-left group"
+          >
+            <div className="h-8 rounded-md mb-1.5 transition-transform group-hover:scale-105" style={{
+              backgroundColor: preset.style.backgroundColor || "#f5f5f5",
+              background: preset.style.gradient || preset.style.backgroundColor || "#f5f5f5",
+              borderRadius: preset.style.borderRadius || "0.25rem",
+            }} />
+            <p className="text-[9px] font-medium truncate">{preset.name}</p>
+          </button>
+        ))}
+      </div>
+      <Separator />
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Style Clipboard</p>
+      <div className="flex gap-1.5">
+        {onCopyStyle && (
+          <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={onCopyStyle}>
+            <Copy className="h-3 w-3 mr-1" /> Copy Style
+          </Button>
+        )}
+        {onPasteStyle && (
+          <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={onPasteStyle} disabled={!hasCopiedStyle}>
+            <Wand2 className="h-3 w-3 mr-1" /> Paste Style
+          </Button>
+        )}
+      </div>
+      <Separator />
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick Reset</p>
+      <Button variant="outline" size="sm" className="w-full text-[10px] h-7" onClick={() => onUpdate(undefined, { textAlign: "center", padding: "2rem 1rem" } as BlockStyle)}>
+        <RotateCcw className="h-3 w-3 mr-1" /> Reset to Default Style
+      </Button>
+    </>
+  );
+}
+
+
   return (
     <>
       {/* Text Alignment - Canva-style toggle */}

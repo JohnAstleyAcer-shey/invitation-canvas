@@ -41,6 +41,7 @@ const App = () => (
             <Route path="settings" element={<SettingsPage />} />
             <Route path="help" element={<HelpPage />} />
           </Route>
+          <Route path="/invite/:slug" element={<InvitationViewPage />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

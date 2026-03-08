@@ -45,7 +45,7 @@ export function BlockSidebar({ onAddBlock, isPending }: BlockSidebarProps) {
       : getBlocksByCategory(activeTab);
 
   return (
-    <div className="w-64 border-r border-border bg-card flex flex-col h-full">
+    <div className="w-48 sm:w-56 md:w-64 border-r border-border bg-card flex flex-col h-full shrink-0">
       <div className="p-3 border-b border-border space-y-2">
         <div className="flex items-center justify-between">
           <h3 className="font-display font-bold text-sm">Blocks</h3>

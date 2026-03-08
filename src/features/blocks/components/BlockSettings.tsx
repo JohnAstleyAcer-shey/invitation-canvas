@@ -93,7 +93,7 @@ interface BlockSettingsProps {
   hasCopiedStyle?: boolean;
 }
 
-export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) {
+export function BlockSettings({ block, onUpdate, onClose, onCopyStyle, onPasteStyle, hasCopiedStyle }: BlockSettingsProps) {
   const [content, setContent] = useState<any>(block.content);
   const [style, setStyle] = useState<any>(block.style);
   const fileRef = useRef<HTMLInputElement>(null);

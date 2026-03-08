@@ -144,6 +144,9 @@ export function BlockSettings({ block, onUpdate, onClose, onCopyStyle, onPasteSt
       <Tabs defaultValue="content" className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-3 mt-2 h-7">
           <TabsTrigger value="content" className="text-[10px] h-6">Content</TabsTrigger>
+          <TabsTrigger value="presets" className="text-[10px] h-6">
+            <Wand2 className="h-2.5 w-2.5 mr-1" /> Presets
+          </TabsTrigger>
           <TabsTrigger value="style" className="text-[10px] h-6">
             <Palette className="h-2.5 w-2.5 mr-1" /> Style
           </TabsTrigger>

@@ -16,6 +16,7 @@ import ActivityLogPage from "./features/admin/pages/ActivityLogPage";
 import TemplatesPage from "./features/admin/pages/TemplatesPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import HelpPage from "./features/admin/pages/HelpPage";
+import InvitationViewPage from "./features/invitation/pages/InvitationViewPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();

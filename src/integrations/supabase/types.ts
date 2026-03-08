@@ -753,7 +753,38 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      customer_admins_public: {
+        Row: {
+          created_at: string | null
+          display_name: string | null
+          id: string | null
+          invitation_id: string | null
+          username: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          invitation_id?: string | null
+          username?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          display_name?: string | null
+          id?: string | null
+          invitation_id?: string | null
+          username?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_admins_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       has_role: {

@@ -1,5 +1,6 @@
 import { useState, useRef } from "react";
-import { X, Plus, Trash2, Upload, Palette, Wand2 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { X, Plus, Trash2, Upload, Palette, Wand2, AlignLeft, AlignCenter, AlignRight, RotateCcw, Layers, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,10 +11,64 @@ import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Badge } from "@/components/ui/badge";
 import { BLOCK_REGISTRY } from "../registry";
 import type { InvitationBlock, BlockContent, BlockStyle } from "../types";
 import { uploadFile } from "@/features/admin/hooks/useInvitationData";
 import { toast } from "sonner";
+
+// Preset color palettes for quick selection
+const COLOR_PRESETS = [
+  "#FFFFFF", "#F8F9FA", "#E9ECEF", "#DEE2E6", "#ADB5BD", "#6C757D", "#495057", "#343A40", "#212529", "#000000",
+  "#FF6B6B", "#E64980", "#BE4BDB", "#7950F2", "#4C6EF5", "#228BE6", "#15AABF", "#12B886", "#40C057", "#82C91E",
+  "#FAB005", "#FD7E14", "#F06595", "#CC5DE8", "#845EF7", "#5C7CFA", "#22B8CF", "#20C997", "#51CF66", "#94D82D",
+];
+
+// Shadow presets with visual preview
+const SHADOW_PRESETS = [
+  { value: "none", label: "None", preview: "" },
+  { value: "sm", label: "Subtle", preview: "shadow-sm" },
+  { value: "md", label: "Medium", preview: "shadow-md" },
+  { value: "lg", label: "Large", preview: "shadow-lg" },
+  { value: "xl", label: "Extra Large", preview: "shadow-xl" },
+  { value: "2xl", label: "Dramatic", preview: "shadow-2xl" },
+  { value: "inner", label: "Inner", preview: "shadow-inner" },
+];
+
+// Gradient direction presets
+const GRADIENT_DIRECTIONS = [
+  { value: "0deg", label: "↑" },
+  { value: "45deg", label: "↗" },
+  { value: "90deg", label: "→" },
+  { value: "135deg", label: "↘" },
+  { value: "180deg", label: "↓" },
+  { value: "225deg", label: "↙" },
+  { value: "270deg", label: "←" },
+  { value: "315deg", label: "↖" },
+];
+
+// Spacing presets
+const SPACING_PRESETS = [
+  { value: "0", label: "0" },
+  { value: "0.5rem", label: "XS" },
+  { value: "1rem", label: "S" },
+  { value: "1.5rem", label: "M" },
+  { value: "2rem", label: "L" },
+  { value: "3rem", label: "XL" },
+  { value: "4rem", label: "2XL" },
+];
+
+// Border radius presets
+const RADIUS_PRESETS = [
+  { value: "0", label: "None" },
+  { value: "0.25rem", label: "SM" },
+  { value: "0.5rem", label: "MD" },
+  { value: "0.75rem", label: "LG" },
+  { value: "1rem", label: "XL" },
+  { value: "1.5rem", label: "2XL" },
+  { value: "9999px", label: "Full" },
+];
 
 interface BlockSettingsProps {
   block: InvitationBlock;

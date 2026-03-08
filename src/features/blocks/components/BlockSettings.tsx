@@ -70,10 +70,27 @@ const RADIUS_PRESETS = [
   { value: "9999px", label: "Full" },
 ];
 
+// Style presets for one-click application
+const STYLE_PRESETS = [
+  { name: "Clean White", style: { backgroundColor: "#FFFFFF", textColor: "#1a1a1a", padding: "2rem 1rem", shadow: "none" as const, borderRadius: "0" } },
+  { name: "Soft Blush", style: { backgroundColor: "#FFF5F5", textColor: "#4a1a2a", padding: "2rem 1rem", shadow: "sm" as const, borderRadius: "0.75rem" } },
+  { name: "Midnight", style: { backgroundColor: "#1a1a2e", textColor: "#e0e0e0", padding: "3rem 1rem", shadow: "xl" as const } },
+  { name: "Golden Hour", style: { backgroundColor: "#fef3c7", textColor: "#78350f", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #fef3c7, #fde68a)" } },
+  { name: "Ocean Breeze", style: { backgroundColor: "#ecfeff", textColor: "#164e63", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #ecfeff, #cffafe)" } },
+  { name: "Rose Garden", style: { backgroundColor: "#fdf2f8", textColor: "#831843", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #fdf2f8, #fce7f3)" } },
+  { name: "Frosted Glass", style: { glassmorphism: true, padding: "2rem 1rem", borderRadius: "1rem", shadow: "lg" as const } },
+  { name: "Bold Dark", style: { backgroundColor: "#0f172a", textColor: "#f8fafc", padding: "3rem 2rem", shadow: "2xl" as const, borderRadius: "1rem" } },
+  { name: "Forest", style: { backgroundColor: "#ecfdf5", textColor: "#064e3b", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #ecfdf5, #d1fae5)" } },
+  { name: "Lavender Dreams", style: { backgroundColor: "#f5f3ff", textColor: "#4c1d95", padding: "2rem 1rem", gradient: "linear-gradient(135deg, #f5f3ff, #ede9fe)" } },
+];
+
 interface BlockSettingsProps {
   block: InvitationBlock;
   onUpdate: (content?: BlockContent, style?: BlockStyle) => void;
   onClose: () => void;
+  onCopyStyle?: () => void;
+  onPasteStyle?: () => void;
+  hasCopiedStyle?: boolean;
 }
 
 export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) {

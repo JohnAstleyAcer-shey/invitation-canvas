@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { motion } from "framer-motion";
+import { useState, useCallback, useMemo } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Type, AlignLeft, ImageIcon, Space, Minus, MousePointer,
   Timer, Mail, MapPin, Grid3X3, Play, Clock, Users,
@@ -7,12 +7,12 @@ import {
   Maximize, MessageSquare, LayoutGrid, Quote, Search, Plus,
   Columns, ChevronDown, Star, MoveHorizontal, Sparkles,
   Music, Disc3, Camera, Phone, Map, DollarSign, QrCode,
-  Cloud, MessageCircle,
+  Cloud, MessageCircle, History, Heart, Zap,
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { BLOCK_REGISTRY, BLOCK_CATEGORIES, getBlocksByCategory } from "../registry";
 import type { BlockType } from "../types";
 
@@ -26,6 +26,9 @@ const iconMap: Record<string, React.FC<any>> = {
   Cloud, MessageCircle,
 };
 
+// Popular blocks shown as quick-add
+const POPULAR_BLOCKS: BlockType[] = ["heading", "text", "image", "cover_hero", "countdown", "rsvp", "gallery", "location"];
+
 interface BlockSidebarProps {
   onAddBlock: (type: BlockType) => void;
   isPending?: boolean;
@@ -34,15 +37,48 @@ interface BlockSidebarProps {
 export function BlockSidebar({ onAddBlock, isPending }: BlockSidebarProps) {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState("all");
+  const [recentlyUsed, setRecentlyUsed] = useState<BlockType[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("recent-blocks") || "[]");
+    } catch { return []; }
+  });
+  const [favorites, setFavorites] = useState<BlockType[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem("fav-blocks") || "[]");
+    } catch { return []; }
+  });
 
-  const filteredBlocks = search
-    ? Object.values(BLOCK_REGISTRY).filter(b =>
+  const handleAddBlock = useCallback((type: BlockType) => {
+    onAddBlock(type);
+    setRecentlyUsed(prev => {
+      const next = [type, ...prev.filter(t => t !== type)].slice(0, 8);
+      localStorage.setItem("recent-blocks", JSON.stringify(next));
+      return next;
+    });
+  }, [onAddBlock]);
+
+  const toggleFavorite = useCallback((type: BlockType, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setFavorites(prev => {
+      const next = prev.includes(type) ? prev.filter(t => t !== type) : [...prev, type];
+      localStorage.setItem("fav-blocks", JSON.stringify(next));
+      return next;
+    });
+  }, []);
+
+  const filteredBlocks = useMemo(() => {
+    if (search) {
+      return Object.values(BLOCK_REGISTRY).filter(b =>
         b.label.toLowerCase().includes(search.toLowerCase()) ||
         b.description.toLowerCase().includes(search.toLowerCase())
-      )
-    : activeTab === "all"
-      ? null
-      : getBlocksByCategory(activeTab);
+      );
+    }
+    if (activeTab === "favorites") return favorites.map(t => BLOCK_REGISTRY[t]).filter(Boolean);
+    if (activeTab === "recent") return recentlyUsed.map(t => BLOCK_REGISTRY[t]).filter(Boolean);
+    if (activeTab === "popular") return POPULAR_BLOCKS.map(t => BLOCK_REGISTRY[t]).filter(Boolean);
+    if (activeTab !== "all") return getBlocksByCategory(activeTab);
+    return null;
+  }, [search, activeTab, favorites, recentlyUsed]);
 
   return (
     <div className="w-48 sm:w-56 md:w-64 border-r border-border bg-card flex flex-col h-full shrink-0">
@@ -66,6 +102,13 @@ export function BlockSidebar({ onAddBlock, isPending }: BlockSidebarProps) {
         <div className="border-b border-border px-3 py-1.5">
           <div className="flex flex-wrap gap-1">
             <TabButton active={activeTab === "all"} onClick={() => setActiveTab("all")}>All</TabButton>
+            <TabButton active={activeTab === "popular"} onClick={() => setActiveTab("popular")} icon={<Zap className="h-2.5 w-2.5" />}>Popular</TabButton>
+            {favorites.length > 0 && (
+              <TabButton active={activeTab === "favorites"} onClick={() => setActiveTab("favorites")} icon={<Heart className="h-2.5 w-2.5" />}>Favs</TabButton>
+            )}
+            {recentlyUsed.length > 0 && (
+              <TabButton active={activeTab === "recent"} onClick={() => setActiveTab("recent")} icon={<History className="h-2.5 w-2.5" />}>Recent</TabButton>
+            )}
             {BLOCK_CATEGORIES.map(cat => (
               <TabButton key={cat.key} active={activeTab === cat.key} onClick={() => setActiveTab(cat.key)}>
                 {cat.label}
@@ -83,12 +126,18 @@ export function BlockSidebar({ onAddBlock, isPending }: BlockSidebarProps) {
                 <BlockCard
                   key={block.type}
                   block={block}
-                  onAdd={() => onAddBlock(block.type)}
+                  onAdd={() => handleAddBlock(block.type)}
                   disabled={isPending}
+                  isFavorite={favorites.includes(block.type)}
+                  onToggleFavorite={(e) => toggleFavorite(block.type, e)}
                 />
               ))}
               {filteredBlocks?.length === 0 && (
-                <p className="col-span-2 text-xs text-muted-foreground text-center py-4">No blocks found</p>
+                <div className="col-span-2 text-center py-8">
+                  <Search className="h-8 w-8 mx-auto mb-2 text-muted-foreground/30" />
+                  <p className="text-xs text-muted-foreground">No blocks found</p>
+                  <p className="text-[10px] text-muted-foreground/60 mt-1">Try a different search term</p>
+                </div>
               )}
             </div>
           ) : (
@@ -105,8 +154,10 @@ export function BlockSidebar({ onAddBlock, isPending }: BlockSidebarProps) {
                       <BlockCard
                         key={block.type}
                         block={block}
-                        onAdd={() => onAddBlock(block.type)}
+                        onAdd={() => handleAddBlock(block.type)}
                         disabled={isPending}
+                        isFavorite={favorites.includes(block.type)}
+                        onToggleFavorite={(e) => toggleFavorite(block.type, e)}
                       />
                     ))}
                   </div>
@@ -116,27 +167,56 @@ export function BlockSidebar({ onAddBlock, isPending }: BlockSidebarProps) {
           )}
         </div>
       </ScrollArea>
+
+      {/* Quick add strip */}
+      <div className="p-2 border-t border-border bg-muted/20">
+        <p className="text-[8px] uppercase tracking-wider text-muted-foreground/60 mb-1.5 px-1">Quick Add</p>
+        <div className="flex gap-1 overflow-x-auto">
+          {POPULAR_BLOCKS.slice(0, 5).map(type => {
+            const def = BLOCK_REGISTRY[type];
+            const Icon = iconMap[def.icon] || Type;
+            return (
+              <Tooltip key={type}>
+                <TooltipTrigger asChild>
+                  <motion.button
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.9 }}
+                    onClick={() => handleAddBlock(type)}
+                    className="h-7 w-7 rounded-lg bg-accent/50 hover:bg-primary hover:text-primary-foreground flex items-center justify-center transition-colors shrink-0"
+                  >
+                    <Icon className="h-3 w-3" />
+                  </motion.button>
+                </TooltipTrigger>
+                <TooltipContent className="text-[10px]">{def.label}</TooltipContent>
+              </Tooltip>
+            );
+          })}
+        </div>
+      </div>
     </div>
   );
 }
 
-function TabButton({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+function TabButton({ active, onClick, children, icon }: { active: boolean; onClick: () => void; children: React.ReactNode; icon?: React.ReactNode }) {
   return (
     <button
       onClick={onClick}
-      className={`px-2 py-0.5 rounded-full text-[9px] font-medium transition-colors ${
+      className={`px-2 py-0.5 rounded-full text-[9px] font-medium transition-colors flex items-center gap-0.5 ${
         active ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"
       }`}
     >
+      {icon}
       {children}
     </button>
   );
 }
 
-function BlockCard({ block, onAdd, disabled }: {
+function BlockCard({ block, onAdd, disabled, isFavorite, onToggleFavorite }: {
   block: typeof BLOCK_REGISTRY[keyof typeof BLOCK_REGISTRY];
   onAdd: () => void;
   disabled?: boolean;
+  isFavorite: boolean;
+  onToggleFavorite: (e: React.MouseEvent) => void;
 }) {
   const Icon = iconMap[block.icon] || Type;
   const [isAdding, setIsAdding] = useState(false);
@@ -149,15 +229,23 @@ function BlockCard({ block, onAdd, disabled }: {
 
   return (
     <motion.button
-      whileHover={{ scale: 1.05, y: -2 }}
-      whileTap={{ scale: 0.92 }}
+      whileHover={{ scale: 1.03, y: -1 }}
+      whileTap={{ scale: 0.95 }}
       onClick={handleAdd}
       disabled={disabled || isAdding}
-      className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border border-border bg-background hover:bg-accent/50 hover:border-primary/30 hover:shadow-sm transition-all text-center disabled:opacity-50 cursor-pointer relative overflow-hidden ${
+      className={`relative flex flex-col items-center gap-1 p-2.5 rounded-lg border border-border bg-background hover:bg-accent/50 hover:border-primary/30 hover:shadow-sm transition-all text-center disabled:opacity-50 cursor-pointer overflow-hidden group ${
         isAdding ? "ring-2 ring-primary/50" : ""
       }`}
       title={block.description}
     >
+      {/* Favorite button */}
+      <button
+        onClick={onToggleFavorite}
+        className="absolute top-1 right-1 h-4 w-4 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-primary/10 z-10"
+      >
+        <Heart className={`h-2.5 w-2.5 ${isFavorite ? "fill-primary text-primary" : "text-muted-foreground"}`} />
+      </button>
+
       {isAdding && (
         <motion.div
           initial={{ scale: 0, opacity: 1 }}
@@ -170,7 +258,7 @@ function BlockCard({ block, onAdd, disabled }: {
         animate={isAdding ? { scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] } : {}}
         transition={{ duration: 0.4 }}
       >
-        <Icon className="h-4 w-4 text-muted-foreground" />
+        <Icon className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
       </motion.div>
       <span className="text-[10px] font-medium leading-tight">{block.label}</span>
     </motion.button>

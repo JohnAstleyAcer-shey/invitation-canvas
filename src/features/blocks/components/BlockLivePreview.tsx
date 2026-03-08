@@ -1,6 +1,6 @@
-import { useRef, useEffect, useState, useMemo } from "react";
+import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Maximize2, RotateCw, Zap, Eye, RefreshCw, ExternalLink, Moon, Sun, Sparkles } from "lucide-react";
+import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Maximize2, Zap, RefreshCw, ExternalLink, Moon, Sun, RotateCw, Minimize2 } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +24,10 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
   const [updateCount, setUpdateCount] = useState(0);
   const [showDarkPreview, setShowDarkPreview] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [fps, setFps] = useState(60);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [scrollProgress, setScrollProgress] = useState(0);
 
-  // Track updates for "live" indicator
+  // Track updates
   useEffect(() => {
     setLastUpdate(new Date());
     setIsLive(true);
@@ -42,30 +43,13 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
     }
   }, [scrollPosition, scrollSync]);
 
-  // FPS counter
-  useEffect(() => {
-    let frameCount = 0;
-    let lastTime = performance.now();
-    let animId: number;
-    const measure = () => {
-      frameCount++;
-      const now = performance.now();
-      if (now - lastTime >= 1000) {
-        setFps(frameCount);
-        frameCount = 0;
-        lastTime = now;
-      }
-      animId = requestAnimationFrame(measure);
-    };
-    animId = requestAnimationFrame(measure);
-    return () => cancelAnimationFrame(animId);
-  }, []);
-
-  const handleScroll = () => {
-    if (scrollRef.current && onScroll) {
-      onScroll(scrollRef.current.scrollTop);
+  const handleScroll = useCallback(() => {
+    if (scrollRef.current) {
+      onScroll?.(scrollRef.current.scrollTop);
+      const { scrollTop, scrollHeight, clientHeight } = scrollRef.current;
+      setScrollProgress(scrollHeight > clientHeight ? (scrollTop / (scrollHeight - clientHeight)) * 100 : 0);
     }
-  };
+  }, [onScroll]);
 
   // Block type summary
   const blockSummary = useMemo(() => {
@@ -104,6 +88,15 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
 
   return (
     <div className="flex flex-col h-full">
+      {/* Scroll progress bar */}
+      <div className="h-0.5 bg-border/50 relative">
+        <motion.div
+          className="h-full bg-primary/60"
+          style={{ width: `${scrollProgress}%` }}
+          transition={{ duration: 0.1 }}
+        />
+      </div>
+
       {/* Enhanced live indicator bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-muted/20">
         <div className="flex items-center gap-2">
@@ -121,7 +114,15 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
             </motion.div>
           )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button onClick={() => setShowDarkPreview(!showDarkPreview)} className="p-0.5 rounded hover:bg-accent transition-colors">
+                {showDarkPreview ? <Sun className="h-3 w-3 text-amber-500" /> : <Moon className="h-3 w-3 text-muted-foreground/40" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="text-[10px]">{showDarkPreview ? "Light preview" : "Dark preview"}</TooltipContent>
+          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={() => setAutoRefresh(!autoRefresh)} className="p-0.5 rounded hover:bg-accent transition-colors">
@@ -133,14 +134,18 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
           <div className="flex items-center gap-1">
             {isLive ? <Wifi className="h-3 w-3 text-green-500" /> : <WifiOff className="h-3 w-3 text-muted-foreground/30" />}
             <span className="text-[8px] text-muted-foreground font-mono">
-              {visibleBlocks.length}b · {fps}fps
+              {visibleBlocks.length}b
             </span>
           </div>
         </div>
       </div>
 
       {/* Preview content */}
-      <div className="flex-1 overflow-y-auto" ref={scrollRef} onScroll={handleScroll}>
+      <div
+        className={`flex-1 overflow-y-auto transition-colors ${showDarkPreview ? "bg-gray-900" : ""}`}
+        ref={scrollRef}
+        onScroll={handleScroll}
+      >
         <div className="min-h-full">
           <AnimatePresence mode="wait">
             <motion.div
@@ -148,6 +153,7 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
               initial={autoRefresh ? { opacity: 0.95 } : false}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.15 }}
+              className={showDarkPreview ? "dark" : ""}
             >
               <BlockViewRenderer blocks={visibleBlocks} />
             </motion.div>

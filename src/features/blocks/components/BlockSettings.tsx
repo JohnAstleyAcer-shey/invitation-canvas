@@ -226,7 +226,7 @@ function StylePresetsPanel({ style, updateStyle, onUpdate, onCopyStyle, onPasteS
   );
 }
 
-
+function StyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
   return (
     <>
       {/* Text Alignment - Canva-style toggle */}

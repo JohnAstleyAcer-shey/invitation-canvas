@@ -1,11 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
 import { useRsvpStats, useGuestsPerInvitation, useRsvpTimeline } from "../hooks/useInvitationData";
 import { useInvitationStats } from "../hooks/useInvitations";
-import { TrendingUp, Users, CheckCircle, XCircle, HelpCircle, Clock, Eye, Smartphone, Monitor, Tablet, ArrowUpRight, Activity } from "lucide-react";
+import { TrendingUp, Users, CheckCircle, XCircle, HelpCircle, Clock, Eye, Smartphone, Monitor, Tablet, ArrowUpRight, Activity, RefreshCw } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
+import { AnalyticsSkeleton } from "@/components/LoadingSkeletons";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 const COLORS = ["hsl(var(--foreground))", "hsl(var(--destructive))", "hsl(var(--muted-foreground))", "hsl(var(--border))"];
 const DEVICE_ICONS: Record<string, React.ReactNode> = {
@@ -28,7 +31,8 @@ function AnimatedNumber({ value, label, icon: Icon, suffix, gradient, index }: {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.06, type: "spring", stiffness: 300, damping: 25 }}
-      className={`rounded-2xl border border-border bg-gradient-to-br ${gradient} p-4 sm:p-5`}
+      whileHover={{ scale: 1.02, y: -2 }}
+      className={`rounded-2xl border border-border bg-gradient-to-br ${gradient} p-4 sm:p-5 cursor-default transition-shadow hover:shadow-md`}
     >
       <div className="flex items-center gap-2 mb-2 text-muted-foreground">
         <Icon className="h-4 w-4" />
@@ -46,12 +50,14 @@ function AnimatedNumber({ value, label, icon: Icon, suffix, gradient, index }: {
   );
 }
 
-function ChartCard({ title, children, className = "" }: { title: string; children: React.ReactNode; className?: string }) {
+function ChartCard({ title, children, className = "", delay = 0 }: { title: string; children: React.ReactNode; className?: string; delay?: number }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
-      className={`rounded-2xl border border-border bg-card p-5 sm:p-6 ${className}`}
+      transition={{ delay }}
+      whileHover={{ y: -2 }}
+      className={`rounded-2xl border border-border bg-card p-5 sm:p-6 transition-shadow hover:shadow-md ${className}`}
     >
       <h3 className="font-display font-bold text-sm mb-4 flex items-center gap-2">
         <Activity className="h-4 w-4 text-muted-foreground" />
@@ -63,12 +69,13 @@ function ChartCard({ title, children, className = "" }: { title: string; childre
 }
 
 export default function AnalyticsPage() {
-  const { data: stats } = useInvitationStats();
-  const { data: rsvpStats } = useRsvpStats();
+  const { data: stats, isLoading: statsLoading } = useInvitationStats();
+  const { data: rsvpStats, isLoading: rsvpLoading } = useRsvpStats();
   const { data: guestsPerInv } = useGuestsPerInvitation();
   const { data: rsvpTimeline } = useRsvpTimeline();
+  const [refreshing, setRefreshing] = useState(false);
 
-  const { data: totalViews } = useQuery({
+  const { data: totalViews, refetch: refetchViews } = useQuery({
     queryKey: ["analytics-total-views"],
     queryFn: async () => {
       const { count } = await supabase.from("invitation_views" as any).select("*", { count: "exact", head: true });
@@ -102,6 +109,8 @@ export default function AnalyticsPage() {
     },
   });
 
+  const isLoading = statsLoading || rsvpLoading;
+
   const pieData = rsvpStats ? [
     { name: "Attending", value: rsvpStats.attending },
     { name: "Declined", value: rsvpStats.not_attending },
@@ -120,14 +129,29 @@ export default function AnalyticsPage() {
     conversionRate,
   ];
 
+  const handleRefresh = async () => {
+    setRefreshing(true);
+    await refetchViews();
+    setTimeout(() => setRefreshing(false), 600);
+  };
+
+  if (isLoading) return <AnalyticsSkeleton />;
+
   return (
     <div className="space-y-6 w-full max-w-7xl mx-auto">
       <SEOHead title="Analytics" />
-      <div>
-        <motion.h1 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="font-display text-2xl sm:text-3xl font-black">
-          Analytics
-        </motion.h1>
-        <p className="text-sm text-muted-foreground mt-0.5">Overview of your invitation performance</p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <motion.h1 initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} className="font-display text-2xl sm:text-3xl font-black">
+            Analytics
+          </motion.h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Overview of your invitation performance</p>
+        </div>
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
+          <Button variant="outline" size="sm" className="rounded-full text-xs" onClick={handleRefresh} disabled={refreshing}>
+            <RefreshCw className={`h-3 w-3 mr-1.5 ${refreshing ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+        </motion.div>
       </div>
 
       {/* Stats */}
@@ -147,7 +171,7 @@ export default function AnalyticsPage() {
 
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
         {/* RSVP Donut */}
-        <ChartCard title="RSVP Breakdown">
+        <ChartCard title="RSVP Breakdown" delay={0.3}>
           {totalRsvps === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <HelpCircle className="h-10 w-10 mb-3 opacity-30" />
@@ -158,7 +182,7 @@ export default function AnalyticsPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <ResponsiveContainer width={200} height={200}>
                 <PieChart>
-                  <Pie data={pieData} innerRadius={55} outerRadius={90} dataKey="value" stroke="none">
+                  <Pie data={pieData} innerRadius={55} outerRadius={90} dataKey="value" stroke="none" animationBegin={300} animationDuration={800}>
                     {pieData.map((_, i) => <Cell key={i} fill={COLORS[i % COLORS.length]} />)}
                   </Pie>
                   <Tooltip />
@@ -166,11 +190,17 @@ export default function AnalyticsPage() {
               </ResponsiveContainer>
               <div className="space-y-2.5">
                 {pieData.map((d, i) => (
-                  <div key={d.name} className="flex items-center gap-2.5 text-sm">
+                  <motion.div
+                    key={d.name}
+                    initial={{ opacity: 0, x: 10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.5 + i * 0.08 }}
+                    className="flex items-center gap-2.5 text-sm"
+                  >
                     <div className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: COLORS[i] }} />
                     <span className="text-muted-foreground">{d.name}</span>
                     <span className="font-bold ml-auto">{d.value}</span>
-                  </div>
+                  </motion.div>
                 ))}
               </div>
             </div>
@@ -178,7 +208,7 @@ export default function AnalyticsPage() {
         </ChartCard>
 
         {/* Device breakdown */}
-        <ChartCard title="Views by Device">
+        <ChartCard title="Views by Device" delay={0.35}>
           {!viewsByDevice?.length ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Monitor className="h-10 w-10 mb-3 opacity-30" />
@@ -187,11 +217,17 @@ export default function AnalyticsPage() {
             </div>
           ) : (
             <div className="space-y-4">
-              {viewsByDevice.map(d => {
+              {viewsByDevice.map((d, i) => {
                 const total = viewsByDevice.reduce((a, b) => a + b.value, 0);
                 const pct = total > 0 ? Math.round((d.value / total) * 100) : 0;
                 return (
-                  <div key={d.name} className="space-y-1.5">
+                  <motion.div
+                    key={d.name}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.4 + i * 0.08 }}
+                    className="space-y-1.5"
+                  >
                     <div className="flex items-center justify-between text-sm">
                       <div className="flex items-center gap-2 capitalize">
                         {DEVICE_ICONS[d.name] || <Monitor className="w-4 h-4" />}
@@ -204,10 +240,10 @@ export default function AnalyticsPage() {
                         className="h-full rounded-full bg-foreground"
                         initial={{ width: 0 }}
                         animate={{ width: `${pct}%` }}
-                        transition={{ duration: 0.8, ease: "easeOut" }}
+                        transition={{ duration: 0.8, ease: "easeOut", delay: 0.5 + i * 0.1 }}
                       />
                     </div>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -216,25 +252,27 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Views over time */}
-      {viewsTimeline && viewsTimeline.length > 0 && (
-        <ChartCard title="Page Views Over Time">
-          <div className="w-full overflow-x-auto -mx-2">
-            <div className="min-w-[400px] px-2">
-              <ResponsiveContainer width="100%" height={250}>
-                <AreaChart data={viewsTimeline}>
-                  <XAxis dataKey="date" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Area type="monotone" dataKey="views" stroke="hsl(var(--foreground))" fill="hsl(var(--foreground))" fillOpacity={0.08} strokeWidth={2} />
-                </AreaChart>
-              </ResponsiveContainer>
+      <AnimatePresence>
+        {viewsTimeline && viewsTimeline.length > 0 && (
+          <ChartCard title="Page Views Over Time" delay={0.45}>
+            <div className="w-full overflow-x-auto -mx-2">
+              <div className="min-w-[400px] px-2">
+                <ResponsiveContainer width="100%" height={250}>
+                  <AreaChart data={viewsTimeline}>
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="views" stroke="hsl(var(--foreground))" fill="hsl(var(--foreground))" fillOpacity={0.08} strokeWidth={2} animationDuration={1200} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
             </div>
-          </div>
-        </ChartCard>
-      )}
+          </ChartCard>
+        )}
+      </AnimatePresence>
 
       <div className="grid lg:grid-cols-2 gap-4 sm:gap-6">
-        <ChartCard title="Guests per Invitation">
+        <ChartCard title="Guests per Invitation" delay={0.5}>
           {!guestsPerInv?.length ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Users className="h-10 w-10 mb-3 opacity-30" />
@@ -248,7 +286,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="name" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Bar dataKey="guests" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} />
+                    <Bar dataKey="guests" fill="hsl(var(--foreground))" radius={[6, 6, 0, 0]} animationDuration={1000} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -256,7 +294,7 @@ export default function AnalyticsPage() {
           )}
         </ChartCard>
 
-        <ChartCard title="RSVPs Over Time">
+        <ChartCard title="RSVPs Over Time" delay={0.55}>
           {!rsvpTimeline?.length ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Clock className="h-10 w-10 mb-3 opacity-30" />
@@ -270,7 +308,7 @@ export default function AnalyticsPage() {
                     <XAxis dataKey="date" tick={{ fontSize: 10 }} />
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
-                    <Line type="monotone" dataKey="count" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3 }} />
+                    <Line type="monotone" dataKey="count" stroke="hsl(var(--foreground))" strokeWidth={2} dot={{ r: 3 }} animationDuration={1000} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

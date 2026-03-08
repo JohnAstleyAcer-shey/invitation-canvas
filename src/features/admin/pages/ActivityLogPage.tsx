@@ -1,12 +1,14 @@
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Activity, Clock, Filter, UserCheck, UserX, HelpCircle, Bell } from "lucide-react";
+import { Activity, Clock, UserCheck, UserX, HelpCircle, Bell, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useInvitations } from "../hooks/useInvitations";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { RSVP_STATUS_LABELS, type RsvpStatus } from "../types";
 import { formatDistanceToNow } from "date-fns";
+import { ActivityLogSkeleton } from "@/components/LoadingSkeletons";
 import { SEOHead } from "@/components/SEOHead";
 
 type RsvpEvent = {
@@ -36,32 +38,34 @@ const statusColors: Record<string, string> = {
 
 export default function ActivityLogPage() {
   const [events, setEvents] = useState<RsvpEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [filterInvitation, setFilterInvitation] = useState("all");
   const { data: invitations } = useInvitations();
 
-  useEffect(() => {
-    const fetchRsvps = async () => {
-      const { data } = await supabase
-        .from("rsvps")
-        .select("*, guests(full_name), invitations(title)")
-        .order("created_at", { ascending: false })
-        .limit(100);
+  const fetchRsvps = async () => {
+    setIsLoading(true);
+    const { data } = await supabase
+      .from("rsvps")
+      .select("*, guests(full_name), invitations(title)")
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-      if (data) {
-        setEvents(data.map((r: any) => ({
-          id: r.id,
-          status: r.status,
-          responded_at: r.responded_at,
-          created_at: r.created_at,
-          message: r.message,
-          num_companions: r.num_companions,
-          guest_name: r.guests?.full_name,
-          invitation_title: r.invitations?.title,
-        })));
-      }
-    };
-    fetchRsvps();
-  }, []);
+    if (data) {
+      setEvents(data.map((r: any) => ({
+        id: r.id,
+        status: r.status,
+        responded_at: r.responded_at,
+        created_at: r.created_at,
+        message: r.message,
+        num_companions: r.num_companions,
+        guest_name: r.guests?.full_name,
+        invitation_title: r.invitations?.title,
+      })));
+    }
+    setIsLoading(false);
+  };
+
+  useEffect(() => { fetchRsvps(); }, []);
 
   useEffect(() => {
     const channel = supabase
@@ -105,6 +109,8 @@ export default function ActivityLogPage() {
     ? events
     : events.filter(e => e.invitation_title === filterInvitation);
 
+  if (isLoading) return <ActivityLogSkeleton />;
+
   return (
     <div className="space-y-6 w-full max-w-4xl mx-auto">
       <SEOHead title="Activity Log" />
@@ -116,26 +122,36 @@ export default function ActivityLogPage() {
           <p className="text-sm text-muted-foreground mt-0.5">Real-time RSVP feed</p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-green-500/10 border border-green-500/20"
+          >
             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
             <span className="text-xs font-medium text-green-700 dark:text-green-400">Live</span>
-          </div>
+          </motion.div>
           <Badge variant="secondary" className="text-xs">{filtered.length} events</Badge>
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={fetchRsvps}>
+            <RefreshCw className="h-3.5 w-3.5" />
+          </Button>
         </div>
       </div>
 
-      <Select value={filterInvitation} onValueChange={setFilterInvitation}>
-        <SelectTrigger className="w-full sm:w-64 rounded-xl"><SelectValue placeholder="All invitations" /></SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">All Invitations</SelectItem>
-          {invitations?.map(inv => <SelectItem key={inv.id} value={inv.title}>{inv.title}</SelectItem>)}
-        </SelectContent>
-      </Select>
+      <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
+        <Select value={filterInvitation} onValueChange={setFilterInvitation}>
+          <SelectTrigger className="w-full sm:w-64 rounded-xl"><SelectValue placeholder="All invitations" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Invitations</SelectItem>
+            {invitations?.map(inv => <SelectItem key={inv.id} value={inv.title}>{inv.title}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </motion.div>
 
       <div className="space-y-3">
-        <AnimatePresence>
+        <AnimatePresence mode="popLayout">
           {filtered.length === 0 ? (
             <motion.div
+              key="empty"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               className="text-center py-20"
@@ -150,15 +166,22 @@ export default function ActivityLogPage() {
             filtered.map((event, i) => (
               <motion.div
                 key={event.id}
-                initial={{ opacity: 0, x: -16 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 16 }}
-                transition={{ delay: i * 0.02 }}
-                className="rounded-xl border border-border bg-card p-4 flex items-start gap-3 hover:bg-accent/20 transition-colors"
+                layout
+                initial={{ opacity: 0, x: -16, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 16, scale: 0.95 }}
+                transition={{ delay: i * 0.02, type: "spring", stiffness: 300, damping: 25 }}
+                whileHover={{ x: 4 }}
+                className="rounded-xl border border-border bg-card p-4 flex items-start gap-3 hover:bg-accent/20 transition-colors cursor-default"
               >
-                <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
+                <motion.div
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  transition={{ delay: i * 0.02 + 0.1, type: "spring" }}
+                  className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0"
+                >
                   {statusIcons[event.status] || <Clock className="h-4 w-4 text-muted-foreground" />}
-                </div>
+                </motion.div>
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
                     <p className="text-sm font-bold truncate">{event.guest_name || "Unknown Guest"}</p>
@@ -172,7 +195,13 @@ export default function ActivityLogPage() {
                     </p>
                   )}
                   {event.message && (
-                    <p className="text-xs text-muted-foreground mt-1.5 italic bg-accent/30 rounded-lg px-2.5 py-1.5">"{event.message}"</p>
+                    <motion.p
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      className="text-xs text-muted-foreground mt-1.5 italic bg-accent/30 rounded-lg px-2.5 py-1.5"
+                    >
+                      "{event.message}"
+                    </motion.p>
                   )}
                   <div className="flex items-center gap-3 mt-1.5 text-[10px] text-muted-foreground">
                     {event.num_companions ? <span>+{event.num_companions} companion(s)</span> : null}

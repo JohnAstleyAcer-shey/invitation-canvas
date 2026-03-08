@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Heart, Cake, Baby, Building2, PartyPopper, ArrowRight, Sparkles, Crown, Star, Search, Filter } from "lucide-react";
+import { Heart, Cake, Baby, Building2, PartyPopper, ArrowRight, Sparkles, Crown, Star, Search, Filter, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -93,6 +93,7 @@ export default function TemplatesPage() {
   const createInvitation = useCreateInvitation();
   const [search, setSearch] = useState("");
   const [filterType, setFilterType] = useState<EventType | "all">("all");
+  const [creatingTemplate, setCreatingTemplate] = useState<string | null>(null);
 
   const filtered = templates.filter(t => {
     const matchSearch = !search || t.name.toLowerCase().includes(search.toLowerCase()) || t.description.toLowerCase().includes(search.toLowerCase());
@@ -102,6 +103,7 @@ export default function TemplatesPage() {
 
   const handleUseTemplate = async (template: typeof templates[0]) => {
     if (!user) return;
+    setCreatingTemplate(template.name);
     try {
       const slug = template.preset.title.toLowerCase().replace(/[^a-z0-9]+/g, "-") + "-" + Date.now().toString(36);
       const inv = await createInvitation.mutateAsync({
@@ -114,7 +116,9 @@ export default function TemplatesPage() {
       });
       toast.success("Invitation created from template!");
       navigate(`/admin/edit/${inv.id}`);
-    } catch {}
+    } catch {
+      setCreatingTemplate(null);
+    }
   };
 
   return (
@@ -148,46 +152,56 @@ export default function TemplatesPage() {
         </Tabs>
       </motion.div>
 
-      {/* Results count */}
       <p className="text-xs text-muted-foreground">{filtered.length} template{filtered.length !== 1 ? "s" : ""} found</p>
 
-      {/* Grid */}
       {filtered.length === 0 ? (
-        <div className="text-center py-16">
+        <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="text-center py-16">
           <Filter className="h-10 w-10 mx-auto mb-3 text-muted-foreground/30" />
           <p className="text-sm text-muted-foreground">No templates match your search</p>
-        </div>
+        </motion.div>
       ) : (
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filtered.map((t, i) => (
-            <motion.div
-              key={`${t.name}-${i}`}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 25 }}
-              className={`group relative rounded-2xl border border-border bg-gradient-to-br ${t.color} p-5 flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-300`}
-            >
-              {t.popular && (
-                <Badge className="absolute top-3 right-3 text-[9px] shadow-sm">Popular</Badge>
-              )}
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-11 h-11 rounded-xl bg-background/60 backdrop-blur-sm flex items-center justify-center group-hover:scale-110 transition-transform">
-                  <t.icon className="h-5 w-5" />
-                </div>
-                <Badge variant="outline" className="text-[10px] bg-background/50">{EVENT_TYPE_LABELS[t.type]}</Badge>
-              </div>
-              <h3 className="font-display font-bold mb-1">{t.name}</h3>
-              <p className="text-xs text-muted-foreground mb-4 flex-1 leading-relaxed">{t.description}</p>
-              <Button
-                variant="outline"
-                className="rounded-full w-full bg-background/60 hover:bg-background transition-colors"
-                onClick={() => handleUseTemplate(t)}
-                disabled={createInvitation.isPending}
+          {filtered.map((t, i) => {
+            const isCreating = creatingTemplate === t.name;
+            return (
+              <motion.div
+                key={`${t.name}-${i}`}
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05, type: "spring", stiffness: 300, damping: 25 }}
+                whileHover={{ y: -4, scale: 1.01 }}
+                whileTap={{ scale: 0.98 }}
+                className={`group relative rounded-2xl border border-border bg-gradient-to-br ${t.color} p-5 flex flex-col hover:shadow-lg hover:border-primary/20 transition-all duration-300`}
               >
-                {createInvitation.isPending ? "Creating..." : "Use Template"} <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </motion.div>
-          ))}
+                {t.popular && (
+                  <Badge className="absolute top-3 right-3 text-[9px] shadow-sm">Popular</Badge>
+                )}
+                <div className="flex items-center gap-3 mb-3">
+                  <motion.div
+                    whileHover={{ scale: 1.1, rotate: 5 }}
+                    className="w-11 h-11 rounded-xl bg-background/60 backdrop-blur-sm flex items-center justify-center"
+                  >
+                    <t.icon className="h-5 w-5" />
+                  </motion.div>
+                  <Badge variant="outline" className="text-[10px] bg-background/50">{EVENT_TYPE_LABELS[t.type]}</Badge>
+                </div>
+                <h3 className="font-display font-bold mb-1">{t.name}</h3>
+                <p className="text-xs text-muted-foreground mb-4 flex-1 leading-relaxed">{t.description}</p>
+                <Button
+                  variant="outline"
+                  className="rounded-full w-full bg-background/60 hover:bg-background transition-colors"
+                  onClick={() => handleUseTemplate(t)}
+                  disabled={!!creatingTemplate}
+                >
+                  {isCreating ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</>
+                  ) : (
+                    <>Use Template <ArrowRight className="h-4 w-4 ml-2" /></>
+                  )}
+                </Button>
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </div>

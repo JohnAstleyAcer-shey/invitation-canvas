@@ -1,17 +1,17 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { User, Camera, Save, Shield, Bell, Palette, LogOut, ChevronRight, Lock, Smartphone, Globe } from "lucide-react";
+import { User, Camera, Save, Shield, Bell, Palette, LogOut, Lock, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { useAuth } from "../hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { uploadFile } from "../hooks/useInvitationData";
 import { toast } from "sonner";
 import { SEOHead } from "@/components/SEOHead";
+import { SettingsSkeleton } from "@/components/LoadingSkeletons";
 import { useNavigate } from "react-router-dom";
 
 function SettingsSection({ icon: Icon, title, description, children, delay = 0 }: {
@@ -22,7 +22,8 @@ function SettingsSection({ icon: Icon, title, description, children, delay = 0 }
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay, type: "spring", stiffness: 300, damping: 25 }}
-      className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5"
+      whileHover={{ y: -1 }}
+      className="rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-5 transition-shadow hover:shadow-sm"
     >
       <div className="flex items-center gap-3">
         <div className="w-9 h-9 rounded-xl bg-accent flex items-center justify-center shrink-0">
@@ -51,10 +52,11 @@ function SettingsRow({ label, description, children }: { label: string; descript
 }
 
 export default function SettingsPage() {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: isLoading } = useAuth();
   const navigate = useNavigate();
   const [fullName, setFullName] = useState(profile?.full_name || "");
   const [saving, setSaving] = useState(false);
+  const [uploadingAvatar, setUploadingAvatar] = useState(false);
 
   useEffect(() => {
     if (profile?.full_name) setFullName(profile.full_name);
@@ -75,12 +77,15 @@ export default function SettingsPage() {
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !user) return;
+    setUploadingAvatar(true);
     try {
       const url = await uploadFile("invitation-assets", file, `avatars/${user.id}`);
       await supabase.from("profiles").update({ avatar_url: url }).eq("user_id", user.id);
       toast.success("Avatar updated");
     } catch (err: any) {
       toast.error(err.message);
+    } finally {
+      setUploadingAvatar(false);
     }
   };
 
@@ -88,6 +93,8 @@ export default function SettingsPage() {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
+  if (isLoading) return <SettingsSkeleton />;
 
   return (
     <div className="max-w-2xl mx-auto space-y-6 w-full">
@@ -103,13 +110,18 @@ export default function SettingsPage() {
       <SettingsSection icon={User} title="Profile" description="Your personal information" delay={0.05}>
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
           <div className="relative">
-            <div className="w-20 h-20 rounded-2xl bg-accent flex items-center justify-center overflow-hidden border-2 border-border">
-              {profile?.avatar_url ? (
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              className="w-20 h-20 rounded-2xl bg-accent flex items-center justify-center overflow-hidden border-2 border-border"
+            >
+              {uploadingAvatar ? (
+                <Loader2 className="h-8 w-8 text-muted-foreground animate-spin" />
+              ) : profile?.avatar_url ? (
                 <img src={profile.avatar_url} alt="" className="w-full h-full object-cover" />
               ) : (
                 <User className="h-10 w-10 text-muted-foreground/30" />
               )}
-            </div>
+            </motion.div>
             <label className="absolute -bottom-1 -right-1 w-7 h-7 bg-primary text-primary-foreground rounded-full flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity shadow-md">
               <Camera className="h-3.5 w-3.5" />
               <input type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
@@ -133,7 +145,8 @@ export default function SettingsPage() {
         </div>
 
         <Button onClick={handleSave} disabled={saving} className="rounded-full mt-2">
-          <Save className="h-4 w-4 mr-2" /> {saving ? "Saving..." : "Save Changes"}
+          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+          {saving ? "Saving..." : "Save Changes"}
         </Button>
       </SettingsSection>
 

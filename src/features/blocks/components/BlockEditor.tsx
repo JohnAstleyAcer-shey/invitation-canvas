@@ -1,11 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { useState, useCallback, useEffect, useMemo } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Monitor, Smartphone, Tablet, Eye, Layers, Undo2, Redo2,
   ZoomIn, ZoomOut, Maximize2, PanelRightOpen, PanelRightClose,
   Keyboard, Download, Upload, Trash2, Copy, ChevronsUpDown,
-  SplitSquareHorizontal, Grid3X3, LayoutList,
+  SplitSquareHorizontal, Grid3X3, LayoutList, Save, CheckCircle2, Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import { BlockCanvas } from "./BlockCanvas";
 import { BlockSettings } from "./BlockSettings";
 import { BlockTemplatePanel } from "./BlockTemplatePanel";
 import { BlockLivePreview } from "./BlockLivePreview";
-import { useBlocks } from "../hooks/useBlocks";
+import { useBlocks, useBlockHistory } from "../hooks/useBlocks";
 import { BLOCK_REGISTRY } from "../registry";
 import type { BlockType, BlockContent, BlockStyle, InvitationBlock } from "../types";
 import { toast } from "sonner";
@@ -28,51 +28,57 @@ interface BlockEditorProps {
   invitationSlug: string;
 }
 
-// Undo/redo history
-interface HistoryEntry {
-  blocks: InvitationBlock[];
-  description: string;
-}
-
 export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: BlockEditorProps) {
-  const navigate = useNavigate();
   const { blocks, isLoading, addBlock, updateBlock, removeBlock, duplicateBlock, reorderBlocks, addBlocksFromTemplate } = useBlocks(invitationId);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [previewMode, setPreviewMode] = useState<"mobile" | "tablet" | "desktop">("mobile");
-  const [showTemplates, setShowTemplates] = useState(false);
   const [showLivePreview, setShowLivePreview] = useState(false);
   const [showSettings, setShowSettings] = useState(true);
   const [zoom, setZoom] = useState(100);
   const [sidebarPanel, setSidebarPanel] = useState<"blocks" | "templates" | "layers">("blocks");
   const [showShortcuts, setShowShortcuts] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
-  // History for undo/redo
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
-  const [historyIndex, setHistoryIndex] = useState(-1);
+  // Track save state from mutations
+  useEffect(() => {
+    if (updateBlock.isPending || addBlock.isPending || removeBlock.isPending || reorderBlocks.isPending) {
+      setIsSaving(true);
+    } else {
+      if (isSaving) {
+        setLastSaved(new Date());
+        setIsSaving(false);
+      }
+    }
+  }, [updateBlock.isPending, addBlock.isPending, removeBlock.isPending, reorderBlocks.isPending]);
 
   const selectedBlock = blocks.find(b => b.id === selectedBlockId);
+
+  // Block stats
+  const blockStats = useMemo(() => ({
+    total: blocks.length,
+    visible: blocks.filter(b => b.is_visible).length,
+    hidden: blocks.filter(b => !b.is_visible).length,
+  }), [blocks]);
 
   // Keyboard shortcuts
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
 
-      // Delete selected block
       if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
         e.preventDefault();
         removeBlock.mutate(selectedBlockId);
         setSelectedBlockId(null);
       }
-      // Duplicate
       if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedBlockId) {
         e.preventDefault();
         duplicateBlock.mutate(selectedBlockId);
       }
-      // Deselect
       if (e.key === "Escape") {
         setSelectedBlockId(null);
+        setShowShortcuts(false);
       }
-      // Navigate blocks
       if (e.key === "ArrowUp" && e.altKey && selectedBlockId) {
         e.preventDefault();
         const idx = blocks.findIndex(b => b.id === selectedBlockId);
@@ -83,7 +89,6 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
         const idx = blocks.findIndex(b => b.id === selectedBlockId);
         if (idx < blocks.length - 1) handleMoveDown(idx);
       }
-      // Select next/prev block
       if (e.key === "ArrowUp" && !e.altKey && !e.ctrlKey) {
         const idx = blocks.findIndex(b => b.id === selectedBlockId);
         if (idx > 0) setSelectedBlockId(blocks[idx - 1].id);
@@ -94,12 +99,10 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
         if (idx < blocks.length - 1) setSelectedBlockId(blocks[idx + 1].id);
         else if (blocks.length) setSelectedBlockId(blocks[0].id);
       }
-      // Toggle preview
       if ((e.ctrlKey || e.metaKey) && e.key === "p") {
         e.preventDefault();
         setShowLivePreview(prev => !prev);
       }
-      // Zoom
       if ((e.ctrlKey || e.metaKey) && e.key === "=") {
         e.preventDefault();
         setZoom(z => Math.min(z + 10, 150));
@@ -108,14 +111,18 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
         e.preventDefault();
         setZoom(z => Math.max(z - 10, 50));
       }
-      // Show keyboard shortcuts
-      if (e.key === "?") {
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
         setShowShortcuts(prev => !prev);
+      }
+      // Toggle visibility of selected block
+      if (e.key === "h" && selectedBlockId && !e.ctrlKey && !e.metaKey) {
+        const block = blocks.find(b => b.id === selectedBlockId);
+        if (block) updateBlock.mutate({ id: selectedBlockId, is_visible: !block.is_visible });
       }
     };
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
-  }, [selectedBlockId, blocks, removeBlock, duplicateBlock]);
+  }, [selectedBlockId, blocks, removeBlock, duplicateBlock, updateBlock]);
 
   const handleAddBlock = useCallback((type: BlockType) => {
     addBlock.mutate({ blockType: type });
@@ -190,18 +197,19 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="h-8 w-8 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" />
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin mx-auto" />
+          <p className="text-xs text-muted-foreground">Loading blocks...</p>
+        </div>
       </div>
     );
   }
-
-  const previewWidths = { mobile: "375px", tablet: "768px", desktop: "100%" };
 
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       {/* Toolbar */}
       <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 border-b border-border bg-card gap-1 sm:gap-2 overflow-x-auto">
-        {/* Left: Back + title */}
+        {/* Left: Back + title + save status */}
         <div className="flex items-center gap-2 min-w-0">
           <Tooltip>
             <TooltipTrigger asChild>
@@ -213,15 +221,27 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
           </Tooltip>
           <div className="min-w-0">
             <h2 className="font-display font-bold text-xs truncate">{invitationTitle}</h2>
-            <p className="text-[9px] text-muted-foreground truncate">/invite/{invitationSlug}</p>
+            <div className="flex items-center gap-1.5">
+              <p className="text-[9px] text-muted-foreground truncate">/invite/{invitationSlug}</p>
+              {/* Save indicator */}
+              {isSaving ? (
+                <span className="flex items-center gap-0.5 text-[8px] text-muted-foreground">
+                  <Loader2 className="h-2 w-2 animate-spin" /> Saving...
+                </span>
+              ) : lastSaved ? (
+                <span className="flex items-center gap-0.5 text-[8px] text-green-600">
+                  <CheckCircle2 className="h-2 w-2" /> Saved
+                </span>
+              ) : null}
+            </div>
           </div>
           <Separator orientation="vertical" className="h-5 mx-1" />
           <Badge variant="secondary" className="text-[9px] shrink-0">
-            <Layers className="h-2.5 w-2.5 mr-0.5" /> {blocks.length}
+            <Layers className="h-2.5 w-2.5 mr-0.5" /> {blockStats.total}
           </Badge>
         </div>
 
-        {/* Center: Device + Zoom */}
+        {/* Center: Device + Zoom + Sidebar toggles */}
         <div className="flex items-center gap-1">
           {/* Sidebar panel toggles */}
           <div className="flex border border-border rounded-md overflow-hidden mr-2">
@@ -312,7 +332,7 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
               <Button variant={showLivePreview ? "default" : "outline"} size="sm" className="h-6 text-[10px] gap-1"
                 onClick={() => setShowLivePreview(!showLivePreview)}>
                 <SplitSquareHorizontal className="h-3 w-3" />
-                {showLivePreview ? "Hide Preview" : "Live Preview"}
+                <span className="hidden sm:inline">{showLivePreview ? "Hide" : "Preview"}</span>
               </Button>
             </TooltipTrigger>
             <TooltipContent>Toggle live preview (Ctrl+P)</TooltipContent>
@@ -386,7 +406,8 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
                 ["Ctrl + D", "Duplicate block"],
                 ["Ctrl + P", "Toggle live preview"],
                 ["Ctrl + +/-", "Zoom in/out"],
-                ["Escape", "Deselect block"],
+                ["H", "Toggle block visibility"],
+                ["Escape", "Deselect / close"],
                 ["?", "Toggle shortcuts"],
               ].map(([key, desc]) => (
                 <div key={key} className="flex items-center justify-between">
@@ -448,13 +469,7 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
                 transition={{ duration: 0.3 }}
                 className="border-l border-border overflow-hidden flex flex-col bg-background"
               >
-                <div className="px-3 py-1.5 border-b border-border bg-muted/30 flex items-center justify-between">
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Live Preview</span>
-                  <Badge variant="outline" className="text-[8px]">{previewMode}</Badge>
-                </div>
-                <ScrollArea className="flex-1">
-                  <BlockLivePreview blocks={blocks} />
-                </ScrollArea>
+                <BlockLivePreview blocks={blocks} previewMode={previewMode} />
               </motion.div>
             )}
           </AnimatePresence>
@@ -474,7 +489,7 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
   );
 }
 
-// Layers panel - shows all blocks in a flat list for quick navigation
+// Layers panel
 function BlockLayersPanel({
   blocks, selectedBlockId, onSelectBlock, onToggleVisibility, onRemove,
 }: {
@@ -484,33 +499,42 @@ function BlockLayersPanel({
   onToggleVisibility: (id: string, visible: boolean) => void;
   onRemove: (id: string) => void;
 }) {
-  // BLOCK_REGISTRY is imported at top of file
-
   return (
     <div className="w-64 border-r border-border bg-card flex flex-col h-full">
       <div className="p-3 border-b border-border">
         <h3 className="font-display font-bold text-sm">Layers</h3>
-        <p className="text-[10px] text-muted-foreground">{blocks.length} blocks</p>
+        <p className="text-[10px] text-muted-foreground">{blocks.length} blocks · {blocks.filter(b => b.is_visible).length} visible</p>
       </div>
       <ScrollArea className="flex-1">
         <div className="p-1">
           {blocks.map((block, i) => {
             const def = BLOCK_REGISTRY[block.block_type as keyof typeof BLOCK_REGISTRY];
             return (
-              <button
+              <motion.button
                 key={block.id}
-                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors ${
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.02 }}
+                className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-colors group ${
                   selectedBlockId === block.id ? "bg-primary/10 text-primary" : "hover:bg-accent/50"
                 } ${!block.is_visible ? "opacity-40" : ""}`}
                 onClick={() => onSelectBlock(selectedBlockId === block.id ? null : block.id)}
               >
                 <span className="w-5 text-[9px] text-muted-foreground text-right shrink-0">{i + 1}</span>
                 <span className="flex-1 truncate font-medium">{def?.label || block.block_type}</span>
-                <Button variant="ghost" size="icon" className="h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100"
-                  onClick={e => { e.stopPropagation(); onToggleVisibility(block.id, !block.is_visible); }}>
+                <button
+                  className="h-5 w-5 flex items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 hover:bg-accent transition-all shrink-0"
+                  onClick={e => { e.stopPropagation(); onToggleVisibility(block.id, !block.is_visible); }}
+                >
                   {block.is_visible ? <Eye className="h-2.5 w-2.5" /> : <span className="text-[8px]">👁</span>}
-                </Button>
-              </button>
+                </button>
+                <button
+                  className="h-5 w-5 flex items-center justify-center rounded-sm opacity-0 group-hover:opacity-100 hover:bg-destructive/20 transition-all shrink-0"
+                  onClick={e => { e.stopPropagation(); onRemove(block.id); }}
+                >
+                  <Trash2 className="h-2.5 w-2.5 text-destructive" />
+                </button>
+              </motion.button>
             );
           })}
         </div>

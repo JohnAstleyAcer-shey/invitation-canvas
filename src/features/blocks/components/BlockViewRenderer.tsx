@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { MapPin, ExternalLink, Play, ChevronDown, Clock, Users, Gift, HelpCircle, Shirt, Mail, Quote as QuoteIcon, Instagram, Facebook, Twitter, Globe, Music, Disc3, Phone, Camera, Star, Heart, Calendar, Sparkles, DollarSign, QrCode, Cloud, Navigation } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
+import { MapPin, ExternalLink, Play, ChevronDown, Clock, Users, Gift, HelpCircle, Shirt, Mail, Quote as QuoteIcon, Instagram, Facebook, Twitter, Globe, Music, Disc3, Phone, Camera, Star, Heart, Calendar, Sparkles, DollarSign, QrCode, Cloud, Navigation, ChevronLeft, ChevronRight, X, Pause, Volume2, VolumeX, ArrowDown } from "lucide-react";
 import type { InvitationBlock } from "../types";
 
 const animationVariants: Record<string, any> = {
@@ -26,12 +26,12 @@ const shadowMap: Record<string, string> = {
 export function BlockViewRenderer({ blocks }: { blocks: InvitationBlock[] }) {
   return (
     <div className="w-full">
-      {blocks.map(block => <BlockView key={block.id} block={block} />)}
+      {blocks.map((block, idx) => <BlockView key={block.id} block={block} index={idx} totalBlocks={blocks.length} />)}
     </div>
   );
 }
 
-function BlockView({ block }: { block: InvitationBlock }) {
+function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; index: number; totalBlocks: number }) {
   const c = block.content as any;
   const s = block.style as any;
   const anim = animationVariants[s.animation] || {};
@@ -65,8 +65,8 @@ function BlockView({ block }: { block: InvitationBlock }) {
   const glassClass = s.glassmorphism ? "backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 p-8" : "";
 
   const Wrap = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <motion.div {...anim} transition={{ duration: 0.6, ease: "easeOut" }} viewport={{ once: true }} whileInView={anim.animate} style={wrapStyle} className={className}>
-      {s.backgroundImage && !s.gradient && <img src={s.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" />}
+    <motion.div {...anim} transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }} viewport={{ once: true, amount: 0.2 }} whileInView={anim.animate} style={wrapStyle} className={className}>
+      {s.backgroundImage && !s.gradient && <img src={s.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />}
       {s.backgroundOverlay && <div className="absolute inset-0" style={{ backgroundColor: s.backgroundOverlay }} />}
       <div className={`relative z-10 w-full max-w-2xl mx-auto ${glassClass}`}>{children}</div>
     </motion.div>
@@ -80,13 +80,16 @@ function BlockView({ block }: { block: InvitationBlock }) {
     }
 
     case "text":
-      return <Wrap><p className="whitespace-pre-wrap leading-relaxed">{c.body}</p></Wrap>;
+      return <Wrap><p className="whitespace-pre-wrap leading-relaxed text-base md:text-lg">{c.body}</p></Wrap>;
 
     case "image":
       return (
         <Wrap>
-          {c.imageUrl && <img src={c.imageUrl} alt={c.alt || ""} className="w-full rounded-xl object-cover" style={{ borderRadius: s.borderRadius }} />}
-          {c.caption && <p className="text-sm opacity-70 mt-2">{c.caption}</p>}
+          {c.imageUrl && (
+            <motion.img src={c.imageUrl} alt={c.alt || ""} className="w-full rounded-xl object-cover" style={{ borderRadius: s.borderRadius }}
+              initial={{ scale: 1.05, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }} loading="lazy" />
+          )}
+          {c.caption && <p className="text-sm opacity-70 mt-3 italic">{c.caption}</p>}
         </Wrap>
       );
 
@@ -99,8 +102,10 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "button":
       return (
         <Wrap>
-          <a href={c.url || "#"} target="_blank" rel="noopener noreferrer"
-            className={`inline-block rounded-full font-medium transition-all hover:scale-105 ${
+          <motion.a href={c.url || "#"} target="_blank" rel="noopener noreferrer"
+            whileHover={{ scale: 1.05, boxShadow: "0 10px 30px rgba(0,0,0,0.15)" }}
+            whileTap={{ scale: 0.95 }}
+            className={`inline-block rounded-full font-medium transition-all ${
               c.buttonSize === "lg" ? "px-10 py-4 text-lg" : c.buttonSize === "sm" ? "px-5 py-2 text-sm" : "px-8 py-3"
             } ${
               c.variant === "outline" ? "border-2 border-current hover:bg-current/10" :
@@ -110,7 +115,7 @@ function BlockView({ block }: { block: InvitationBlock }) {
             }`}
           >
             {c.label || "Button"}
-          </a>
+          </motion.a>
         </Wrap>
       );
 
@@ -118,10 +123,10 @@ function BlockView({ block }: { block: InvitationBlock }) {
       return (
         <Wrap>
           <div className={`grid gap-6 ${
-            c.columnRatio === "2:1" ? "grid-cols-[2fr_1fr]" : c.columnRatio === "1:2" ? "grid-cols-[1fr_2fr]" : "grid-cols-2"
+            c.columnRatio === "2:1" ? "grid-cols-1 md:grid-cols-[2fr_1fr]" : c.columnRatio === "1:2" ? "grid-cols-1 md:grid-cols-[1fr_2fr]" : "grid-cols-1 md:grid-cols-2"
           }`}>
             {(c.columnContent || []).map((col: string, i: number) => (
-              <div key={i} className="whitespace-pre-wrap text-left">{col}</div>
+              <motion.div key={i} className="whitespace-pre-wrap text-left" initial={{ opacity: 0, x: i === 0 ? -20 : 20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.15 }}>{col}</motion.div>
             ))}
           </div>
         </Wrap>
@@ -132,7 +137,7 @@ function BlockView({ block }: { block: InvitationBlock }) {
         <Wrap>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
             {(c.columnContent || []).map((col: string, i: number) => (
-              <div key={i} className="whitespace-pre-wrap text-left">{col}</div>
+              <motion.div key={i} className="whitespace-pre-wrap text-left" initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>{col}</motion.div>
             ))}
           </div>
         </Wrap>
@@ -140,15 +145,21 @@ function BlockView({ block }: { block: InvitationBlock }) {
 
     case "cover_hero":
       return (
-        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1 }}
-          style={{ ...wrapStyle, backgroundImage: c.imageUrl ? `url(${c.imageUrl})` : s.gradient || undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
-          {c.overlay && <div className="absolute inset-0 bg-black/40" />}
+        <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
+          style={{ ...wrapStyle, backgroundImage: c.imageUrl ? `url(${c.imageUrl})` : s.gradient || undefined, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+          {c.overlay && <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />}
           <div className="relative z-10 text-white text-center px-6">
-            <motion.h1 initial={{ y: 30, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.3, duration: 0.8 }}
-              className="font-display text-5xl md:text-7xl font-bold mb-4">{c.overlayText || "You're Invited"}</motion.h1>
+            <motion.h1 initial={{ y: 40, opacity: 0, filter: "blur(10px)" }} animate={{ y: 0, opacity: 1, filter: "blur(0px)" }} transition={{ delay: 0.3, duration: 1 }}
+              className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-4 drop-shadow-lg">{c.overlayText || "You're Invited"}</motion.h1>
             {c.overlaySubtext && (
-              <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.6 }}
-                className="text-xl md:text-2xl opacity-80">{c.overlaySubtext}</motion.p>
+              <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8, duration: 0.8 }}
+                className="text-xl md:text-2xl opacity-90 font-light tracking-wide">{c.overlaySubtext}</motion.p>
+            )}
+            {/* Scroll hint */}
+            {index === 0 && totalBlocks > 1 && (
+              <motion.div className="absolute bottom-8 left-1/2 -translate-x-1/2" animate={{ y: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
+                <ArrowDown className="w-6 h-6 text-white/60" />
+              </motion.div>
             )}
           </div>
         </motion.div>
@@ -165,17 +176,24 @@ function BlockView({ block }: { block: InvitationBlock }) {
           ) : c.heroVideoUrl ? (
             <video src={c.heroVideoUrl} autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" />
           ) : <div className="absolute inset-0 bg-black/80" />}
-          {c.heroOverlay && <div className="absolute inset-0 bg-black/40 z-[1]" />}
+          {c.heroOverlay && <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60 z-[1]" />}
           <div className="relative z-10 text-white text-center px-6">
-            <h1 className="font-display text-5xl md:text-7xl font-bold mb-4">{c.heroOverlayText || "Video Hero"}</h1>
-            {c.heroOverlaySubtext && <p className="text-xl opacity-80">{c.heroOverlaySubtext}</p>}
+            <motion.h1 initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ duration: 1 }}
+              className="font-display text-5xl md:text-7xl font-bold mb-4 drop-shadow-lg">{c.heroOverlayText || "Video Hero"}</motion.h1>
+            {c.heroOverlaySubtext && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.5 }} className="text-xl opacity-90">{c.heroOverlaySubtext}</motion.p>}
           </div>
         </div>
       );
     }
 
     case "message_card":
-      return <Wrap><p className="whitespace-pre-wrap leading-relaxed italic text-lg">{c.body}</p></Wrap>;
+      return (
+        <Wrap>
+          <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <p className="whitespace-pre-wrap leading-relaxed italic text-lg md:text-xl">{c.body}</p>
+          </motion.div>
+        </Wrap>
+      );
 
     case "countdown":
     case "countdown_flip":
@@ -184,13 +202,27 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "location":
       return (
         <Wrap>
-          <MapPin className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-1">{c.venueName || "Venue"}</h3>
-          {c.venueAddress && <p className="opacity-70 mb-2">{c.venueAddress}</p>}
-          {c.venuePhone && <p className="text-sm opacity-60 mb-2"><Phone className="h-3 w-3 inline mr-1" />{c.venuePhone}</p>}
-          <div className="flex justify-center gap-3 mt-3">
-            {c.mapUrl && <a href={c.mapUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm font-medium underline"><ExternalLink className="h-4 w-4" /> View Map</a>}
-            {c.showDirections && c.venueAddress && <a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.venueAddress)}`} target="_blank" rel="noopener" className="inline-flex items-center gap-1 text-sm font-medium underline"><Navigation className="h-4 w-4" /> Directions</a>}
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <MapPin className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-2">{c.venueName || "Venue"}</h3>
+          {c.venueAddress && <p className="opacity-70 mb-3 text-base">{c.venueAddress}</p>}
+          {c.venuePhone && <p className="text-sm opacity-60 mb-3"><Phone className="h-3 w-3 inline mr-1" />{c.venuePhone}</p>}
+          <div className="flex justify-center gap-4 mt-4 flex-wrap">
+            {c.mapUrl && (
+              <motion.a href={c.mapUrl} target="_blank" rel="noopener noreferrer"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-current/10 text-sm font-medium hover:bg-current/20 transition">
+                <ExternalLink className="h-4 w-4" /> View Map
+              </motion.a>
+            )}
+            {c.showDirections && c.venueAddress && (
+              <motion.a href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(c.venueAddress)}`} target="_blank" rel="noopener"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-current/10 text-sm font-medium hover:bg-current/20 transition">
+                <Navigation className="h-4 w-4" /> Directions
+              </motion.a>
+            )}
           </div>
         </Wrap>
       );
@@ -207,17 +239,19 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "timeline":
       return (
         <Wrap>
-          <Clock className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-6">Schedule</h3>
-          <div className={`space-y-4 max-w-md mx-auto ${c.timelineLayout === "alternating" ? "relative" : ""}`}>
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <Clock className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-8">Schedule</h3>
+          <div className={`space-y-0 max-w-md mx-auto ${c.timelineLayout === "alternating" ? "relative" : ""}`}>
             {(c.events || []).map((ev: any, i: number) => (
-              <motion.div key={i} initial={{ x: c.timelineLayout === "alternating" && i % 2 ? 20 : -20, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className={`flex items-start gap-4 ${c.timelineLayout === "alternating" && i % 2 ? "flex-row-reverse text-right" : "text-left"}`}>
-                <div className="w-20 shrink-0 font-semibold text-sm">{ev.time}</div>
-                <div className="w-3 h-3 rounded-full bg-current opacity-30 shrink-0 mt-1" />
+              <motion.div key={i} initial={{ x: c.timelineLayout === "alternating" && i % 2 ? 30 : -30, opacity: 0 }} whileInView={{ x: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className={`flex items-start gap-4 py-4 ${i > 0 ? "border-t border-current/10" : ""} ${c.timelineLayout === "alternating" && i % 2 ? "flex-row-reverse text-right" : "text-left"}`}>
+                <div className="w-20 shrink-0 font-semibold text-sm opacity-70">{ev.time}</div>
+                <div className="w-3 h-3 rounded-full bg-current opacity-40 shrink-0 mt-1.5 ring-4 ring-current/10" />
                 <div>
-                  <p className="font-semibold">{ev.title}</p>
-                  {ev.description && <p className="text-sm opacity-70">{ev.description}</p>}
+                  <p className="font-semibold text-base">{ev.title}</p>
+                  {ev.description && <p className="text-sm opacity-70 mt-0.5">{ev.description}</p>}
                 </div>
               </motion.div>
             ))}
@@ -228,57 +262,76 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "entourage":
       return (
         <Wrap>
-          <Users className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-6">{c.entourageTitle || "Special People"}</h3>
-          <div className={c.entourageLayout === "list" ? "space-y-3 max-w-md mx-auto" : "grid grid-cols-2 sm:grid-cols-3 gap-4"}>
-            {(c.people || []).map((p: any, i: number) => (
-              <motion.div key={i} initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                className={c.entourageLayout === "list" ? "flex items-center gap-3 text-left" : "text-center"}>
-                {p.imageUrl ? <img src={p.imageUrl} alt={p.name} className={`${c.entourageLayout === "list" ? "w-10 h-10" : "w-16 h-16 mx-auto mb-2"} rounded-full object-cover`} /> :
-                  <div className={`${c.entourageLayout === "list" ? "w-10 h-10" : "w-16 h-16 mx-auto mb-2"} rounded-full bg-current/10 flex items-center justify-center text-lg font-bold`}>{p.name?.charAt(0)}</div>}
-                <div>
-                  <p className="font-semibold text-sm">{p.name}</p>
-                  {p.role && <p className="text-xs opacity-60">{p.role}</p>}
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <Users className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-8">{c.entourageTitle || "Special People"}</h3>
+          {c.entourageLayout === "carousel" ? (
+            <EntourageCarousel people={c.people || []} />
+          ) : (
+            <div className={c.entourageLayout === "list" ? "space-y-3 max-w-md mx-auto" : "grid grid-cols-2 sm:grid-cols-3 gap-5"}>
+              {(c.people || []).map((p: any, i: number) => (
+                <motion.div key={i} initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05, type: "spring", damping: 12 }}
+                  className={c.entourageLayout === "list" ? "flex items-center gap-4 text-left p-3 rounded-xl bg-current/5" : "text-center"}>
+                  {p.imageUrl ? (
+                    <img src={p.imageUrl} alt={p.name} className={`${c.entourageLayout === "list" ? "w-12 h-12" : "w-20 h-20 mx-auto mb-3"} rounded-full object-cover ring-2 ring-current/10`} loading="lazy" />
+                  ) : (
+                    <div className={`${c.entourageLayout === "list" ? "w-12 h-12" : "w-20 h-20 mx-auto mb-3"} rounded-full bg-current/10 flex items-center justify-center text-xl font-bold`}>{p.name?.charAt(0)}</div>
+                  )}
+                  <div>
+                    <p className="font-semibold">{p.name}</p>
+                    {p.role && <p className="text-xs opacity-60">{p.role}</p>}
+                    {p.message && <p className="text-xs opacity-50 mt-1 italic">{p.message}</p>}
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </Wrap>
       );
 
     case "gallery":
       return (
         <Wrap>
-          <div className={`grid grid-cols-${c.columns || 3} gap-2`}>
-            {(c.images || []).map((img: any, i: number) => (
-              <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}>
-                <img src={img.url} alt={img.caption || ""} className="w-full aspect-square object-cover rounded-lg" />
-                {c.showCaptions && img.caption && <p className="text-xs opacity-60 mt-1 text-center">{img.caption}</p>}
-              </motion.div>
-            ))}
-          </div>
+          {c.galleryLayout === "carousel" ? (
+            <GalleryCarousel images={c.images || []} showCaptions={c.showCaptions} />
+          ) : (
+            <div className={`grid grid-cols-${c.columns || 3} gap-2`}>
+              {(c.images || []).map((img: any, i: number) => (
+                <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                  className="overflow-hidden rounded-lg group">
+                  <img src={img.url} alt={img.caption || ""} className="w-full aspect-square object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
+                  {c.showCaptions && img.caption && <p className="text-xs opacity-60 mt-1 text-center">{img.caption}</p>}
+                </motion.div>
+              ))}
+            </div>
+          )}
         </Wrap>
       );
 
     case "video": {
       if (c.videoUrl?.includes("youtube")) {
         const id = c.videoUrl.match(/(?:v=|youtu\.be\/)([^&]+)/)?.[1];
-        return <Wrap><div className="aspect-video rounded-xl overflow-hidden"><iframe src={`https://www.youtube.com/embed/${id}${c.autoplay ? "?autoplay=1" : ""}`} className="w-full h-full" allowFullScreen allow="autoplay" /></div></Wrap>;
+        return <Wrap><div className="aspect-video rounded-xl overflow-hidden shadow-xl"><iframe src={`https://www.youtube.com/embed/${id}${c.autoplay ? "?autoplay=1" : ""}`} className="w-full h-full" allowFullScreen allow="autoplay" /></div></Wrap>;
       }
-      return <Wrap><video src={c.videoUrl} controls autoPlay={c.autoplay} muted={c.muted} loop={c.loop} poster={c.posterUrl} className="w-full rounded-xl" /></Wrap>;
+      return <Wrap><video src={c.videoUrl} controls autoPlay={c.autoplay} muted={c.muted} loop={c.loop} poster={c.posterUrl} className="w-full rounded-xl shadow-xl" /></Wrap>;
     }
 
     case "dress_code":
       return (
         <Wrap>
-          <Shirt className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-4">Dress Code</h3>
-          {c.dressCodeNote && <p className="text-sm opacity-70 mb-4">{c.dressCodeNote}</p>}
-          <div className="flex justify-center gap-4 flex-wrap">
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <Shirt className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-4">Dress Code</h3>
+          {c.dressCodeNote && <p className="text-sm opacity-70 mb-6 max-w-md mx-auto">{c.dressCodeNote}</p>}
+          {c.dressCodeImage && <img src={c.dressCodeImage} alt="Dress code" className="w-full max-w-sm mx-auto rounded-xl mb-6" loading="lazy" />}
+          <div className="flex justify-center gap-5 flex-wrap">
             {(c.colors || []).map((col: any, i: number) => (
-              <motion.div key={i} initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1, type: "spring" }} className="text-center">
-                <div className="w-14 h-14 rounded-full mx-auto border-2 border-white/20 shadow-md" style={{ backgroundColor: col.hex }} />
-                {col.name && <p className="text-xs mt-2">{col.name}</p>}
+              <motion.div key={i} initial={{ scale: 0, rotate: -20 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, type: "spring", damping: 10 }} className="text-center">
+                <div className="w-16 h-16 rounded-full mx-auto border-2 border-white/20 shadow-lg ring-4 ring-current/5" style={{ backgroundColor: col.hex }} />
+                {col.name && <p className="text-xs mt-2 font-medium">{col.name}</p>}
+                {col.description && <p className="text-[10px] opacity-50">{col.description}</p>}
               </motion.div>
             ))}
           </div>
@@ -288,18 +341,31 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "gift_registry":
       return (
         <Wrap>
-          <Gift className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-4">{c.registryTitle || "Gift Registry"}</h3>
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <Gift className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-6">{c.registryTitle || "Gift Registry"}</h3>
           <div className="space-y-3 max-w-md mx-auto">
             {(c.items || []).map((item: any, i: number) => (
               <motion.div key={i} initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                className="p-4 rounded-xl bg-current/5 text-left">
+                className="p-4 rounded-xl bg-current/5 text-left hover:bg-current/10 transition-colors">
                 <div className="flex justify-between items-start">
-                  <p className="font-semibold">{item.name}</p>
-                  {item.price && <span className="text-sm font-bold opacity-70">{item.price}</span>}
+                  <div className="flex items-start gap-3">
+                    {item.imageUrl && <img src={item.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" loading="lazy" />}
+                    <div>
+                      <p className="font-semibold">{item.name}</p>
+                      {item.category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-current/10 font-medium">{item.category}</span>}
+                    </div>
+                  </div>
+                  {item.price && <span className="text-sm font-bold opacity-70 shrink-0">{item.price}</span>}
                 </div>
-                {item.description && <p className="text-sm opacity-70 mt-1">{item.description}</p>}
-                {item.url && <a href={item.url} target="_blank" rel="noopener" className="text-xs underline mt-2 inline-block">{item.linkLabel || "View"}</a>}
+                {item.description && <p className="text-sm opacity-70 mt-2">{item.description}</p>}
+                {item.url && (
+                  <motion.a href={item.url} target="_blank" rel="noopener" whileHover={{ x: 3 }}
+                    className="text-xs underline mt-2 inline-flex items-center gap-1 font-medium">
+                    {item.linkLabel || "View"} <ExternalLink className="h-3 w-3" />
+                  </motion.a>
+                )}
               </motion.div>
             ))}
           </div>
@@ -309,10 +375,12 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "faq":
       return (
         <Wrap>
-          <HelpCircle className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-4">{c.faqTitle || "FAQ"}</h3>
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <HelpCircle className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-6">{c.faqTitle || "FAQ"}</h3>
           <div className="space-y-2 max-w-lg mx-auto text-left">
-            {(c.faqs || []).map((faq: any, i: number) => <FaqItem key={i} question={faq.question} answer={faq.answer} />)}
+            {(c.faqs || []).map((faq: any, i: number) => <FaqItem key={i} question={faq.question} answer={faq.answer} index={i} />)}
           </div>
         </Wrap>
       );
@@ -322,7 +390,7 @@ function BlockView({ block }: { block: InvitationBlock }) {
         <Wrap>
           <div className="space-y-2 max-w-lg mx-auto text-left">
             {(c.accordionItems || []).map((item: any, i: number) => (
-              <FaqItem key={i} question={item.title} answer={item.content} style={c.accordionStyle} />
+              <FaqItem key={i} question={item.title} answer={item.content} style={c.accordionStyle} index={i} />
             ))}
           </div>
         </Wrap>
@@ -331,12 +399,14 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "icon_text": {
       const iconMap: Record<string, any> = { Heart, Star, Gift, Music, Camera, MapPin, Clock, Users, Mail, Phone, Calendar, Sparkles };
       const Icon = iconMap[c.iconName] || Star;
-      const sizes = { sm: "h-6 w-6", md: "h-10 w-10", lg: "h-14 w-14" };
+      const sizes = { sm: "h-8 w-8", md: "h-12 w-12", lg: "h-16 w-16" };
       return (
         <Wrap>
-          <Icon className={`${sizes[c.iconSize as keyof typeof sizes] || sizes.md} mx-auto mb-3 opacity-70`} />
-          <h3 className="font-display text-xl font-bold mb-2">{c.title}</h3>
-          <p className="text-sm opacity-70 max-w-md mx-auto">{c.description}</p>
+          <motion.div initial={{ scale: 0, rotate: -10 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}>
+            <Icon className={`${sizes[c.iconSize as keyof typeof sizes] || sizes.md} mx-auto mb-4 opacity-70`} />
+          </motion.div>
+          <h3 className="font-display text-xl md:text-2xl font-bold mb-2">{c.title}</h3>
+          <p className="text-sm opacity-70 max-w-md mx-auto leading-relaxed">{c.description}</p>
         </Wrap>
       );
     }
@@ -344,15 +414,18 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "testimonial":
       return (
         <Wrap>
-          <div className="space-y-6 max-w-lg mx-auto">
+          <div className="space-y-8 max-w-lg mx-auto">
             {(c.testimonials || []).map((t: any, i: number) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="text-center">
-                <QuoteIcon className="h-6 w-6 mx-auto mb-2 opacity-30" />
-                <p className="italic text-lg leading-relaxed mb-3">"{t.quote}"</p>
-                <div>
-                  <p className="font-semibold text-sm">{t.author}</p>
-                  {t.role && <p className="text-xs opacity-60">{t.role}</p>}
+                className="text-center p-6 rounded-2xl bg-current/5">
+                <QuoteIcon className="h-6 w-6 mx-auto mb-3 opacity-30" />
+                <p className="italic text-lg leading-relaxed mb-4">"{t.quote}"</p>
+                <div className="flex items-center justify-center gap-3">
+                  {t.imageUrl && <img src={t.imageUrl} alt="" className="w-10 h-10 rounded-full object-cover" loading="lazy" />}
+                  <div>
+                    <p className="font-semibold text-sm">{t.author}</p>
+                    {t.role && <p className="text-xs opacity-60">{t.role}</p>}
+                  </div>
                 </div>
               </motion.div>
             ))}
@@ -363,24 +436,26 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "rsvp":
       return (
         <Wrap>
-          <Mail className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-2">{c.rsvpTitle || "RSVP"}</h3>
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 15 }}>
+            <Mail className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          </motion.div>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-2">{c.rsvpTitle || "RSVP"}</h3>
           {c.rsvpSubtitle && <p className="text-sm opacity-70 mb-4">{c.rsvpSubtitle}</p>}
-          <p className="text-sm opacity-50">RSVP form appears with invitation codes.</p>
+          <p className="text-sm opacity-50 bg-current/5 rounded-xl p-4 max-w-sm mx-auto">RSVP form appears with invitation codes.</p>
         </Wrap>
       );
 
     case "embed": {
       if (c.embedType === "youtube" && c.embedUrl) {
         const id = c.embedUrl.match(/(?:v=|youtu\.be\/)([^&]+)/)?.[1];
-        return <Wrap><div className="rounded-xl overflow-hidden" style={{ height: c.embedHeight || 315 }}><iframe src={`https://www.youtube.com/embed/${id}`} className="w-full h-full" allowFullScreen /></div></Wrap>;
+        return <Wrap><div className="rounded-xl overflow-hidden shadow-xl" style={{ height: c.embedHeight || 315 }}><iframe src={`https://www.youtube.com/embed/${id}`} className="w-full h-full" allowFullScreen /></div></Wrap>;
       }
       if (c.embedType === "spotify" && c.embedUrl) {
         return <Wrap><iframe src={c.embedUrl.replace("open.spotify.com", "open.spotify.com/embed")} className="w-full rounded-xl" style={{ height: c.embedHeight || 80 }} allow="encrypted-media" /></Wrap>;
       }
       if (c.embedType === "vimeo" && c.embedUrl) {
         const vimeoId = c.embedUrl.match(/vimeo\.com\/(\d+)/)?.[1];
-        return <Wrap><div className="rounded-xl overflow-hidden" style={{ height: c.embedHeight || 315 }}><iframe src={`https://player.vimeo.com/video/${vimeoId}`} className="w-full h-full" allowFullScreen /></div></Wrap>;
+        return <Wrap><div className="rounded-xl overflow-hidden shadow-xl" style={{ height: c.embedHeight || 315 }}><iframe src={`https://player.vimeo.com/video/${vimeoId}`} className="w-full h-full" allowFullScreen /></div></Wrap>;
       }
       return <Wrap><p className="text-sm opacity-50">Embed: {c.embedUrl || "No URL set"}</p></Wrap>;
     }
@@ -394,12 +469,15 @@ function BlockView({ block }: { block: InvitationBlock }) {
             {(c.links || []).map((link: any, i: number) => {
               const Icon = iconMap[link.platform] || Globe;
               if (c.socialStyle === "buttons") {
-                return <a key={i} href={link.url} target="_blank" rel="noopener" className="px-4 py-2 rounded-full bg-current/10 text-sm font-medium hover:bg-current/20 transition inline-flex items-center gap-2"><Icon className="h-4 w-4" /> {link.label || link.platform}</a>;
+                return <motion.a key={i} href={link.url} target="_blank" rel="noopener" whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}
+                  className="px-5 py-2.5 rounded-full bg-current/10 text-sm font-medium hover:bg-current/20 transition inline-flex items-center gap-2 shadow-sm"><Icon className="h-4 w-4" /> {link.label || link.platform}</motion.a>;
               }
               if (c.socialStyle === "pills") {
-                return <a key={i} href={link.url} target="_blank" rel="noopener" className="px-3 py-1.5 rounded-full border border-current/20 text-xs font-medium hover:bg-current/10 transition inline-flex items-center gap-1.5"><Icon className="h-3 w-3" /> {link.label || link.platform}</a>;
+                return <motion.a key={i} href={link.url} target="_blank" rel="noopener" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}
+                  className="px-3 py-1.5 rounded-full border border-current/20 text-xs font-medium hover:bg-current/10 transition inline-flex items-center gap-1.5"><Icon className="h-3 w-3" /> {link.label || link.platform}</motion.a>;
               }
-              return <a key={i} href={link.url} target="_blank" rel="noopener" className="w-10 h-10 rounded-full bg-current/10 flex items-center justify-center hover:bg-current/20 transition"><Icon className="h-5 w-5" /></a>;
+              return <motion.a key={i} href={link.url} target="_blank" rel="noopener" whileHover={{ scale: 1.15, rotate: 5 }} whileTap={{ scale: 0.9 }}
+                className="w-12 h-12 rounded-full bg-current/10 flex items-center justify-center hover:bg-current/20 transition shadow-sm"><Icon className="h-5 w-5" /></motion.a>;
             })}
           </div>
         </Wrap>
@@ -409,7 +487,7 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "guestbook":
       return (
         <Wrap>
-          <h3 className="font-display text-2xl font-bold mb-4">{c.guestbookTitle || "Guestbook"}</h3>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-4">{c.guestbookTitle || "Guestbook"}</h3>
           <p className="text-sm opacity-70">Messages from guests will appear here.</p>
         </Wrap>
       );
@@ -419,8 +497,8 @@ function BlockView({ block }: { block: InvitationBlock }) {
         <Wrap>
           <div className={`grid ${c.layout === "mosaic" ? "grid-cols-3 auto-rows-[200px]" : `grid-cols-${c.columns || 3}`} gap-2`}>
             {(c.collageImages || []).map((img: any, i: number) => (
-              <motion.img key={i} src={img.url} alt="" className={`w-full rounded-lg object-cover ${c.layout === "mosaic" && i % 3 === 0 ? "row-span-2" : ""}`}
-                initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} />
+              <motion.img key={i} src={img.url} alt="" className={`w-full rounded-lg object-cover ${c.layout === "mosaic" && i % 3 === 0 ? "row-span-2" : ""} hover:scale-105 transition-transform duration-500`}
+                initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} loading="lazy" />
             ))}
           </div>
         </Wrap>
@@ -429,9 +507,11 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "quote":
       return (
         <Wrap>
-          <QuoteIcon className="h-8 w-8 mx-auto mb-3 opacity-30" />
-          <p className="italic text-xl md:text-2xl max-w-lg mx-auto leading-relaxed">"{c.body}"</p>
-          {c.author && <p className="text-sm opacity-60 mt-3">— {c.author}</p>}
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <QuoteIcon className="h-10 w-10 mx-auto mb-4 opacity-20" />
+            <p className="italic text-xl md:text-2xl lg:text-3xl max-w-lg mx-auto leading-relaxed font-light">"{c.body}"</p>
+            {c.author && <p className="text-sm opacity-60 mt-4 font-medium">— {c.author}</p>}
+          </motion.div>
         </Wrap>
       );
 
@@ -440,7 +520,12 @@ function BlockView({ block }: { block: InvitationBlock }) {
         dots: "• • •", stars: "✦ ✦ ✦", hearts: "♥ ♥ ♥",
         floral: "❀ ❀ ❀", wave: "〰〰〰", diamond: "◆ ◆ ◆",
       };
-      return <Wrap><div className="text-2xl opacity-30 tracking-[1em]">{separators[c.separatorStyle || "floral"]}</div></Wrap>;
+      return (
+        <Wrap>
+          <motion.div initial={{ scaleX: 0 }} whileInView={{ scaleX: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}
+            className="text-2xl opacity-30 tracking-[1em]">{separators[c.separatorStyle || "floral"]}</motion.div>
+        </Wrap>
+      );
     }
 
     case "marquee_text":
@@ -457,9 +542,9 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "audio_player":
       return (
         <Wrap>
-          <Music className="h-8 w-8 mx-auto mb-3 opacity-60" />
+          <Music className="h-10 w-10 mx-auto mb-4 opacity-60" />
           <h3 className="font-display text-lg font-bold">{c.audioTitle || "Audio"}</h3>
-          {c.audioArtist && <p className="text-sm opacity-60 mb-3">{c.audioArtist}</p>}
+          {c.audioArtist && <p className="text-sm opacity-60 mb-4">{c.audioArtist}</p>}
           {c.audioUrl && <audio src={c.audioUrl} controls autoPlay={c.audioAutoplay} className="w-full max-w-sm mx-auto" />}
         </Wrap>
       );
@@ -467,38 +552,43 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "music_player":
       return (
         <Wrap>
-          <div className="flex items-center gap-4 max-w-sm mx-auto p-4 rounded-2xl bg-current/5">
-            <div className="w-16 h-16 rounded-xl overflow-hidden shrink-0 bg-current/10 flex items-center justify-center">
-              {c.musicCoverUrl ? <img src={c.musicCoverUrl} alt="" className="w-full h-full object-cover" /> : <Disc3 className="h-8 w-8 opacity-40 animate-spin" style={{ animationDuration: "3s" }} />}
+          <motion.div initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}
+            className="flex items-center gap-4 max-w-sm mx-auto p-5 rounded-2xl bg-current/5 shadow-sm">
+            <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-current/10 flex items-center justify-center">
+              {c.musicCoverUrl ? <img src={c.musicCoverUrl} alt="" className="w-full h-full object-cover" loading="lazy" /> : <Disc3 className="h-10 w-10 opacity-40 animate-spin" style={{ animationDuration: "3s" }} />}
             </div>
             <div className="text-left flex-1 min-w-0">
-              <p className="font-semibold truncate">{c.musicTitle || "Song"}</p>
+              <p className="font-semibold text-base truncate">{c.musicTitle || "Song"}</p>
               <p className="text-sm opacity-60 truncate">{c.musicArtist || "Artist"}</p>
               {c.musicUrl && <audio src={c.musicUrl} controls autoPlay={c.musicAutoplay} className="w-full mt-2" style={{ height: 32 }} />}
             </div>
-          </div>
+          </motion.div>
         </Wrap>
       );
 
     case "photo_upload_wall":
       return (
         <Wrap>
-          <Camera className="h-8 w-8 mx-auto mb-3 opacity-60" />
-          <h3 className="font-display text-2xl font-bold mb-4">{c.wallTitle || "Photo Wall"}</h3>
-          <p className="text-sm opacity-70">Guests can upload and share photos here.</p>
+          <Camera className="h-10 w-10 mx-auto mb-4 opacity-60" />
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-4">{c.wallTitle || "Photo Wall"}</h3>
+          <p className="text-sm opacity-70 mb-4">Guests can upload and share photos here.</p>
+          <div className="max-w-xs mx-auto p-6 rounded-xl border-2 border-dashed border-current/20 text-center">
+            <Camera className="h-8 w-8 mx-auto mb-2 opacity-30" />
+            <p className="text-sm opacity-50">Tap to upload a photo</p>
+          </div>
         </Wrap>
       );
 
     case "seating_chart":
       return (
         <Wrap>
-          <h3 className="font-display text-2xl font-bold mb-6">{c.seatingTitle || "Seating Chart"}</h3>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-8">{c.seatingTitle || "Seating Chart"}</h3>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
             {(c.tables || []).map((table: any, i: number) => (
-              <motion.div key={i} initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }}
-                className="p-3 rounded-xl bg-current/5 text-center">
-                <div className="w-12 h-12 rounded-full bg-current/10 mx-auto mb-2 flex items-center justify-center font-bold">{i + 1}</div>
-                <p className="font-semibold text-sm mb-1">{table.name}</p>
+              <motion.div key={i} initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05, type: "spring" }}
+                className="p-4 rounded-2xl bg-current/5 text-center hover:bg-current/10 transition-colors">
+                <div className="w-14 h-14 rounded-full bg-current/10 mx-auto mb-3 flex items-center justify-center font-bold text-lg">{i + 1}</div>
+                <p className="font-semibold text-sm mb-2">{table.name}</p>
                 <div className="text-xs opacity-60 space-y-0.5">{(table.seats || []).map((s: string, j: number) => <p key={j}>{s}</p>)}</div>
               </motion.div>
             ))}
@@ -509,14 +599,19 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "pricing_table":
       return (
         <Wrap>
-          <h3 className="font-display text-2xl font-bold mb-6">{c.pricingTitle || "Packages"}</h3>
+          <h3 className="font-display text-2xl md:text-3xl font-bold mb-8">{c.pricingTitle || "Packages"}</h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto">
             {(c.pricingItems || []).map((item: any, i: number) => (
-              <motion.div key={i} initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}
-                className={`p-5 rounded-2xl text-center ${item.highlighted ? "bg-current/10 ring-2 ring-current/30 scale-105" : "bg-current/5"}`}>
+              <motion.div key={i} initial={{ y: 30, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className={`p-6 rounded-2xl text-center transition-all ${item.highlighted ? "bg-current/10 ring-2 ring-current/30 scale-105 shadow-xl" : "bg-current/5 hover:bg-current/10"}`}>
                 <p className="font-bold text-lg">{item.name}</p>
-                <p className="text-3xl font-display font-bold my-3">{item.price}</p>
-                {item.description && <p className="text-sm opacity-70">{item.description}</p>}
+                <p className="text-4xl font-display font-bold my-4">{item.price}</p>
+                {item.description && <p className="text-sm opacity-70 mb-3">{item.description}</p>}
+                {item.features && (
+                  <ul className="text-sm opacity-60 space-y-1">
+                    {item.features.map((f: string, j: number) => <li key={j}>✓ {f}</li>)}
+                  </ul>
+                )}
               </motion.div>
             ))}
           </div>
@@ -526,7 +621,7 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "weather_widget":
       return (
         <Wrap>
-          <Cloud className="h-8 w-8 mx-auto mb-3 opacity-60" />
+          <Cloud className="h-10 w-10 mx-auto mb-4 opacity-60" />
           <h3 className="font-display text-lg font-bold">Weather Forecast</h3>
           <p className="text-sm opacity-70 mt-1">{c.weatherLocation || "Location not set"}</p>
           {c.weatherDate && <p className="text-xs opacity-50 mt-1">{c.weatherDate}</p>}
@@ -536,26 +631,28 @@ function BlockView({ block }: { block: InvitationBlock }) {
     case "qr_code":
       return (
         <Wrap>
-          <div className="mx-auto rounded-xl bg-white p-4 inline-block">
+          <motion.div initial={{ scale: 0 }} whileInView={{ scale: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}
+            className="mx-auto rounded-2xl bg-white p-6 inline-block shadow-lg">
             <QrCode className="opacity-30" style={{ width: c.qrSize || 200, height: c.qrSize || 200 }} />
-          </div>
-          {c.qrLabel && <p className="text-sm mt-3 opacity-70">{c.qrLabel}</p>}
+          </motion.div>
+          {c.qrLabel && <p className="text-sm mt-4 opacity-70 font-medium">{c.qrLabel}</p>}
         </Wrap>
       );
 
     case "contact_card":
       return (
         <Wrap>
-          <div className="max-w-sm mx-auto p-6 rounded-2xl bg-current/5 text-center">
-            {c.contactImageUrl ? <img src={c.contactImageUrl} alt="" className="w-20 h-20 rounded-full mx-auto mb-3 object-cover" /> :
-              <div className="w-20 h-20 rounded-full mx-auto mb-3 bg-current/10 flex items-center justify-center text-2xl font-bold">{c.contactName?.charAt(0) || "?"}</div>}
+          <motion.div initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}
+            className="max-w-sm mx-auto p-8 rounded-2xl bg-current/5 text-center shadow-sm">
+            {c.contactImageUrl ? <img src={c.contactImageUrl} alt="" className="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-current/10" loading="lazy" /> :
+              <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-current/10 flex items-center justify-center text-3xl font-bold">{c.contactName?.charAt(0) || "?"}</div>}
             <h3 className="font-display text-xl font-bold">{c.contactName || "Contact"}</h3>
-            {c.contactRole && <p className="text-sm opacity-60 mb-2">{c.contactRole}</p>}
-            <div className="space-y-1 mt-3">
-              {c.contactPhone && <p className="text-sm"><Phone className="h-3 w-3 inline mr-1" />{c.contactPhone}</p>}
-              {c.contactEmail && <p className="text-sm"><Mail className="h-3 w-3 inline mr-1" />{c.contactEmail}</p>}
+            {c.contactRole && <p className="text-sm opacity-60 mb-3">{c.contactRole}</p>}
+            <div className="space-y-2 mt-4">
+              {c.contactPhone && <a href={`tel:${c.contactPhone}`} className="flex items-center justify-center gap-2 text-sm hover:opacity-80 transition"><Phone className="h-4 w-4" />{c.contactPhone}</a>}
+              {c.contactEmail && <a href={`mailto:${c.contactEmail}`} className="flex items-center justify-center gap-2 text-sm hover:opacity-80 transition"><Mail className="h-4 w-4" />{c.contactEmail}</a>}
             </div>
-          </div>
+          </motion.div>
         </Wrap>
       );
 
@@ -563,6 +660,8 @@ function BlockView({ block }: { block: InvitationBlock }) {
       return null;
   }
 }
+
+// --- Sub-components ---
 
 function CountdownTimer({ targetDate, show, style = "simple", flipTheme }: {
   targetDate?: string; show: Record<string, boolean>; style?: string; flipTheme?: string;
@@ -588,16 +687,16 @@ function CountdownTimer({ targetDate, show, style = "simple", flipTheme }: {
   ].filter(Boolean) as { label: string; value: number }[];
 
   if (style === "flip" || style === "circle") {
-    const themeClass = flipTheme === "light" ? "bg-white text-black shadow-md" : flipTheme === "glass" ? "bg-white/10 backdrop-blur-md text-white" : "bg-black text-white";
+    const themeClass = flipTheme === "light" ? "bg-white text-black shadow-md" : flipTheme === "glass" ? "bg-white/10 backdrop-blur-md text-white border border-white/20" : "bg-black text-white";
     return (
       <div className="flex justify-center gap-4">
         {units.map(u => (
           <div key={u.label} className="text-center">
-            <motion.div key={u.value} initial={{ rotateX: 90 }} animate={{ rotateX: 0 }} transition={{ duration: 0.3 }}
-              className={`${style === "circle" ? "w-20 h-20 rounded-full" : "w-16 h-20 rounded-xl"} ${themeClass} flex items-center justify-center text-3xl font-display font-bold`}>
+            <motion.div key={u.value} initial={{ rotateX: 90, scale: 0.8 }} animate={{ rotateX: 0, scale: 1 }} transition={{ duration: 0.4, type: "spring" }}
+              className={`${style === "circle" ? "w-20 h-20 rounded-full" : "w-18 h-22 rounded-xl"} ${themeClass} flex items-center justify-center text-3xl md:text-4xl font-display font-bold`}>
               {String(u.value).padStart(2, "0")}
             </motion.div>
-            <div className="text-xs opacity-60 mt-2">{u.label}</div>
+            <div className="text-xs opacity-60 mt-2 font-medium">{u.label}</div>
           </div>
         ))}
       </div>
@@ -606,11 +705,11 @@ function CountdownTimer({ targetDate, show, style = "simple", flipTheme }: {
 
   if (style === "minimal") {
     return (
-      <div className="flex justify-center gap-2 text-lg font-mono">
+      <div className="flex justify-center gap-2 text-2xl md:text-3xl font-mono font-light">
         {units.map((u, i) => (
           <span key={u.label}>
             {i > 0 && <span className="opacity-30 mx-1">:</span>}
-            <span className="font-bold">{String(u.value).padStart(2, "0")}</span>
+            <motion.span key={u.value} initial={{ y: -10, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="font-bold">{String(u.value).padStart(2, "0")}</motion.span>
           </span>
         ))}
       </div>
@@ -618,35 +717,124 @@ function CountdownTimer({ targetDate, show, style = "simple", flipTheme }: {
   }
 
   return (
-    <div className="flex justify-center gap-6">
+    <div className="flex justify-center gap-6 md:gap-8">
       {units.map(u => (
         <div key={u.label} className="text-center">
-          <motion.div initial={{ scale: 0.5 }} animate={{ scale: 1 }} className="text-4xl md:text-5xl font-display font-bold">
+          <motion.div key={u.value} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 10 }}
+            className="text-4xl md:text-6xl font-display font-bold">
             {String(u.value).padStart(2, "0")}
           </motion.div>
-          <div className="text-xs opacity-60 mt-1">{u.label}</div>
+          <div className="text-xs opacity-60 mt-2 font-medium uppercase tracking-wider">{u.label}</div>
         </div>
       ))}
     </div>
   );
 }
 
-function FaqItem({ question, answer, style }: { question: string; answer: string; style?: string }) {
+function FaqItem({ question, answer, style, index = 0 }: { question: string; answer: string; style?: string; index?: number }) {
   const [open, setOpen] = useState(false);
   const cls = style === "filled" ? "bg-current/5 rounded-xl" : style === "simple" ? "" : "border border-current/10 rounded-xl";
   return (
-    <div className={`overflow-hidden ${cls}`}>
-      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left">
-        <span className="font-semibold text-sm">{question}</span>
-        <ChevronDown className={`h-4 w-4 transition-transform shrink-0 ${open ? "rotate-180" : ""}`} />
+    <motion.div initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.05 }}
+      className={`overflow-hidden ${cls}`}>
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between p-4 text-left hover:bg-current/5 transition-colors rounded-xl">
+        <span className="font-semibold text-sm pr-4">{question}</span>
+        <motion.div animate={{ rotate: open ? 180 : 0 }} transition={{ duration: 0.3 }}>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </motion.div>
       </button>
       <AnimatePresence>
         {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-            <div className="px-4 pb-4 text-sm opacity-70">{answer}</div>
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.3 }}>
+            <div className="px-4 pb-4 text-sm opacity-70 leading-relaxed">{answer}</div>
           </motion.div>
         )}
       </AnimatePresence>
+    </motion.div>
+  );
+}
+
+// Gallery carousel component
+function GalleryCarousel({ images, showCaptions }: { images: { url: string; caption?: string }[]; showCaptions?: boolean }) {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  if (!images.length) return null;
+
+  return (
+    <div className="relative">
+      <div className="overflow-hidden rounded-xl">
+        <AnimatePresence mode="wait">
+          <motion.img
+            key={currentIdx}
+            src={images[currentIdx].url}
+            alt={images[currentIdx].caption || ""}
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -50 }}
+            className="w-full aspect-[4/3] object-cover"
+            loading="lazy"
+          />
+        </AnimatePresence>
+      </div>
+      {showCaptions && images[currentIdx].caption && (
+        <p className="text-sm opacity-70 mt-2 text-center italic">{images[currentIdx].caption}</p>
+      )}
+      {images.length > 1 && (
+        <>
+          <button onClick={() => setCurrentIdx((currentIdx - 1 + images.length) % images.length)}
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button onClick={() => setCurrentIdx((currentIdx + 1) % images.length)}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+          {/* Dots */}
+          <div className="flex justify-center gap-1.5 mt-3">
+            {images.map((_, i) => (
+              <button key={i} onClick={() => setCurrentIdx(i)}
+                className={`w-2 h-2 rounded-full transition-all ${i === currentIdx ? "bg-current w-6" : "bg-current/30"}`} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+// Entourage carousel
+function EntourageCarousel({ people }: { people: { name: string; role?: string; imageUrl?: string; message?: string }[] }) {
+  const [currentIdx, setCurrentIdx] = useState(0);
+  if (!people.length) return null;
+  const p = people[currentIdx];
+
+  return (
+    <div className="relative max-w-sm mx-auto">
+      <AnimatePresence mode="wait">
+        <motion.div key={currentIdx} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }}
+          className="text-center py-6">
+          {p.imageUrl ? (
+            <img src={p.imageUrl} alt={p.name} className="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-current/10" loading="lazy" />
+          ) : (
+            <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-current/10 flex items-center justify-center text-3xl font-bold">{p.name?.charAt(0)}</div>
+          )}
+          <p className="font-semibold text-lg">{p.name}</p>
+          {p.role && <p className="text-sm opacity-60">{p.role}</p>}
+          {p.message && <p className="text-sm opacity-50 mt-2 italic">"{p.message}"</p>}
+        </motion.div>
+      </AnimatePresence>
+      {people.length > 1 && (
+        <div className="flex justify-center gap-2 mt-2">
+          <button onClick={() => setCurrentIdx((currentIdx - 1 + people.length) % people.length)}
+            className="w-8 h-8 rounded-full bg-current/10 flex items-center justify-center hover:bg-current/20 transition">
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <span className="text-sm opacity-50 flex items-center">{currentIdx + 1}/{people.length}</span>
+          <button onClick={() => setCurrentIdx((currentIdx + 1) % people.length)}
+            className="w-8 h-8 rounded-full bg-current/10 flex items-center justify-center hover:bg-current/20 transition">
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,5 +1,6 @@
+import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2 } from "lucide-react";
+import { Loader2, Share2, MessageCircle } from "lucide-react";
 import { Flower2, Flame, Crown, Banknote } from "lucide-react";
 import {
   usePublicInvitation, usePublicTheme, usePublicPages,
@@ -10,6 +11,7 @@ import { InvitationThemeProvider } from "../components/ThemeProvider";
 import { StoryNavigation } from "../components/StoryNavigation";
 import { MusicPlayer } from "../components/MusicPlayer";
 import { ParticleCanvas } from "../components/ParticleCanvas";
+import { PasswordGate } from "../components/sections/PasswordGate";
 import { CoverSection } from "../components/sections/CoverSection";
 import { MessageSection } from "../components/sections/MessageSection";
 import { CountdownSection } from "../components/sections/CountdownSection";
@@ -21,16 +23,44 @@ import { GallerySection } from "../components/sections/GallerySection";
 import { GiftGuideSection } from "../components/sections/GiftGuideSection";
 import { FaqSection } from "../components/sections/FaqSection";
 import { RsvpSection } from "../components/sections/RsvpSection";
+import { InvitationSEO } from "@/components/SEOHead";
+import { InvitationViewSkeleton } from "@/components/LoadingSkeletons";
 import type { Tables } from "@/integrations/supabase/types";
 import { PAGE_TYPE_LABELS } from "@/features/admin/types";
+import { toast } from "sonner";
 
 type PageType = Tables<"invitation_pages">["page_type"];
 type StyleVariant = "classic" | "modern" | "elegant" | "bold";
+
+function FloatingShareButton({ slug, title }: { slug: string; title: string }) {
+  const url = `${window.location.origin}/invite/${slug}`;
+  const share = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: `You're invited to ${title}!`, url });
+      } catch {}
+    } else {
+      await navigator.clipboard.writeText(url);
+      toast.success("Link copied to clipboard!");
+    }
+  };
+
+  return (
+    <button
+      onClick={share}
+      className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-all"
+      aria-label="Share invitation"
+    >
+      <Share2 className="w-5 h-5" />
+    </button>
+  );
+}
 
 export default function InvitationViewPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: invitation, isLoading, error } = usePublicInvitation(slug || "");
   const invId = invitation?.id ?? "";
+  const [unlocked, setUnlocked] = useState(false);
 
   const { data: theme } = usePublicTheme(invId);
   const { data: pages } = usePublicPages(invId);
@@ -44,20 +74,28 @@ export default function InvitationViewPage() {
   const { data: giftItems } = usePublicGiftItems(invId);
   const { data: faqs } = usePublicFaqs(invId);
 
-  if (isLoading) {
+  if (isLoading) return <InvitationViewSkeleton />;
+
+  if (error || !invitation) {
     return (
-      <div className="h-screen flex items-center justify-center bg-background">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground gap-4 px-6 text-center">
+        <div className="w-20 h-20 rounded-full bg-accent flex items-center justify-center mb-2">
+          <MessageCircle className="w-8 h-8 text-muted-foreground" />
+        </div>
+        <h1 className="text-3xl font-bold font-display">Invitation Not Found</h1>
+        <p className="text-muted-foreground max-w-sm">This invitation may have been removed, is not yet published, or the link may be incorrect.</p>
+        <a href="/" className="text-sm text-primary hover:underline mt-2">Go to homepage</a>
       </div>
     );
   }
 
-  if (error || !invitation) {
+  // Password protection check
+  if (invitation.is_password_protected && invitation.password_hash && !unlocked) {
     return (
-      <div className="h-screen flex flex-col items-center justify-center bg-background text-foreground gap-4">
-        <h1 className="text-4xl font-bold">Invitation Not Found</h1>
-        <p className="text-muted-foreground">This invitation may have been removed or is not yet published.</p>
-      </div>
+      <InvitationThemeProvider theme={theme}>
+        <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
+        <PasswordGate invitation={invitation} onUnlock={() => setUnlocked(true)} />
+      </InvitationThemeProvider>
     );
   }
 
@@ -84,7 +122,6 @@ export default function InvitationViewPage() {
   const enabledPages = pages ?? [];
   const sections: React.ReactNode[] = [];
   const labels: string[] = [];
-
   enabledPages.forEach(page => {
     const section = buildSection(page.page_type, page.style_variant as StyleVariant);
     if (section) {
@@ -95,19 +132,14 @@ export default function InvitationViewPage() {
 
   return (
     <InvitationThemeProvider theme={theme}>
+      <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
       <ParticleCanvas effect={theme?.particle_effect} />
+      <FloatingShareButton slug={invitation.slug} title={invitation.title} />
       {theme?.music_url && (
-        <MusicPlayer
-          url={theme.music_url}
-          autoplay={theme.music_autoplay ?? false}
-          loop={theme.music_loop ?? true}
-          volume={theme.music_volume ?? 0.5}
-        />
+        <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
       )}
       {sections.length > 0 ? (
-        <StoryNavigation pageLabels={labels}>
-          {sections}
-        </StoryNavigation>
+        <StoryNavigation pageLabels={labels}>{sections}</StoryNavigation>
       ) : (
         <div className="h-screen flex items-center justify-center">
           <p style={{ color: "var(--inv-text-secondary)" }}>This invitation has no pages configured yet.</p>

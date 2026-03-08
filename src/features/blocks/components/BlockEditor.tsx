@@ -18,6 +18,7 @@ import { BlockSettings } from "./BlockSettings";
 import { BlockTemplatePanel } from "./BlockTemplatePanel";
 import { BlockLivePreview } from "./BlockLivePreview";
 import { useBlocks } from "../hooks/useBlocks";
+import { BLOCK_REGISTRY } from "../registry";
 import type { BlockType, BlockContent, BlockStyle, InvitationBlock } from "../types";
 import { toast } from "sonner";
 

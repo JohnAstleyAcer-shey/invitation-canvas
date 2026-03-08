@@ -17,6 +17,7 @@ import ActivityLogPage from "./features/admin/pages/ActivityLogPage";
 import TemplatesPage from "./features/admin/pages/TemplatesPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import HelpPage from "./features/admin/pages/HelpPage";
+import BlockEditorPage from "./features/blocks/pages/BlockEditorPage";
 import InvitationViewPage from "./features/invitation/pages/InvitationViewPage";
 import { CustomerAdminProvider } from "./features/customer-portal/hooks/useCustomerAdmin";
 import CustomerLoginPage from "./features/customer-portal/pages/CustomerLoginPage";

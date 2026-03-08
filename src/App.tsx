@@ -5,6 +5,17 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import LandingPage from "./features/landing/pages/LandingPage";
 import AuthPage from "./features/auth/pages/AuthPage";
+import { AdminLayout } from "./features/admin/components/AdminLayout";
+import { ProtectedRoute } from "./features/admin/components/ProtectedRoute";
+import DashboardPage from "./features/admin/pages/DashboardPage";
+import CreateInvitationPage from "./features/admin/pages/CreateInvitationPage";
+import EditInvitationPage from "./features/admin/pages/EditInvitationPage";
+import GuestManagementPage from "./features/admin/pages/GuestManagementPage";
+import AnalyticsPage from "./features/admin/pages/AnalyticsPage";
+import ActivityLogPage from "./features/admin/pages/ActivityLogPage";
+import TemplatesPage from "./features/admin/pages/TemplatesPage";
+import SettingsPage from "./features/admin/pages/SettingsPage";
+import HelpPage from "./features/admin/pages/HelpPage";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -18,7 +29,17 @@ const App = () => (
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/auth" element={<AuthPage />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+            <Route index element={<DashboardPage />} />
+            <Route path="create" element={<CreateInvitationPage />} />
+            <Route path="edit/:id" element={<EditInvitationPage />} />
+            <Route path="guests/:id" element={<GuestManagementPage />} />
+            <Route path="analytics" element={<AnalyticsPage />} />
+            <Route path="activity" element={<ActivityLogPage />} />
+            <Route path="templates" element={<TemplatesPage />} />
+            <Route path="settings" element={<SettingsPage />} />
+            <Route path="help" element={<HelpPage />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

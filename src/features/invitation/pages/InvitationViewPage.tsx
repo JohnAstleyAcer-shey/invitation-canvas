@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Loader2, Share2, MessageCircle } from "lucide-react";
+import { Share2, MessageCircle } from "lucide-react";
 import { Flower2, Flame, Crown, Banknote } from "lucide-react";
 import {
   usePublicInvitation, usePublicTheme, usePublicPages,
   usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures,
   usePublicBlueBills, usePublicGallery, usePublicDressCode, usePublicGiftItems, usePublicFaqs,
 } from "../hooks/usePublicInvitation";
+import { useViewTracking } from "../hooks/useViewTracking";
 import { InvitationThemeProvider } from "../components/ThemeProvider";
 import { StoryNavigation } from "../components/StoryNavigation";
 import { MusicPlayer } from "../components/MusicPlayer";
@@ -61,6 +62,9 @@ export default function InvitationViewPage() {
   const { data: invitation, isLoading, error } = usePublicInvitation(slug || "");
   const invId = invitation?.id ?? "";
   const [unlocked, setUnlocked] = useState(false);
+
+  // Track views
+  useViewTracking(invitation?.id);
 
   const { data: theme } = usePublicTheme(invId);
   const { data: pages } = usePublicPages(invId);

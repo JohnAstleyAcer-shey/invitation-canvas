@@ -54,7 +54,7 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
   const updateListItem = (key: string, index: number, field: string, value: any) => { const arr = [...(content[key] || [])]; arr[index] = { ...arr[index], [field]: value }; updateContent(key, arr); };
 
   return (
-    <div className="w-80 border-l border-border bg-card flex flex-col h-full">
+    <div className="w-72 sm:w-80 border-l border-border bg-card flex flex-col h-full shrink-0">
       <div className="p-3 border-b border-border flex items-center justify-between">
         <h3 className="font-display font-bold text-sm">{def?.label || "Settings"}</h3>
         <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}><X className="h-4 w-4" /></Button>

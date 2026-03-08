@@ -74,8 +74,8 @@ export function BlockCanvas({
   }
 
   return (
-    <div className="flex-1 overflow-y-auto p-4">
-      <div className={`mx-auto ${previewMode === "mobile" ? "max-w-[375px]" : "max-w-[800px]"} transition-all duration-300`}>
+    <div className="flex-1 overflow-y-auto p-2 sm:p-4">
+      <div className={`mx-auto ${previewMode === "mobile" ? "max-w-[375px]" : "max-w-[800px]"} transition-all duration-300 w-full`}>
         <div className="bg-background border border-border rounded-xl shadow-sm overflow-hidden min-h-[600px]">
           {/* Insert zone at top */}
           <InsertZone index={0} isHovered={hoveredInsertIndex === 0}

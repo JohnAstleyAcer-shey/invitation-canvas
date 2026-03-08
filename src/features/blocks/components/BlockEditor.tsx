@@ -483,7 +483,7 @@ function BlockLayersPanel({
   onToggleVisibility: (id: string, visible: boolean) => void;
   onRemove: (id: string) => void;
 }) {
-  const { BLOCK_REGISTRY } = require("../registry");
+  // BLOCK_REGISTRY is imported at top of file
 
   return (
     <div className="w-64 border-r border-border bg-card flex flex-col h-full">

@@ -162,6 +162,15 @@ export default function EditInvitationPage() {
   const [bulkText, setBulkText] = useState("");
   const [bulkDialog, setBulkDialog] = useState<string | null>(null);
 
+  const autoSaveFn = useCallback(async () => {
+    if (!Object.keys(editForm).length) return;
+    await updateInvitation.mutateAsync({ id: id!, ...editForm });
+    setUnsavedChanges(false);
+    setEditForm({});
+  }, [editForm, id, updateInvitation]);
+
+  const { lastSaved, isSaving } = useAutosave(autoSaveFn, unsavedChanges, 3000);
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="h-8 w-8 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" /></div>;
   if (!invitation) return <div className="text-center py-16"><p>Invitation not found</p></div>;
 

@@ -1,7 +1,8 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Save, ArrowLeft, Image as ImageIcon, Trash2, Plus, Upload, X, ExternalLink, Monitor, Smartphone, RefreshCw, Eye, EyeOff, GripVertical, Music, Sparkles, Snowflake, Heart, Flower2 } from "lucide-react";
+import { Save, ArrowLeft, Image as ImageIcon, Trash2, Plus, Upload, X, ExternalLink, Monitor, Smartphone, RefreshCw, Eye, EyeOff, GripVertical, Music, Sparkles, Snowflake, Heart, Flower2, Clock, CheckCircle } from "lucide-react";
+import { useAutosave } from "../hooks/useAutosave";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -161,6 +162,15 @@ export default function EditInvitationPage() {
   const [bulkText, setBulkText] = useState("");
   const [bulkDialog, setBulkDialog] = useState<string | null>(null);
 
+  const autoSaveFn = useCallback(async () => {
+    if (!Object.keys(editForm).length) return;
+    await updateInvitation.mutateAsync({ id: id!, ...editForm });
+    setUnsavedChanges(false);
+    setEditForm({});
+  }, [editForm, id, updateInvitation]);
+
+  const { lastSaved, isSaving } = useAutosave(autoSaveFn, unsavedChanges, 3000);
+
   if (isLoading) return <div className="flex items-center justify-center h-64"><div className="h-8 w-8 border-2 border-foreground/20 border-t-foreground rounded-full animate-spin" /></div>;
   if (!invitation) return <div className="text-center py-16"><p>Invitation not found</p></div>;
 
@@ -246,11 +256,23 @@ export default function EditInvitationPage() {
             <p className="text-xs text-muted-foreground">/invite/{invitation.slug}</p>
           </div>
         </div>
-        {unsavedChanges && (
-          <Button onClick={handleSaveDetails} disabled={updateInvitation.isPending} className="rounded-full" size="sm">
-            <Save className="h-4 w-4 mr-2" /> Save Changes
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isSaving && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3 animate-spin" /> Saving...
+            </span>
+          )}
+          {lastSaved && !unsavedChanges && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <CheckCircle className="h-3 w-3 text-green-500" /> Saved
+            </span>
+          )}
+          {unsavedChanges && (
+            <Button onClick={handleSaveDetails} disabled={updateInvitation.isPending} className="rounded-full" size="sm">
+              <Save className="h-4 w-4 mr-2" /> Save Now
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

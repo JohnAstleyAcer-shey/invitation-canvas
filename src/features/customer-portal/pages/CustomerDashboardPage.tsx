@@ -1,16 +1,20 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useCustomerAdmin } from "../hooks/useCustomerAdmin";
-import { Users, CheckCircle, XCircle, HelpCircle, CalendarDays, TrendingUp, UtensilsCrossed, UserPlus, Printer } from "lucide-react";
+import { useRealtimeRsvps } from "@/features/invitation/hooks/useRealtimeRsvps";
+import { Users, CheckCircle, XCircle, HelpCircle, CalendarDays, TrendingUp, UtensilsCrossed, UserPlus, Printer, Eye, Wifi } from "lucide-react";
 import { format } from "date-fns";
 import { motion } from "framer-motion";
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, BarChart, Bar, XAxis, YAxis } from "recharts";
 
 const PIE_COLORS = ["#22c55e", "#ef4444", "#eab308", "#94a3b8"];
 
 export default function CustomerDashboardPage() {
   const { session } = useCustomerAdmin();
   const invId = session!.invitation.id;
+
+  // Enable real-time RSVP updates
+  useRealtimeRsvps(invId);
 
   const { data: guestCount } = useQuery({
     queryKey: ["cp-guest-count", invId],
@@ -60,6 +64,27 @@ export default function CustomerDashboardPage() {
     },
   });
 
+  const { data: viewCount } = useQuery({
+    queryKey: ["cp-view-count", invId],
+    queryFn: async () => {
+      const { count } = await supabase.from("invitation_views" as any).select("*", { count: "exact", head: true }).eq("invitation_id", invId);
+      return count ?? 0;
+    },
+  });
+
+  const { data: viewsByDevice } = useQuery({
+    queryKey: ["cp-views-device", invId],
+    queryFn: async () => {
+      const { data } = await supabase.from("invitation_views" as any).select("device_type").eq("invitation_id", invId);
+      const grouped: Record<string, number> = {};
+      (data as any[])?.forEach((v: any) => {
+        const d = v.device_type || "unknown";
+        grouped[d] = (grouped[d] || 0) + 1;
+      });
+      return Object.entries(grouped).map(([name, value]) => ({ name, value }));
+    },
+  });
+
   const eventDate = session!.invitation.event_date;
   const daysUntil = eventDate ? Math.ceil((new Date(eventDate).getTime() - Date.now()) / 86400000) : null;
 
@@ -80,12 +105,19 @@ export default function CustomerDashboardPage() {
     { label: "Maybe", value: rsvpStats?.maybe ?? 0, icon: HelpCircle, color: "text-yellow-500" },
     { label: "Extra Guests", value: rsvpStats?.totalCompanions ?? 0, icon: UserPlus, color: "text-purple-500" },
     { label: "Response Rate", value: responseRate, icon: TrendingUp, color: "text-emerald-500", suffix: "%" },
+    { label: "Page Views", value: viewCount ?? 0, icon: Eye, color: "text-indigo-500" },
   ];
 
   const handlePrint = () => window.print();
 
   return (
     <div className="space-y-6">
+      {/* Real-time indicator */}
+      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+        <Wifi className="w-3 h-3 text-green-500 animate-pulse" />
+        <span>Live updates enabled</span>
+      </div>
+
       {/* Countdown banner */}
       {daysUntil !== null && daysUntil > 0 && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center justify-between p-4 rounded-xl bg-primary/5 border border-primary/10">
@@ -103,7 +135,7 @@ export default function CustomerDashboardPage() {
       )}
 
       {/* Stat cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-3">
         {cards.map((card, i) => (
           <motion.div key={card.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.04 }} className="p-3 rounded-xl border border-border bg-card">
             <div className="flex items-center gap-2 mb-1">
@@ -168,22 +200,39 @@ export default function CustomerDashboardPage() {
         </div>
       </div>
 
-      {/* Dietary Restrictions Summary */}
-      {dietaryList && dietaryList.length > 0 && (
-        <div className="rounded-xl border border-border bg-card p-4">
-          <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
-            <UtensilsCrossed className="w-4 h-4 text-muted-foreground" /> Dietary Restrictions ({dietaryList.length})
-          </h3>
-          <div className="grid sm:grid-cols-2 gap-2">
-            {dietaryList.map((r, i) => (
-              <div key={i} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/30">
-                <span className="font-medium text-foreground">{(r.guests as any)?.full_name}:</span>
-                <span className="text-muted-foreground">{r.dietary_notes}</span>
-              </div>
-            ))}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Views by Device */}
+        {viewsByDevice && viewsByDevice.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="font-semibold text-foreground mb-4">Views by Device</h3>
+            <ResponsiveContainer width="100%" height={200}>
+              <BarChart data={viewsByDevice}>
+                <XAxis dataKey="name" tick={{ fontSize: 11 }} />
+                <YAxis tick={{ fontSize: 11 }} />
+                <Tooltip />
+                <Bar dataKey="value" fill="hsl(var(--foreground))" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* Dietary Restrictions Summary */}
+        {dietaryList && dietaryList.length > 0 && (
+          <div className="rounded-xl border border-border bg-card p-4">
+            <h3 className="font-semibold text-foreground mb-3 flex items-center gap-2">
+              <UtensilsCrossed className="w-4 h-4 text-muted-foreground" /> Dietary Restrictions ({dietaryList.length})
+            </h3>
+            <div className="grid sm:grid-cols-2 gap-2">
+              {dietaryList.map((r, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-accent/30">
+                  <span className="font-medium text-foreground">{(r.guests as any)?.full_name}:</span>
+                  <span className="text-muted-foreground">{r.dietary_notes}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Attendance Summary for Print */}
       <div className="rounded-xl border border-border bg-card p-4">
@@ -197,6 +246,8 @@ export default function CustomerDashboardPage() {
           <p className="font-semibold text-foreground">{rsvpStats?.totalCompanions ?? 0} extra</p>
           <p className="text-muted-foreground">Still pending:</p>
           <p className="font-semibold text-foreground">{(guestCount ?? 0) - totalResponded} guests</p>
+          <p className="text-muted-foreground">Total page views:</p>
+          <p className="font-semibold text-foreground">{viewCount ?? 0}</p>
         </div>
       </div>
     </div>

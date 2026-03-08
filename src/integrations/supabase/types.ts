@@ -454,6 +454,44 @@ export type Database = {
           },
         ]
       }
+      invitation_views: {
+        Row: {
+          country: string | null
+          device_type: string | null
+          id: string
+          invitation_id: string
+          referrer: string | null
+          user_agent: string | null
+          viewed_at: string
+        }
+        Insert: {
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          invitation_id: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Update: {
+          country?: string | null
+          device_type?: string | null
+          id?: string
+          invitation_id?: string
+          referrer?: string | null
+          user_agent?: string | null
+          viewed_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_views_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitations: {
         Row: {
           admin_user_id: string

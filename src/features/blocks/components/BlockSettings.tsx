@@ -158,97 +158,208 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
 function StyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
   return (
     <>
-      <div className="space-y-1">
-        <Label className="text-xs">Text Align</Label>
-        <Select value={style.textAlign || "center"} onValueChange={v => updateStyle("textAlign", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="left">Left</SelectItem>
-            <SelectItem value="center">Center</SelectItem>
-            <SelectItem value="right">Right</SelectItem>
-          </SelectContent>
-        </Select>
+      {/* Text Alignment - Canva-style toggle */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Text Alignment</Label>
+        <div className="flex border border-border rounded-lg overflow-hidden">
+          {[
+            { value: "left", icon: AlignLeft },
+            { value: "center", icon: AlignCenter },
+            { value: "right", icon: AlignRight },
+          ].map(({ value, icon: Icon }) => (
+            <button
+              key={value}
+              onClick={() => updateStyle("textAlign", value)}
+              className={`flex-1 h-8 flex items-center justify-center transition-colors ${
+                (style.textAlign || "center") === value ? "bg-primary text-primary-foreground" : "hover:bg-accent"
+              }`}
+            >
+              <Icon className="h-3.5 w-3.5" />
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Background Color</Label>
-        <div className="flex gap-2">
-          <input type="color" value={style.backgroundColor || "#ffffff"} onChange={e => updateStyle("backgroundColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
+
+      {/* Color section - with presets like Canva */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Background Color</Label>
+        <div className="flex gap-2 items-center">
+          <input type="color" value={style.backgroundColor || "#ffffff"} onChange={e => updateStyle("backgroundColor", e.target.value)} className="h-8 w-8 rounded-lg cursor-pointer border border-border" />
           <Input value={style.backgroundColor || ""} onChange={e => updateStyle("backgroundColor", e.target.value)} placeholder="transparent" className="h-8 text-xs flex-1" />
         </div>
+        <div className="flex flex-wrap gap-1">
+          {COLOR_PRESETS.slice(0, 10).map(c => (
+            <button
+              key={c}
+              className={`w-5 h-5 rounded border transition-all hover:scale-110 ${style.backgroundColor === c ? "ring-2 ring-primary ring-offset-1" : "border-border"}`}
+              style={{ backgroundColor: c }}
+              onClick={() => updateStyle("backgroundColor", c)}
+            />
+          ))}
+        </div>
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Text Color</Label>
-        <div className="flex gap-2">
-          <input type="color" value={style.textColor || "#000000"} onChange={e => updateStyle("textColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
+
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Text Color</Label>
+        <div className="flex gap-2 items-center">
+          <input type="color" value={style.textColor || "#000000"} onChange={e => updateStyle("textColor", e.target.value)} className="h-8 w-8 rounded-lg cursor-pointer border border-border" />
           <Input value={style.textColor || ""} onChange={e => updateStyle("textColor", e.target.value)} placeholder="inherit" className="h-8 text-xs flex-1" />
         </div>
-      </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Gradient</Label>
-        <div className="flex gap-2">
-          <div className="flex-1 space-y-1">
-            <div className="flex gap-1">
-              <input type="color" value={style.gradientFrom || "#667eea"} onChange={e => updateStyle("gradientFrom", e.target.value)} className="h-6 w-6 rounded cursor-pointer border" />
-              <input type="color" value={style.gradientTo || "#764ba2"} onChange={e => updateStyle("gradientTo", e.target.value)} className="h-6 w-6 rounded cursor-pointer border" />
-            </div>
-            <Button variant="outline" size="sm" className="h-6 text-[10px] w-full" onClick={() => {
-              if (style.gradientFrom && style.gradientTo) {
-                updateStyle("gradient", `linear-gradient(${style.gradientDirection || "135deg"}, ${style.gradientFrom}, ${style.gradientTo})`);
-              }
-            }}>
-              <Palette className="h-3 w-3 mr-1" /> Apply Gradient
-            </Button>
-          </div>
+        <div className="flex flex-wrap gap-1">
+          {COLOR_PRESETS.slice(0, 10).map(c => (
+            <button
+              key={c}
+              className={`w-5 h-5 rounded border transition-all hover:scale-110 ${style.textColor === c ? "ring-2 ring-primary ring-offset-1" : "border-border"}`}
+              style={{ backgroundColor: c }}
+              onClick={() => updateStyle("textColor", c)}
+            />
+          ))}
         </div>
-        {style.gradient && <Button variant="ghost" size="sm" className="h-5 text-[9px] text-destructive" onClick={() => updateStyle("gradient", "")}>Clear gradient</Button>}
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Padding</Label>
-        <Input value={style.padding || ""} onChange={e => updateStyle("padding", e.target.value)} placeholder="1rem" className="h-8 text-xs" />
+
+      <Separator />
+
+      {/* Gradient - with direction picker */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Gradient</Label>
+        <div className="flex gap-2 items-center">
+          <input type="color" value={style.gradientFrom || "#667eea"} onChange={e => updateStyle("gradientFrom", e.target.value)} className="h-6 w-6 rounded cursor-pointer border border-border" />
+          <span className="text-[9px] text-muted-foreground">→</span>
+          <input type="color" value={style.gradientTo || "#764ba2"} onChange={e => updateStyle("gradientTo", e.target.value)} className="h-6 w-6 rounded cursor-pointer border border-border" />
+        </div>
+        <div className="flex gap-0.5">
+          {GRADIENT_DIRECTIONS.map(d => (
+            <button
+              key={d.value}
+              onClick={() => updateStyle("gradientDirection", d.value)}
+              className={`flex-1 h-6 rounded text-[10px] transition-colors ${
+                (style.gradientDirection || "135deg") === d.value ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/80"
+              }`}
+            >
+              {d.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          <Button variant="outline" size="sm" className="h-6 text-[10px] flex-1" onClick={() => {
+            if (style.gradientFrom && style.gradientTo) {
+              updateStyle("gradient", `linear-gradient(${style.gradientDirection || "135deg"}, ${style.gradientFrom}, ${style.gradientTo})`);
+            }
+          }}>
+            <Palette className="h-3 w-3 mr-1" /> Apply
+          </Button>
+          {style.gradient && (
+            <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => updateStyle("gradient", "")}>
+              <RotateCcw className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
+        {style.gradient && (
+          <div className="h-6 rounded-lg border border-border" style={{ background: style.gradient }} />
+        )}
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Border Radius</Label>
-        <Input value={style.borderRadius || ""} onChange={e => updateStyle("borderRadius", e.target.value)} placeholder="0.75rem" className="h-8 text-xs" />
+
+      <Separator />
+
+      {/* Spacing - with preset chips */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Padding</Label>
+        <div className="flex gap-1">
+          {SPACING_PRESETS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => updateStyle("padding", s.value)}
+              className={`flex-1 h-6 rounded text-[9px] font-medium transition-colors ${
+                style.padding === s.value ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/80"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Shadow</Label>
-        <Select value={style.shadow || "none"} onValueChange={v => updateStyle("shadow", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            <SelectItem value="sm">Small</SelectItem>
-            <SelectItem value="md">Medium</SelectItem>
-            <SelectItem value="lg">Large</SelectItem>
-            <SelectItem value="xl">Extra Large</SelectItem>
-            <SelectItem value="2xl">2XL</SelectItem>
-            <SelectItem value="inner">Inner</SelectItem>
-          </SelectContent>
-        </Select>
+
+      {/* Border Radius - with visual presets */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Border Radius</Label>
+        <div className="flex gap-1">
+          {RADIUS_PRESETS.map(r => (
+            <button
+              key={r.value}
+              onClick={() => updateStyle("borderRadius", r.value)}
+              className={`flex-1 h-6 rounded text-[9px] font-medium transition-colors ${
+                style.borderRadius === r.value ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/80"
+              }`}
+            >
+              {r.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex items-center justify-between">
-        <Label className="text-xs">Full Height</Label>
-        <Switch checked={style.fullHeight || false} onCheckedChange={v => updateStyle("fullHeight", v)} />
+
+      {/* Shadow - visual presets */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Shadow</Label>
+        <div className="grid grid-cols-4 gap-1">
+          {SHADOW_PRESETS.map(s => (
+            <button
+              key={s.value}
+              onClick={() => updateStyle("shadow", s.value)}
+              className={`h-8 rounded-lg text-[9px] font-medium transition-all ${
+                (style.shadow || "none") === s.value ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/80"
+              }`}
+            >
+              {s.label}
+            </button>
+          ))}
+        </div>
       </div>
-      <div className="flex items-center justify-between">
-        <Label className="text-xs">Glassmorphism</Label>
-        <Switch checked={style.glassmorphism || false} onCheckedChange={v => updateStyle("glassmorphism", v)} />
+
+      <Separator />
+
+      {/* Toggle options */}
+      <div className="space-y-3">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Full Height</Label>
+          <Switch checked={style.fullHeight || false} onCheckedChange={v => updateStyle("fullHeight", v)} />
+        </div>
+        <div className="flex items-center justify-between">
+          <div>
+            <Label className="text-xs">Glassmorphism</Label>
+            <p className="text-[9px] text-muted-foreground">Frosted glass effect</p>
+          </div>
+          <Switch checked={style.glassmorphism || false} onCheckedChange={v => updateStyle("glassmorphism", v)} />
+        </div>
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">Animation</Label>
-        <Select value={style.animation || "none"} onValueChange={v => updateStyle("animation", v)}>
-          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="none">None</SelectItem>
-            <SelectItem value="fade-up">Fade Up</SelectItem>
-            <SelectItem value="fade-in">Fade In</SelectItem>
-            <SelectItem value="slide-left">Slide Left</SelectItem>
-            <SelectItem value="slide-right">Slide Right</SelectItem>
-            <SelectItem value="zoom">Zoom</SelectItem>
-            <SelectItem value="bounce">Bounce</SelectItem>
-            <SelectItem value="rotate">Rotate</SelectItem>
-            <SelectItem value="flip">Flip</SelectItem>
-          </SelectContent>
-        </Select>
+
+      <Separator />
+
+      {/* Animation */}
+      <div className="space-y-1.5">
+        <Label className="text-xs font-semibold">Entrance Animation</Label>
+        <div className="grid grid-cols-3 gap-1">
+          {[
+            { value: "none", label: "None" },
+            { value: "fade-up", label: "Fade Up" },
+            { value: "fade-in", label: "Fade In" },
+            { value: "slide-left", label: "Slide L" },
+            { value: "slide-right", label: "Slide R" },
+            { value: "zoom", label: "Zoom" },
+            { value: "bounce", label: "Bounce" },
+            { value: "rotate", label: "Rotate" },
+            { value: "flip", label: "Flip" },
+          ].map(a => (
+            <button
+              key={a.value}
+              onClick={() => updateStyle("animation", a.value)}
+              className={`h-7 rounded-lg text-[9px] font-medium transition-colors ${
+                (style.animation || "none") === a.value ? "bg-primary text-primary-foreground" : "bg-accent hover:bg-accent/80"
+              }`}
+            >
+              {a.label}
+            </button>
+          ))}
+        </div>
       </div>
     </>
   );

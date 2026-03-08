@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { X, Plus, Trash2, Upload, GripVertical } from "lucide-react";
+import { X, Plus, Trash2, Upload, Palette, Wand2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { BLOCK_REGISTRY } from "../registry";
 import type { InvitationBlock, BlockContent, BlockStyle } from "../types";
 import { uploadFile } from "@/features/admin/hooks/useInvitationData";
@@ -45,104 +46,241 @@ export function BlockSettings({ block, onUpdate, onClose }: BlockSettingsProps) 
       const url = await uploadFile("invitation-assets", file, `blocks/${block.invitation_id}`);
       updateContent(key, url);
       toast.success("Image uploaded");
-    } catch (err: any) {
-      toast.error(err.message);
-    }
+    } catch (err: any) { toast.error(err.message); }
   };
 
-  const addListItem = (key: string, item: any) => {
-    updateContent(key, [...(content[key] || []), item]);
-  };
-
-  const removeListItem = (key: string, index: number) => {
-    const arr = [...(content[key] || [])];
-    arr.splice(index, 1);
-    updateContent(key, arr);
-  };
-
-  const updateListItem = (key: string, index: number, field: string, value: any) => {
-    const arr = [...(content[key] || [])];
-    arr[index] = { ...arr[index], [field]: value };
-    updateContent(key, arr);
-  };
+  const addListItem = (key: string, item: any) => updateContent(key, [...(content[key] || []), item]);
+  const removeListItem = (key: string, index: number) => { const arr = [...(content[key] || [])]; arr.splice(index, 1); updateContent(key, arr); };
+  const updateListItem = (key: string, index: number, field: string, value: any) => { const arr = [...(content[key] || [])]; arr[index] = { ...arr[index], [field]: value }; updateContent(key, arr); };
 
   return (
-    <div className="w-72 border-l border-border bg-card flex flex-col h-full">
+    <div className="w-80 border-l border-border bg-card flex flex-col h-full">
       <div className="p-3 border-b border-border flex items-center justify-between">
         <h3 className="font-display font-bold text-sm">{def?.label || "Settings"}</h3>
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}>
-          <X className="h-4 w-4" />
-        </Button>
+        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={onClose}><X className="h-4 w-4" /></Button>
       </div>
 
-      <ScrollArea className="flex-1">
-        <div className="p-3 space-y-4">
-          {/* Content settings by block type */}
-          {renderContentSettings(block.block_type, content, updateContent, addListItem, removeListItem, updateListItem, handleImageUpload, fileRef)}
+      <Tabs defaultValue="content" className="flex-1 flex flex-col overflow-hidden">
+        <TabsList className="mx-3 mt-2 h-7">
+          <TabsTrigger value="content" className="text-[10px] h-6">Content</TabsTrigger>
+          <TabsTrigger value="style" className="text-[10px] h-6">Style</TabsTrigger>
+          <TabsTrigger value="advanced" className="text-[10px] h-6">Advanced</TabsTrigger>
+        </TabsList>
 
-          <Separator />
+        <ScrollArea className="flex-1">
+          <TabsContent value="content" className="p-3 space-y-4 mt-0">
+            {renderContentSettings(block.block_type, content, updateContent, addListItem, removeListItem, updateListItem, handleImageUpload, fileRef)}
+          </TabsContent>
 
-          {/* Style settings (universal) */}
-          <div>
-            <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">Style</p>
-            <div className="space-y-3">
-              <div className="space-y-1">
-                <Label className="text-xs">Text Align</Label>
-                <Select value={style.textAlign || "center"} onValueChange={v => updateStyle("textAlign", v)}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="left">Left</SelectItem>
-                    <SelectItem value="center">Center</SelectItem>
-                    <SelectItem value="right">Right</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Background Color</Label>
-                <div className="flex gap-2">
-                  <input type="color" value={style.backgroundColor || "#ffffff"} onChange={e => updateStyle("backgroundColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
-                  <Input value={style.backgroundColor || ""} onChange={e => updateStyle("backgroundColor", e.target.value)} placeholder="transparent" className="h-8 text-xs flex-1" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Text Color</Label>
-                <div className="flex gap-2">
-                  <input type="color" value={style.textColor || "#000000"} onChange={e => updateStyle("textColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
-                  <Input value={style.textColor || ""} onChange={e => updateStyle("textColor", e.target.value)} placeholder="inherit" className="h-8 text-xs flex-1" />
-                </div>
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Padding</Label>
-                <Input value={style.padding || ""} onChange={e => updateStyle("padding", e.target.value)} placeholder="1rem" className="h-8 text-xs" />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Full Height</Label>
-                <Switch checked={style.fullHeight || false} onCheckedChange={v => updateStyle("fullHeight", v)} />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label className="text-xs">Glassmorphism</Label>
-                <Switch checked={style.glassmorphism || false} onCheckedChange={v => updateStyle("glassmorphism", v)} />
-              </div>
-              <div className="space-y-1">
-                <Label className="text-xs">Animation</Label>
-                <Select value={style.animation || "none"} onValueChange={v => updateStyle("animation", v)}>
-                  <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="fade-up">Fade Up</SelectItem>
-                    <SelectItem value="fade-in">Fade In</SelectItem>
-                    <SelectItem value="slide-left">Slide Left</SelectItem>
-                    <SelectItem value="slide-right">Slide Right</SelectItem>
-                    <SelectItem value="zoom">Zoom</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </div>
-        </div>
-      </ScrollArea>
+          <TabsContent value="style" className="p-3 space-y-4 mt-0">
+            <StyleSettings style={style} updateStyle={updateStyle} />
+          </TabsContent>
+
+          <TabsContent value="advanced" className="p-3 space-y-4 mt-0">
+            <AdvancedStyleSettings style={style} updateStyle={updateStyle} />
+          </TabsContent>
+        </ScrollArea>
+      </Tabs>
+
       <input ref={fileRef} type="file" accept="image/*" className="hidden" />
     </div>
+  );
+}
+
+function StyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
+  return (
+    <>
+      <div className="space-y-1">
+        <Label className="text-xs">Text Align</Label>
+        <Select value={style.textAlign || "center"} onValueChange={v => updateStyle("textAlign", v)}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="left">Left</SelectItem>
+            <SelectItem value="center">Center</SelectItem>
+            <SelectItem value="right">Right</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Background Color</Label>
+        <div className="flex gap-2">
+          <input type="color" value={style.backgroundColor || "#ffffff"} onChange={e => updateStyle("backgroundColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
+          <Input value={style.backgroundColor || ""} onChange={e => updateStyle("backgroundColor", e.target.value)} placeholder="transparent" className="h-8 text-xs flex-1" />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Text Color</Label>
+        <div className="flex gap-2">
+          <input type="color" value={style.textColor || "#000000"} onChange={e => updateStyle("textColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
+          <Input value={style.textColor || ""} onChange={e => updateStyle("textColor", e.target.value)} placeholder="inherit" className="h-8 text-xs flex-1" />
+        </div>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Gradient</Label>
+        <div className="flex gap-2">
+          <div className="flex-1 space-y-1">
+            <div className="flex gap-1">
+              <input type="color" value={style.gradientFrom || "#667eea"} onChange={e => updateStyle("gradientFrom", e.target.value)} className="h-6 w-6 rounded cursor-pointer border" />
+              <input type="color" value={style.gradientTo || "#764ba2"} onChange={e => updateStyle("gradientTo", e.target.value)} className="h-6 w-6 rounded cursor-pointer border" />
+            </div>
+            <Button variant="outline" size="sm" className="h-6 text-[10px] w-full" onClick={() => {
+              if (style.gradientFrom && style.gradientTo) {
+                updateStyle("gradient", `linear-gradient(${style.gradientDirection || "135deg"}, ${style.gradientFrom}, ${style.gradientTo})`);
+              }
+            }}>
+              <Palette className="h-3 w-3 mr-1" /> Apply Gradient
+            </Button>
+          </div>
+        </div>
+        {style.gradient && <Button variant="ghost" size="sm" className="h-5 text-[9px] text-destructive" onClick={() => updateStyle("gradient", "")}>Clear gradient</Button>}
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Padding</Label>
+        <Input value={style.padding || ""} onChange={e => updateStyle("padding", e.target.value)} placeholder="1rem" className="h-8 text-xs" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Border Radius</Label>
+        <Input value={style.borderRadius || ""} onChange={e => updateStyle("borderRadius", e.target.value)} placeholder="0.75rem" className="h-8 text-xs" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Shadow</Label>
+        <Select value={style.shadow || "none"} onValueChange={v => updateStyle("shadow", v)}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="sm">Small</SelectItem>
+            <SelectItem value="md">Medium</SelectItem>
+            <SelectItem value="lg">Large</SelectItem>
+            <SelectItem value="xl">Extra Large</SelectItem>
+            <SelectItem value="2xl">2XL</SelectItem>
+            <SelectItem value="inner">Inner</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Full Height</Label>
+        <Switch checked={style.fullHeight || false} onCheckedChange={v => updateStyle("fullHeight", v)} />
+      </div>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs">Glassmorphism</Label>
+        <Switch checked={style.glassmorphism || false} onCheckedChange={v => updateStyle("glassmorphism", v)} />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Animation</Label>
+        <Select value={style.animation || "none"} onValueChange={v => updateStyle("animation", v)}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="fade-up">Fade Up</SelectItem>
+            <SelectItem value="fade-in">Fade In</SelectItem>
+            <SelectItem value="slide-left">Slide Left</SelectItem>
+            <SelectItem value="slide-right">Slide Right</SelectItem>
+            <SelectItem value="zoom">Zoom</SelectItem>
+            <SelectItem value="bounce">Bounce</SelectItem>
+            <SelectItem value="rotate">Rotate</SelectItem>
+            <SelectItem value="flip">Flip</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+    </>
+  );
+}
+
+function AdvancedStyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
+  return (
+    <>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Advanced Styles</p>
+      <div className="space-y-1">
+        <Label className="text-xs">Opacity: {style.opacity ?? 100}%</Label>
+        <Slider value={[style.opacity ?? 100]} onValueChange={([v]) => updateStyle("opacity", v)} min={0} max={100} step={5} />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Font Family</Label>
+        <Select value={style.fontFamily || ""} onValueChange={v => updateStyle("fontFamily", v)}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Default" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Default</SelectItem>
+            <SelectItem value="serif">Serif</SelectItem>
+            <SelectItem value="sans-serif">Sans Serif</SelectItem>
+            <SelectItem value="monospace">Monospace</SelectItem>
+            <SelectItem value="'Playfair Display', serif">Playfair Display</SelectItem>
+            <SelectItem value="'Dancing Script', cursive">Dancing Script</SelectItem>
+            <SelectItem value="'Great Vibes', cursive">Great Vibes</SelectItem>
+            <SelectItem value="'Montserrat', sans-serif">Montserrat</SelectItem>
+            <SelectItem value="'Cormorant Garamond', serif">Cormorant Garamond</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Font Size</Label>
+        <Input value={style.fontSize || ""} onChange={e => updateStyle("fontSize", e.target.value)} placeholder="1rem" className="h-8 text-xs" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Letter Spacing</Label>
+        <Input value={style.letterSpacing || ""} onChange={e => updateStyle("letterSpacing", e.target.value)} placeholder="0.05em" className="h-8 text-xs" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Line Height</Label>
+        <Input value={style.lineHeight || ""} onChange={e => updateStyle("lineHeight", e.target.value)} placeholder="1.6" className="h-8 text-xs" />
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs">Max Width</Label>
+        <Select value={style.maxWidth || ""} onValueChange={v => updateStyle("maxWidth", v)}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Full width" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">Full width</SelectItem>
+            <SelectItem value="400px">Narrow (400px)</SelectItem>
+            <SelectItem value="600px">Medium (600px)</SelectItem>
+            <SelectItem value="800px">Wide (800px)</SelectItem>
+            <SelectItem value="1024px">Extra Wide (1024px)</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <Separator />
+      <div className="space-y-1">
+        <Label className="text-xs">Border Style</Label>
+        <Select value={style.borderStyle || "none"} onValueChange={v => updateStyle("borderStyle", v)}>
+          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="none">None</SelectItem>
+            <SelectItem value="solid">Solid</SelectItem>
+            <SelectItem value="dashed">Dashed</SelectItem>
+            <SelectItem value="dotted">Dotted</SelectItem>
+            <SelectItem value="double">Double</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {style.borderStyle && style.borderStyle !== "none" && (
+        <>
+          <div className="space-y-1">
+            <Label className="text-xs">Border Width</Label>
+            <Input value={style.borderWidth || "1px"} onChange={e => updateStyle("borderWidth", e.target.value)} className="h-8 text-xs" />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Border Color</Label>
+            <div className="flex gap-2">
+              <input type="color" value={style.borderColor || "#e5e7eb"} onChange={e => updateStyle("borderColor", e.target.value)} className="h-8 w-8 rounded cursor-pointer border" />
+              <Input value={style.borderColor || ""} onChange={e => updateStyle("borderColor", e.target.value)} className="h-8 text-xs flex-1" />
+            </div>
+          </div>
+        </>
+      )}
+      <Separator />
+      <div className="space-y-1">
+        <Label className="text-xs">Background Image URL</Label>
+        <Input value={style.backgroundImage || ""} onChange={e => updateStyle("backgroundImage", e.target.value)} placeholder="https://..." className="h-8 text-xs" />
+      </div>
+      {style.backgroundImage && (
+        <div className="space-y-1">
+          <Label className="text-xs">Background Overlay</Label>
+          <Input value={style.backgroundOverlay || ""} onChange={e => updateStyle("backgroundOverlay", e.target.value)} placeholder="rgba(0,0,0,0.4)" className="h-8 text-xs" />
+        </div>
+      )}
+      <div className="space-y-1">
+        <Label className="text-xs">Margin</Label>
+        <Input value={style.margin || ""} onChange={e => updateStyle("margin", e.target.value)} placeholder="0 auto" className="h-8 text-xs" />
+      </div>
+    </>
   );
 }
 
@@ -158,12 +296,8 @@ function renderContentSettings(
     case "heading":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Heading Text</Label>
-            <Input value={content.text || ""} onChange={e => updateContent("text", e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Level</Label>
+          <div className="space-y-1"><Label className="text-xs">Heading Text</Label><Input value={content.text || ""} onChange={e => updateContent("text", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Level</Label>
             <Select value={String(content.level || 2)} onValueChange={v => updateContent("level", parseInt(v))}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -179,106 +313,63 @@ function renderContentSettings(
 
     case "text":
     case "message_card":
-      return (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Content</Label>
-            <Textarea value={content.body || ""} onChange={e => updateContent("body", e.target.value)} className="text-xs min-h-[120px]" />
-          </div>
-        </div>
-      );
+      return <div className="space-y-3"><div className="space-y-1"><Label className="text-xs">Content</Label><Textarea value={content.body || ""} onChange={e => updateContent("body", e.target.value)} className="text-xs min-h-[120px]" /></div></div>;
 
     case "image":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Image</Label>
-            {content.imageUrl ? (
-              <div className="relative">
-                <img src={content.imageUrl} alt="" className="w-full h-24 object-cover rounded" />
-                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => updateContent("imageUrl", "")}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ) : (
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => { fileRef.current!.onchange = (e) => handleImageUpload(e as any, "imageUrl"); fileRef.current?.click(); }}>
-                <Upload className="h-3 w-3 mr-1" /> Upload Image
-              </Button>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Caption</Label>
-            <Input value={content.caption || ""} onChange={e => updateContent("caption", e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Alt Text</Label>
-            <Input value={content.alt || ""} onChange={e => updateContent("alt", e.target.value)} className="h-8 text-xs" />
-          </div>
+          <ImageUploadField content={content} updateContent={updateContent} fileRef={fileRef} handleImageUpload={handleImageUpload} fieldKey="imageUrl" label="Image" />
+          <div className="space-y-1"><Label className="text-xs">Caption</Label><Input value={content.caption || ""} onChange={e => updateContent("caption", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Alt Text</Label><Input value={content.alt || ""} onChange={e => updateContent("alt", e.target.value)} className="h-8 text-xs" /></div>
         </div>
       );
 
     case "cover_hero":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Background Image</Label>
-            {content.imageUrl ? (
-              <div className="relative">
-                <img src={content.imageUrl} alt="" className="w-full h-24 object-cover rounded" />
-                <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => updateContent("imageUrl", "")}>
-                  <Trash2 className="h-3 w-3" />
-                </Button>
-              </div>
-            ) : (
-              <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => { fileRef.current!.onchange = (e) => handleImageUpload(e as any, "imageUrl"); fileRef.current?.click(); }}>
-                <Upload className="h-3 w-3 mr-1" /> Upload
-              </Button>
-            )}
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Overlay Text</Label>
-            <Input value={content.overlayText || ""} onChange={e => updateContent("overlayText", e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Subtext</Label>
-            <Input value={content.overlaySubtext || ""} onChange={e => updateContent("overlaySubtext", e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs">Dark Overlay</Label>
-            <Switch checked={content.overlay ?? true} onCheckedChange={v => updateContent("overlay", v)} />
-          </div>
+          <ImageUploadField content={content} updateContent={updateContent} fileRef={fileRef} handleImageUpload={handleImageUpload} fieldKey="imageUrl" label="Background Image" />
+          <div className="space-y-1"><Label className="text-xs">Overlay Text</Label><Input value={content.overlayText || ""} onChange={e => updateContent("overlayText", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Subtext</Label><Input value={content.overlaySubtext || ""} onChange={e => updateContent("overlaySubtext", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Dark Overlay</Label><Switch checked={content.overlay ?? true} onCheckedChange={v => updateContent("overlay", v)} /></div>
+        </div>
+      );
+
+    case "hero_video":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Video URL</Label><Input value={content.heroVideoUrl || ""} onChange={e => updateContent("heroVideoUrl", e.target.value)} className="h-8 text-xs" placeholder="YouTube or direct URL" /></div>
+          <div className="space-y-1"><Label className="text-xs">Overlay Text</Label><Input value={content.heroOverlayText || ""} onChange={e => updateContent("heroOverlayText", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Subtext</Label><Input value={content.heroOverlaySubtext || ""} onChange={e => updateContent("heroOverlaySubtext", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Dark Overlay</Label><Switch checked={content.heroOverlay ?? true} onCheckedChange={v => updateContent("heroOverlay", v)} /></div>
         </div>
       );
 
     case "spacer":
-      return (
-        <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Height: {content.height || 48}px</Label>
-            <Slider value={[content.height || 48]} onValueChange={([v]) => updateContent("height", v)} min={8} max={200} step={4} />
-          </div>
-        </div>
-      );
+      return <div className="space-y-3"><div className="space-y-1"><Label className="text-xs">Height: {content.height || 48}px</Label><Slider value={[content.height || 48]} onValueChange={([v]) => updateContent("height", v)} min={8} max={200} step={4} /></div></div>;
 
     case "button":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Label</Label>
-            <Input value={content.label || ""} onChange={e => updateContent("label", e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">URL</Label>
-            <Input value={content.url || ""} onChange={e => updateContent("url", e.target.value)} className="h-8 text-xs" placeholder="https://..." />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Variant</Label>
+          <div className="space-y-1"><Label className="text-xs">Label</Label><Input value={content.label || ""} onChange={e => updateContent("label", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">URL</Label><Input value={content.url || ""} onChange={e => updateContent("url", e.target.value)} className="h-8 text-xs" placeholder="https://..." /></div>
+          <div className="space-y-1"><Label className="text-xs">Variant</Label>
             <Select value={content.variant || "primary"} onValueChange={v => updateContent("variant", v)}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="primary">Primary</SelectItem>
                 <SelectItem value="outline">Outline</SelectItem>
                 <SelectItem value="ghost">Ghost</SelectItem>
+                <SelectItem value="gradient">Gradient</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Size</Label>
+            <Select value={content.buttonSize || "md"} onValueChange={v => updateContent("buttonSize", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sm">Small</SelectItem>
+                <SelectItem value="md">Medium</SelectItem>
+                <SelectItem value="lg">Large</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -286,12 +377,35 @@ function renderContentSettings(
       );
 
     case "countdown":
+    case "countdown_flip":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Target Date</Label>
-            <Input type="datetime-local" value={content.targetDate?.slice(0, 16) || ""} onChange={e => updateContent("targetDate", e.target.value ? new Date(e.target.value).toISOString() : "")} className="h-8 text-xs" />
-          </div>
+          <div className="space-y-1"><Label className="text-xs">Target Date</Label><Input type="datetime-local" value={content.targetDate?.slice(0, 16) || ""} onChange={e => updateContent("targetDate", e.target.value ? new Date(e.target.value).toISOString() : "")} className="h-8 text-xs" /></div>
+          {blockType === "countdown" && (
+            <div className="space-y-1"><Label className="text-xs">Style</Label>
+              <Select value={content.countdownStyle || "simple"} onValueChange={v => updateContent("countdownStyle", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="simple">Simple</SelectItem>
+                  <SelectItem value="flip">Flip</SelectItem>
+                  <SelectItem value="circle">Circle</SelectItem>
+                  <SelectItem value="minimal">Minimal</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {blockType === "countdown_flip" && (
+            <div className="space-y-1"><Label className="text-xs">Theme</Label>
+              <Select value={content.flipStyle || "dark"} onValueChange={v => updateContent("flipStyle", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="dark">Dark</SelectItem>
+                  <SelectItem value="light">Light</SelectItem>
+                  <SelectItem value="glass">Glass</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
           <div className="flex items-center justify-between"><Label className="text-xs">Days</Label><Switch checked={content.showDays ?? true} onCheckedChange={v => updateContent("showDays", v)} /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Hours</Label><Switch checked={content.showHours ?? true} onCheckedChange={v => updateContent("showHours", v)} /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Minutes</Label><Switch checked={content.showMinutes ?? true} onCheckedChange={v => updateContent("showMinutes", v)} /></div>
@@ -305,38 +419,50 @@ function renderContentSettings(
           <div className="space-y-1"><Label className="text-xs">Venue Name</Label><Input value={content.venueName || ""} onChange={e => updateContent("venueName", e.target.value)} className="h-8 text-xs" /></div>
           <div className="space-y-1"><Label className="text-xs">Address</Label><Input value={content.venueAddress || ""} onChange={e => updateContent("venueAddress", e.target.value)} className="h-8 text-xs" /></div>
           <div className="space-y-1"><Label className="text-xs">Map URL</Label><Input value={content.mapUrl || ""} onChange={e => updateContent("mapUrl", e.target.value)} className="h-8 text-xs" placeholder="https://maps.google.com/..." /></div>
+          <div className="space-y-1"><Label className="text-xs">Phone</Label><Input value={content.venuePhone || ""} onChange={e => updateContent("venuePhone", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Show Directions</Label><Switch checked={content.showDirections ?? true} onCheckedChange={v => updateContent("showDirections", v)} /></div>
+        </div>
+      );
+
+    case "map_embed":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Google Maps Embed URL</Label><Input value={content.mapEmbedUrl || ""} onChange={e => updateContent("mapEmbedUrl", e.target.value)} className="h-8 text-xs" placeholder="https://www.google.com/maps/embed?..." /></div>
+          <div className="space-y-1"><Label className="text-xs">Height: {content.mapHeight || 300}px</Label><Slider value={[content.mapHeight || 300]} onValueChange={([v]) => updateContent("mapHeight", v)} min={150} max={600} step={10} /></div>
         </div>
       );
 
     case "timeline":
       return (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Events ({content.events?.length || 0})</Label>
-            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addListItem("events", { time: "", title: "New Event", description: "" })}>
-              <Plus className="h-3 w-3 mr-1" /> Add
-            </Button>
+          <div className="space-y-1"><Label className="text-xs">Layout</Label>
+            <Select value={content.timelineLayout || "vertical"} onValueChange={v => updateContent("timelineLayout", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="vertical">Vertical</SelectItem>
+                <SelectItem value="horizontal">Horizontal</SelectItem>
+                <SelectItem value="alternating">Alternating</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          {(content.events || []).map((ev: any, i: number) => (
-            <div key={i} className="space-y-1 p-2 bg-accent/30 rounded-lg relative">
-              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => removeListItem("events", i)}><Trash2 className="h-3 w-3" /></Button>
-              <Input value={ev.time || ""} onChange={e => updateListItem("events", i, "time", e.target.value)} placeholder="Time" className="h-7 text-[10px]" />
-              <Input value={ev.title || ""} onChange={e => updateListItem("events", i, "title", e.target.value)} placeholder="Title" className="h-7 text-[10px]" />
-              <Input value={ev.description || ""} onChange={e => updateListItem("events", i, "description", e.target.value)} placeholder="Description" className="h-7 text-[10px]" />
-            </div>
-          ))}
+          <ListEditor label="Events" items={content.events} listKey="events"
+            addItem={() => addListItem("events", { time: "", title: "New Event", description: "" })}
+            removeItem={i => removeListItem("events", i)}
+            renderItem={(ev, i) => (
+              <>
+                <Input value={ev.time || ""} onChange={e => updateListItem("events", i, "time", e.target.value)} placeholder="Time" className="h-7 text-[10px]" />
+                <Input value={ev.title || ""} onChange={e => updateListItem("events", i, "title", e.target.value)} placeholder="Title" className="h-7 text-[10px]" />
+                <Input value={ev.description || ""} onChange={e => updateListItem("events", i, "description", e.target.value)} placeholder="Description" className="h-7 text-[10px]" />
+              </>
+            )} />
         </div>
       );
 
     case "entourage":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Section Title</Label>
-            <Input value={content.entourageTitle || ""} onChange={e => updateContent("entourageTitle", e.target.value)} className="h-8 text-xs" />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Type</Label>
+          <div className="space-y-1"><Label className="text-xs">Section Title</Label><Input value={content.entourageTitle || ""} onChange={e => updateContent("entourageTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Type</Label>
             <Select value={content.entourageType || "custom"} onValueChange={v => updateContent("entourageType", v)}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -348,19 +474,25 @@ function renderContentSettings(
               </SelectContent>
             </Select>
           </div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">People ({content.people?.length || 0})</Label>
-            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addListItem("people", { name: "", role: "", message: "" })}>
-              <Plus className="h-3 w-3 mr-1" /> Add
-            </Button>
+          <div className="space-y-1"><Label className="text-xs">Layout</Label>
+            <Select value={content.entourageLayout || "grid"} onValueChange={v => updateContent("entourageLayout", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="grid">Grid</SelectItem>
+                <SelectItem value="list">List</SelectItem>
+                <SelectItem value="carousel">Carousel</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          {(content.people || []).map((p: any, i: number) => (
-            <div key={i} className="space-y-1 p-2 bg-accent/30 rounded-lg relative">
-              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => removeListItem("people", i)}><Trash2 className="h-3 w-3" /></Button>
-              <Input value={p.name || ""} onChange={e => updateListItem("people", i, "name", e.target.value)} placeholder="Name" className="h-7 text-[10px]" />
-              <Input value={p.role || ""} onChange={e => updateListItem("people", i, "role", e.target.value)} placeholder="Role/Message" className="h-7 text-[10px]" />
-            </div>
-          ))}
+          <ListEditor label="People" items={content.people} listKey="people"
+            addItem={() => addListItem("people", { name: "", role: "", message: "" })}
+            removeItem={i => removeListItem("people", i)}
+            renderItem={(p, i) => (
+              <>
+                <Input value={p.name || ""} onChange={e => updateListItem("people", i, "name", e.target.value)} placeholder="Name" className="h-7 text-[10px]" />
+                <Input value={p.role || ""} onChange={e => updateListItem("people", i, "role", e.target.value)} placeholder="Role" className="h-7 text-[10px]" />
+              </>
+            )} />
         </div>
       );
 
@@ -368,63 +500,214 @@ function renderContentSettings(
       return (
         <div className="space-y-3">
           <div className="space-y-1"><Label className="text-xs">Note</Label><Input value={content.dressCodeNote || ""} onChange={e => updateContent("dressCodeNote", e.target.value)} className="h-8 text-xs" /></div>
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Colors ({content.colors?.length || 0})</Label>
-            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addListItem("colors", { hex: "#000000", name: "" })}>
-              <Plus className="h-3 w-3 mr-1" /> Add
-            </Button>
-          </div>
-          {(content.colors || []).map((c: any, i: number) => (
-            <div key={i} className="flex items-center gap-2 p-1 bg-accent/30 rounded-lg">
-              <input type="color" value={c.hex} onChange={e => updateListItem("colors", i, "hex", e.target.value)} className="h-7 w-7 rounded cursor-pointer" />
-              <Input value={c.name || ""} onChange={e => updateListItem("colors", i, "name", e.target.value)} placeholder="Color name" className="h-7 text-[10px] flex-1" />
-              <Button variant="ghost" size="icon" className="h-6 w-6 shrink-0" onClick={() => removeListItem("colors", i)}><Trash2 className="h-3 w-3" /></Button>
-            </div>
-          ))}
+          <ListEditor label="Colors" items={content.colors} listKey="colors"
+            addItem={() => addListItem("colors", { hex: "#000000", name: "" })}
+            removeItem={i => removeListItem("colors", i)}
+            renderItem={(c, i) => (
+              <div className="flex items-center gap-2">
+                <input type="color" value={c.hex} onChange={e => updateListItem("colors", i, "hex", e.target.value)} className="h-7 w-7 rounded cursor-pointer" />
+                <Input value={c.name || ""} onChange={e => updateListItem("colors", i, "name", e.target.value)} placeholder="Name" className="h-7 text-[10px] flex-1" />
+              </div>
+            )} />
         </div>
       );
 
     case "gift_registry":
       return (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Items ({content.items?.length || 0})</Label>
-            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addListItem("items", { name: "", description: "", url: "" })}>
-              <Plus className="h-3 w-3 mr-1" /> Add
-            </Button>
-          </div>
-          {(content.items || []).map((item: any, i: number) => (
-            <div key={i} className="space-y-1 p-2 bg-accent/30 rounded-lg relative">
-              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => removeListItem("items", i)}><Trash2 className="h-3 w-3" /></Button>
-              <Input value={item.name || ""} onChange={e => updateListItem("items", i, "name", e.target.value)} placeholder="Item name" className="h-7 text-[10px]" />
-              <Input value={item.url || ""} onChange={e => updateListItem("items", i, "url", e.target.value)} placeholder="Link URL" className="h-7 text-[10px]" />
-            </div>
-          ))}
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.registryTitle || ""} onChange={e => updateContent("registryTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <ListEditor label="Items" items={content.items} listKey="items"
+            addItem={() => addListItem("items", { name: "", description: "", url: "" })}
+            removeItem={i => removeListItem("items", i)}
+            renderItem={(item, i) => (
+              <>
+                <Input value={item.name || ""} onChange={e => updateListItem("items", i, "name", e.target.value)} placeholder="Item name" className="h-7 text-[10px]" />
+                <Input value={item.description || ""} onChange={e => updateListItem("items", i, "description", e.target.value)} placeholder="Description" className="h-7 text-[10px]" />
+                <Input value={item.url || ""} onChange={e => updateListItem("items", i, "url", e.target.value)} placeholder="URL" className="h-7 text-[10px]" />
+                <Input value={item.price || ""} onChange={e => updateListItem("items", i, "price", e.target.value)} placeholder="Price" className="h-7 text-[10px]" />
+              </>
+            )} />
         </div>
       );
 
     case "faq":
       return (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Questions ({content.faqs?.length || 0})</Label>
-            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addListItem("faqs", { question: "", answer: "" })}>
-              <Plus className="h-3 w-3 mr-1" /> Add
-            </Button>
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.faqTitle || ""} onChange={e => updateContent("faqTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <ListEditor label="Questions" items={content.faqs} listKey="faqs"
+            addItem={() => addListItem("faqs", { question: "", answer: "" })}
+            removeItem={i => removeListItem("faqs", i)}
+            renderItem={(faq, i) => (
+              <>
+                <Input value={faq.question || ""} onChange={e => updateListItem("faqs", i, "question", e.target.value)} placeholder="Question" className="h-7 text-[10px]" />
+                <Textarea value={faq.answer || ""} onChange={e => updateListItem("faqs", i, "answer", e.target.value)} placeholder="Answer" className="text-[10px] min-h-[60px]" />
+              </>
+            )} />
+        </div>
+      );
+
+    case "accordion":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Style</Label>
+            <Select value={content.accordionStyle || "bordered"} onValueChange={v => updateContent("accordionStyle", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="simple">Simple</SelectItem>
+                <SelectItem value="bordered">Bordered</SelectItem>
+                <SelectItem value="filled">Filled</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          {(content.faqs || []).map((faq: any, i: number) => (
-            <div key={i} className="space-y-1 p-2 bg-accent/30 rounded-lg relative">
-              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => removeListItem("faqs", i)}><Trash2 className="h-3 w-3" /></Button>
-              <Input value={faq.question || ""} onChange={e => updateListItem("faqs", i, "question", e.target.value)} placeholder="Question" className="h-7 text-[10px]" />
-              <Textarea value={faq.answer || ""} onChange={e => updateListItem("faqs", i, "answer", e.target.value)} placeholder="Answer" className="text-[10px] min-h-[60px]" />
+          <ListEditor label="Items" items={content.accordionItems} listKey="accordionItems"
+            addItem={() => addListItem("accordionItems", { title: "Section", content: "Content..." })}
+            removeItem={i => removeListItem("accordionItems", i)}
+            renderItem={(item, i) => (
+              <>
+                <Input value={item.title || ""} onChange={e => updateListItem("accordionItems", i, "title", e.target.value)} placeholder="Title" className="h-7 text-[10px]" />
+                <Textarea value={item.content || ""} onChange={e => updateListItem("accordionItems", i, "content", e.target.value)} placeholder="Content" className="text-[10px] min-h-[50px]" />
+              </>
+            )} />
+        </div>
+      );
+
+    case "icon_text":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Icon</Label>
+            <Select value={content.iconName || "Heart"} onValueChange={v => updateContent("iconName", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {["Heart", "Star", "Gift", "Music", "Camera", "MapPin", "Clock", "Users", "Mail", "Phone", "Calendar", "Sparkles"].map(icon => (
+                  <SelectItem key={icon} value={icon}>{icon}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Size</Label>
+            <Select value={content.iconSize || "md"} onValueChange={v => updateContent("iconSize", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="sm">Small</SelectItem>
+                <SelectItem value="md">Medium</SelectItem>
+                <SelectItem value="lg">Large</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.title || ""} onChange={e => updateContent("title", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Description</Label><Textarea value={content.description || ""} onChange={e => updateContent("description", e.target.value)} className="text-xs min-h-[60px]" /></div>
+        </div>
+      );
+
+    case "testimonial":
+      return (
+        <div className="space-y-3">
+          <ListEditor label="Testimonials" items={content.testimonials} listKey="testimonials"
+            addItem={() => addListItem("testimonials", { quote: "", author: "", role: "" })}
+            removeItem={i => removeListItem("testimonials", i)}
+            renderItem={(t, i) => (
+              <>
+                <Textarea value={t.quote || ""} onChange={e => updateListItem("testimonials", i, "quote", e.target.value)} placeholder="Quote" className="text-[10px] min-h-[50px]" />
+                <Input value={t.author || ""} onChange={e => updateListItem("testimonials", i, "author", e.target.value)} placeholder="Author" className="h-7 text-[10px]" />
+                <Input value={t.role || ""} onChange={e => updateListItem("testimonials", i, "role", e.target.value)} placeholder="Role" className="h-7 text-[10px]" />
+              </>
+            )} />
+        </div>
+      );
+
+    case "marquee_text":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Text</Label><Input value={content.marqueeText || ""} onChange={e => updateContent("marqueeText", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Speed: {content.marqueeSpeed || 20}s</Label><Slider value={[content.marqueeSpeed || 20]} onValueChange={([v]) => updateContent("marqueeSpeed", v)} min={5} max={60} step={1} /></div>
+          <div className="space-y-1"><Label className="text-xs">Direction</Label>
+            <Select value={content.marqueeDirection || "left"} onValueChange={v => updateContent("marqueeDirection", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="left">Left</SelectItem>
+                <SelectItem value="right">Right</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+
+    case "separator_fancy":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Style</Label>
+            <Select value={content.separatorStyle || "floral"} onValueChange={v => updateContent("separatorStyle", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="dots">Dots</SelectItem>
+                <SelectItem value="stars">Stars</SelectItem>
+                <SelectItem value="hearts">Hearts</SelectItem>
+                <SelectItem value="floral">Floral</SelectItem>
+                <SelectItem value="wave">Wave</SelectItem>
+                <SelectItem value="diamond">Diamond</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      );
+
+    case "audio_player":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Audio URL</Label><Input value={content.audioUrl || ""} onChange={e => updateContent("audioUrl", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.audioTitle || ""} onChange={e => updateContent("audioTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Artist</Label><Input value={content.audioArtist || ""} onChange={e => updateContent("audioArtist", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Autoplay</Label><Switch checked={content.audioAutoplay ?? false} onCheckedChange={v => updateContent("audioAutoplay", v)} /></div>
+        </div>
+      );
+
+    case "music_player":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Music URL</Label><Input value={content.musicUrl || ""} onChange={e => updateContent("musicUrl", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.musicTitle || ""} onChange={e => updateContent("musicTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Artist</Label><Input value={content.musicArtist || ""} onChange={e => updateContent("musicArtist", e.target.value)} className="h-8 text-xs" /></div>
+          <ImageUploadField content={content} updateContent={updateContent} fileRef={fileRef} handleImageUpload={handleImageUpload} fieldKey="musicCoverUrl" label="Cover Art" />
+          <div className="flex items-center justify-between"><Label className="text-xs">Autoplay</Label><Switch checked={content.musicAutoplay ?? false} onCheckedChange={v => updateContent("musicAutoplay", v)} /></div>
+        </div>
+      );
+
+    case "two_column":
+    case "three_column": {
+      const count = blockType === "two_column" ? 2 : 3;
+      return (
+        <div className="space-y-3">
+          {blockType === "two_column" && (
+            <div className="space-y-1"><Label className="text-xs">Ratio</Label>
+              <Select value={content.columnRatio || "1:1"} onValueChange={v => updateContent("columnRatio", v)}>
+                <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="1:1">Equal (1:1)</SelectItem>
+                  <SelectItem value="2:1">Wide Left (2:1)</SelectItem>
+                  <SelectItem value="1:2">Wide Right (1:2)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          )}
+          {Array.from({ length: count }).map((_, i) => (
+            <div key={i} className="space-y-1">
+              <Label className="text-xs">Column {i + 1}</Label>
+              <Textarea value={(content.columnContent || [])[i] || ""} onChange={e => {
+                const cols = [...(content.columnContent || [])];
+                cols[i] = e.target.value;
+                updateContent("columnContent", cols);
+              }} className="text-xs min-h-[60px]" />
             </div>
           ))}
         </div>
       );
+    }
 
     case "rsvp":
       return (
         <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.rsvpTitle || ""} onChange={e => updateContent("rsvpTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Subtitle</Label><Input value={content.rsvpSubtitle || ""} onChange={e => updateContent("rsvpSubtitle", e.target.value)} className="h-8 text-xs" /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Dietary Notes</Label><Switch checked={content.showDietaryNotes ?? true} onCheckedChange={v => updateContent("showDietaryNotes", v)} /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Companions</Label><Switch checked={content.showCompanions ?? true} onCheckedChange={v => updateContent("showCompanions", v)} /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Message</Label><Switch checked={content.showMessage ?? true} onCheckedChange={v => updateContent("showMessage", v)} /></div>
@@ -438,7 +721,10 @@ function renderContentSettings(
       return (
         <div className="space-y-3">
           <div className="space-y-1"><Label className="text-xs">Video URL</Label><Input value={content.videoUrl || ""} onChange={e => updateContent("videoUrl", e.target.value)} placeholder="YouTube or direct URL" className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Poster URL</Label><Input value={content.posterUrl || ""} onChange={e => updateContent("posterUrl", e.target.value)} placeholder="Thumbnail image" className="h-8 text-xs" /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Autoplay</Label><Switch checked={content.autoplay ?? false} onCheckedChange={v => updateContent("autoplay", v)} /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Muted</Label><Switch checked={content.muted ?? false} onCheckedChange={v => updateContent("muted", v)} /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Loop</Label><Switch checked={content.loop ?? false} onCheckedChange={v => updateContent("loop", v)} /></div>
         </div>
       );
 
@@ -446,45 +732,130 @@ function renderContentSettings(
       return (
         <div className="space-y-3">
           <div className="space-y-1"><Label className="text-xs">Embed URL</Label><Input value={content.embedUrl || ""} onChange={e => updateContent("embedUrl", e.target.value)} className="h-8 text-xs" /></div>
-          <div className="space-y-1">
-            <Label className="text-xs">Type</Label>
+          <div className="space-y-1"><Label className="text-xs">Type</Label>
             <Select value={content.embedType || "youtube"} onValueChange={v => updateContent("embedType", v)}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="youtube">YouTube</SelectItem>
                 <SelectItem value="spotify">Spotify</SelectItem>
+                <SelectItem value="vimeo">Vimeo</SelectItem>
+                <SelectItem value="tiktok">TikTok</SelectItem>
                 <SelectItem value="custom">Custom</SelectItem>
               </SelectContent>
             </Select>
           </div>
+          <div className="space-y-1"><Label className="text-xs">Height: {content.embedHeight || 315}px</Label><Slider value={[content.embedHeight || 315]} onValueChange={([v]) => updateContent("embedHeight", v)} min={100} max={600} step={5} /></div>
         </div>
       );
 
     case "social_links":
       return (
         <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <Label className="text-xs font-semibold">Links ({content.links?.length || 0})</Label>
-            <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={() => addListItem("links", { platform: "instagram", url: "", label: "" })}>
-              <Plus className="h-3 w-3 mr-1" /> Add
-            </Button>
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.socialTitle || ""} onChange={e => updateContent("socialTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Style</Label>
+            <Select value={content.socialStyle || "icons"} onValueChange={v => updateContent("socialStyle", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="icons">Icons</SelectItem>
+                <SelectItem value="buttons">Buttons</SelectItem>
+                <SelectItem value="pills">Pills</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          {(content.links || []).map((link: any, i: number) => (
-            <div key={i} className="space-y-1 p-2 bg-accent/30 rounded-lg relative">
-              <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => removeListItem("links", i)}><Trash2 className="h-3 w-3" /></Button>
-              <Select value={link.platform || "instagram"} onValueChange={v => updateListItem("links", i, "platform", v)}>
-                <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="instagram">Instagram</SelectItem>
-                  <SelectItem value="facebook">Facebook</SelectItem>
-                  <SelectItem value="twitter">Twitter/X</SelectItem>
-                  <SelectItem value="tiktok">TikTok</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                </SelectContent>
-              </Select>
-              <Input value={link.url || ""} onChange={e => updateListItem("links", i, "url", e.target.value)} placeholder="URL" className="h-7 text-[10px]" />
-            </div>
-          ))}
+          <ListEditor label="Links" items={content.links} listKey="links"
+            addItem={() => addListItem("links", { platform: "instagram", url: "", label: "" })}
+            removeItem={i => removeListItem("links", i)}
+            renderItem={(link, i) => (
+              <>
+                <Select value={link.platform || "instagram"} onValueChange={v => updateListItem("links", i, "platform", v)}>
+                  <SelectTrigger className="h-7 text-[10px]"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {["instagram", "facebook", "twitter", "tiktok", "youtube", "spotify", "website", "whatsapp", "telegram", "linkedin"].map(p => (
+                      <SelectItem key={p} value={p} className="capitalize">{p}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Input value={link.url || ""} onChange={e => updateListItem("links", i, "url", e.target.value)} placeholder="URL" className="h-7 text-[10px]" />
+              </>
+            )} />
+        </div>
+      );
+
+    case "seating_chart":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.seatingTitle || ""} onChange={e => updateContent("seatingTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <ListEditor label="Tables" items={content.tables} listKey="tables"
+            addItem={() => addListItem("tables", { name: "Table 1", seats: [] })}
+            removeItem={i => removeListItem("tables", i)}
+            renderItem={(table, i) => (
+              <>
+                <Input value={table.name || ""} onChange={e => updateListItem("tables", i, "name", e.target.value)} placeholder="Table name" className="h-7 text-[10px]" />
+                <Input value={(table.seats || []).join(", ")} onChange={e => updateListItem("tables", i, "seats", e.target.value.split(",").map((s: string) => s.trim()))} placeholder="Names (comma-separated)" className="h-7 text-[10px]" />
+              </>
+            )} />
+        </div>
+      );
+
+    case "pricing_table":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.pricingTitle || ""} onChange={e => updateContent("pricingTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <ListEditor label="Packages" items={content.pricingItems} listKey="pricingItems"
+            addItem={() => addListItem("pricingItems", { name: "Package", price: "₱0", description: "" })}
+            removeItem={i => removeListItem("pricingItems", i)}
+            renderItem={(item, i) => (
+              <>
+                <Input value={item.name || ""} onChange={e => updateListItem("pricingItems", i, "name", e.target.value)} placeholder="Name" className="h-7 text-[10px]" />
+                <Input value={item.price || ""} onChange={e => updateListItem("pricingItems", i, "price", e.target.value)} placeholder="Price" className="h-7 text-[10px]" />
+                <Input value={item.description || ""} onChange={e => updateListItem("pricingItems", i, "description", e.target.value)} placeholder="Description" className="h-7 text-[10px]" />
+              </>
+            )} />
+        </div>
+      );
+
+    case "contact_card":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Name</Label><Input value={content.contactName || ""} onChange={e => updateContent("contactName", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Role</Label><Input value={content.contactRole || ""} onChange={e => updateContent("contactRole", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Phone</Label><Input value={content.contactPhone || ""} onChange={e => updateContent("contactPhone", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Email</Label><Input value={content.contactEmail || ""} onChange={e => updateContent("contactEmail", e.target.value)} className="h-8 text-xs" /></div>
+          <ImageUploadField content={content} updateContent={updateContent} fileRef={fileRef} handleImageUpload={handleImageUpload} fieldKey="contactImageUrl" label="Photo" />
+        </div>
+      );
+
+    case "weather_widget":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Location</Label><Input value={content.weatherLocation || ""} onChange={e => updateContent("weatherLocation", e.target.value)} className="h-8 text-xs" placeholder="City, Country" /></div>
+          <div className="space-y-1"><Label className="text-xs">Event Date</Label><Input type="date" value={content.weatherDate || ""} onChange={e => updateContent("weatherDate", e.target.value)} className="h-8 text-xs" /></div>
+        </div>
+      );
+
+    case "qr_code":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Data/URL</Label><Input value={content.qrData || ""} onChange={e => updateContent("qrData", e.target.value)} className="h-8 text-xs" placeholder="https://..." /></div>
+          <div className="space-y-1"><Label className="text-xs">Label</Label><Input value={content.qrLabel || ""} onChange={e => updateContent("qrLabel", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Size: {content.qrSize || 200}px</Label><Slider value={[content.qrSize || 200]} onValueChange={([v]) => updateContent("qrSize", v)} min={100} max={400} step={10} /></div>
+        </div>
+      );
+
+    case "photo_upload_wall":
+      return (
+        <div className="space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.wallTitle || ""} onChange={e => updateContent("wallTitle", e.target.value)} className="h-8 text-xs" /></div>
+          <div className="space-y-1"><Label className="text-xs">Columns</Label>
+            <Select value={String(content.wallColumns || 3)} onValueChange={v => updateContent("wallColumns", parseInt(v))}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="2">2</SelectItem>
+                <SelectItem value="3">3</SelectItem>
+                <SelectItem value="4">4</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
         </div>
       );
 
@@ -499,8 +870,17 @@ function renderContentSettings(
     case "gallery":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Columns</Label>
+          <div className="space-y-1"><Label className="text-xs">Layout</Label>
+            <Select value={content.galleryLayout || "grid"} onValueChange={v => updateContent("galleryLayout", v)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="grid">Grid</SelectItem>
+                <SelectItem value="masonry">Masonry</SelectItem>
+                <SelectItem value="carousel">Carousel</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">Columns</Label>
             <Select value={String(content.columns || 3)} onValueChange={v => updateContent("columns", parseInt(v))}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
@@ -510,6 +890,7 @@ function renderContentSettings(
               </SelectContent>
             </Select>
           </div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Show Captions</Label><Switch checked={content.showCaptions ?? false} onCheckedChange={v => updateContent("showCaptions", v)} /></div>
           <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => { fileRef.current!.onchange = async (e: any) => {
             const file = e.target.files?.[0];
             if (!file) return;
@@ -536,20 +917,21 @@ function renderContentSettings(
         <div className="space-y-3">
           <div className="space-y-1"><Label className="text-xs">Title</Label><Input value={content.guestbookTitle || ""} onChange={e => updateContent("guestbookTitle", e.target.value)} className="h-8 text-xs" /></div>
           <div className="flex items-center justify-between"><Label className="text-xs">Show Timestamps</Label><Switch checked={content.showTimestamp ?? true} onCheckedChange={v => updateContent("showTimestamp", v)} /></div>
+          <div className="flex items-center justify-between"><Label className="text-xs">Show Avatars</Label><Switch checked={content.showAvatar ?? true} onCheckedChange={v => updateContent("showAvatar", v)} /></div>
         </div>
       );
 
     case "photo_collage":
       return (
         <div className="space-y-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Layout</Label>
+          <div className="space-y-1"><Label className="text-xs">Layout</Label>
             <Select value={content.layout || "grid"} onValueChange={v => updateContent("layout", v)}>
               <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="grid">Grid</SelectItem>
                 <SelectItem value="masonry">Masonry</SelectItem>
                 <SelectItem value="carousel">Carousel</SelectItem>
+                <SelectItem value="mosaic">Mosaic</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -559,4 +941,49 @@ function renderContentSettings(
     default:
       return <p className="text-xs text-muted-foreground">No settings for this block type.</p>;
   }
+}
+
+// Reusable components
+function ImageUploadField({ content, updateContent, fileRef, handleImageUpload, fieldKey, label }: {
+  content: any; updateContent: (k: string, v: any) => void;
+  fileRef: React.RefObject<HTMLInputElement | null>;
+  handleImageUpload: (e: React.ChangeEvent<HTMLInputElement>, key: string) => void;
+  fieldKey: string; label: string;
+}) {
+  return (
+    <div className="space-y-1">
+      <Label className="text-xs">{label}</Label>
+      {content[fieldKey] ? (
+        <div className="relative">
+          <img src={content[fieldKey]} alt="" className="w-full h-24 object-cover rounded" />
+          <Button variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6" onClick={() => updateContent(fieldKey, "")}><Trash2 className="h-3 w-3" /></Button>
+        </div>
+      ) : (
+        <Button variant="outline" size="sm" className="w-full text-xs" onClick={() => { fileRef.current!.onchange = (e) => handleImageUpload(e as any, fieldKey); fileRef.current?.click(); }}>
+          <Upload className="h-3 w-3 mr-1" /> Upload
+        </Button>
+      )}
+    </div>
+  );
+}
+
+function ListEditor({ label, items, listKey, addItem, removeItem, renderItem }: {
+  label: string; items: any[]; listKey: string;
+  addItem: () => void; removeItem: (i: number) => void;
+  renderItem: (item: any, i: number) => React.ReactNode;
+}) {
+  return (
+    <>
+      <div className="flex items-center justify-between">
+        <Label className="text-xs font-semibold">{label} ({(items || []).length})</Label>
+        <Button variant="outline" size="sm" className="h-6 text-[10px]" onClick={addItem}><Plus className="h-3 w-3 mr-1" /> Add</Button>
+      </div>
+      {(items || []).map((item: any, i: number) => (
+        <div key={i} className="space-y-1 p-2 bg-accent/30 rounded-lg relative">
+          <Button variant="ghost" size="icon" className="absolute top-1 right-1 h-5 w-5" onClick={() => removeItem(i)}><Trash2 className="h-3 w-3" /></Button>
+          {renderItem(item, i)}
+        </div>
+      ))}
+    </>
+  );
 }

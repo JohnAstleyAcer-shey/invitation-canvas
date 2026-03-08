@@ -200,7 +200,7 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
   return (
     <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden">
       {/* Toolbar */}
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-card gap-2">
+      <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 border-b border-border bg-card gap-1 sm:gap-2 overflow-x-auto">
         {/* Left: Back + title */}
         <div className="flex items-center gap-2 min-w-0">
           <Tooltip>

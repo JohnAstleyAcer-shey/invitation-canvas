@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { motion, AnimatePresence, useScroll, useTransform } from "framer-motion";
-import { MapPin, ExternalLink, Play, ChevronDown, Clock, Users, Gift, HelpCircle, Shirt, Mail, Quote as QuoteIcon, Instagram, Facebook, Twitter, Globe, Music, Disc3, Phone, Camera, Star, Heart, Calendar, Sparkles, DollarSign, QrCode, Cloud, Navigation, ChevronLeft, ChevronRight, X, Pause, Volume2, VolumeX, ArrowDown } from "lucide-react";
+import { motion, AnimatePresence, useScroll, useTransform, useInView } from "framer-motion";
+import { MapPin, ExternalLink, Play, ChevronDown, Clock, Users, Gift, HelpCircle, Shirt, Mail, Quote as QuoteIcon, Instagram, Facebook, Twitter, Globe, Music, Disc3, Phone, Camera, Star, Heart, Calendar, Sparkles, DollarSign, QrCode, Cloud, Navigation, ChevronLeft, ChevronRight, X, Pause, Volume2, VolumeX, ArrowDown, Check, Loader2, Send, ImageIcon, Eye, Download, Maximize } from "lucide-react";
 import type { InvitationBlock } from "../types";
 
 const animationVariants: Record<string, any> = {
@@ -35,6 +35,8 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
   const c = block.content as any;
   const s = block.style as any;
   const anim = animationVariants[s.animation] || {};
+  const ref = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, amount: 0.15 });
 
   const wrapStyle: React.CSSProperties = {
     backgroundColor: s.backgroundColor || undefined,
@@ -65,7 +67,15 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
   const glassClass = s.glassmorphism ? "backdrop-blur-md bg-white/10 rounded-2xl border border-white/20 p-8" : "";
 
   const Wrap = ({ children, className }: { children: React.ReactNode; className?: string }) => (
-    <motion.div {...anim} transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }} viewport={{ once: true, amount: 0.2 }} whileInView={anim.animate} style={wrapStyle} className={className}>
+    <motion.div
+      ref={ref}
+      {...anim}
+      transition={{ duration: 0.6, ease: "easeOut", delay: 0.05 }}
+      viewport={{ once: true, amount: 0.2 }}
+      whileInView={anim.animate}
+      style={wrapStyle}
+      className={className}
+    >
       {s.backgroundImage && !s.gradient && <img src={s.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" />}
       {s.backgroundOverlay && <div className="absolute inset-0" style={{ backgroundColor: s.backgroundOverlay }} />}
       <div className={`relative z-10 w-full max-w-2xl mx-auto ${glassClass}`}>{children}</div>
@@ -76,18 +86,35 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
     case "heading": {
       const Tag = `h${c.level || 2}` as any;
       const sizes: Record<number, string> = { 1: "text-5xl md:text-6xl", 2: "text-4xl md:text-5xl", 3: "text-3xl", 4: "text-2xl" };
-      return <Wrap><Tag className={`font-display font-bold ${sizes[c.level || 2]}`}>{c.text}</Tag></Wrap>;
+      return (
+        <Wrap>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ duration: 0.7 }}>
+            <Tag className={`font-display font-bold ${sizes[c.level || 2]} leading-tight`}>{c.text}</Tag>
+          </motion.div>
+        </Wrap>
+      );
     }
 
     case "text":
-      return <Wrap><p className="whitespace-pre-wrap leading-relaxed text-base md:text-lg">{c.body}</p></Wrap>;
+      return (
+        <Wrap>
+          <motion.p
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            className="whitespace-pre-wrap leading-relaxed text-base md:text-lg"
+          >
+            {c.body}
+          </motion.p>
+        </Wrap>
+      );
 
     case "image":
       return (
         <Wrap>
           {c.imageUrl && (
-            <motion.img src={c.imageUrl} alt={c.alt || ""} className="w-full rounded-xl object-cover" style={{ borderRadius: s.borderRadius }}
-              initial={{ scale: 1.05, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.8 }} loading="lazy" />
+            <ImageWithLightbox src={c.imageUrl} alt={c.alt || ""} borderRadius={s.borderRadius} />
           )}
           {c.caption && <p className="text-sm opacity-70 mt-3 italic">{c.caption}</p>}
         </Wrap>
@@ -97,7 +124,17 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
       return <div style={{ height: c.height || 48 }} />;
 
     case "divider":
-      return <Wrap><hr className="border-t opacity-20" /></Wrap>;
+      return (
+        <Wrap>
+          <motion.hr
+            initial={{ scaleX: 0 }}
+            whileInView={{ scaleX: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="border-t opacity-20 origin-left"
+          />
+        </Wrap>
+      );
 
     case "button":
       return (
@@ -146,7 +183,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
     case "cover_hero":
       return (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.2 }}
-          style={{ ...wrapStyle, backgroundImage: c.imageUrl ? `url(${c.imageUrl})` : s.gradient || undefined, backgroundSize: "cover", backgroundPosition: "center", backgroundAttachment: "fixed" }}>
+          style={{ ...wrapStyle, backgroundImage: c.imageUrl ? `url(${c.imageUrl})` : s.gradient || undefined, backgroundSize: "cover", backgroundPosition: "center" }}>
           {c.overlay && <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/40 to-black/60" />}
           <div className="relative z-10 text-white text-center px-6">
             <motion.h1 initial={{ y: 40, opacity: 0, filter: "blur(10px)" }} animate={{ y: 0, opacity: 1, filter: "blur(0px)" }} transition={{ delay: 0.3, duration: 1 }}
@@ -155,10 +192,13 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
               <motion.p initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.8, duration: 0.8 }}
                 className="text-xl md:text-2xl opacity-90 font-light tracking-wide">{c.overlaySubtext}</motion.p>
             )}
-            {/* Scroll hint */}
+            {/* Animated scroll hint */}
             {index === 0 && totalBlocks > 1 && (
               <motion.div className="absolute bottom-8 left-1/2 -translate-x-1/2" animate={{ y: [0, 10, 0] }} transition={{ repeat: Infinity, duration: 2 }}>
-                <ArrowDown className="w-6 h-6 text-white/60" />
+                <div className="flex flex-col items-center gap-2">
+                  <span className="text-xs uppercase tracking-widest opacity-50">Scroll</span>
+                  <ArrowDown className="w-5 h-5 text-white/60" />
+                </div>
               </motion.div>
             )}
           </div>
@@ -190,6 +230,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
       return (
         <Wrap>
           <motion.div initial={{ scale: 0.95, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ duration: 0.6 }}>
+            <QuoteIcon className="h-8 w-8 mx-auto mb-4 opacity-20" />
             <p className="whitespace-pre-wrap leading-relaxed italic text-lg md:text-xl">{c.body}</p>
           </motion.div>
         </Wrap>
@@ -272,11 +313,11 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
             <div className={c.entourageLayout === "list" ? "space-y-3 max-w-md mx-auto" : "grid grid-cols-2 sm:grid-cols-3 gap-5"}>
               {(c.people || []).map((p: any, i: number) => (
                 <motion.div key={i} initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05, type: "spring", damping: 12 }}
-                  className={c.entourageLayout === "list" ? "flex items-center gap-4 text-left p-3 rounded-xl bg-current/5" : "text-center"}>
+                  className={c.entourageLayout === "list" ? "flex items-center gap-4 text-left p-3 rounded-xl bg-current/5" : "text-center group"}>
                   {p.imageUrl ? (
-                    <img src={p.imageUrl} alt={p.name} className={`${c.entourageLayout === "list" ? "w-12 h-12" : "w-20 h-20 mx-auto mb-3"} rounded-full object-cover ring-2 ring-current/10`} loading="lazy" />
+                    <img src={p.imageUrl} alt={p.name} className={`${c.entourageLayout === "list" ? "w-12 h-12" : "w-20 h-20 mx-auto mb-3"} rounded-full object-cover ring-2 ring-current/10 group-hover:ring-4 transition-all`} loading="lazy" />
                   ) : (
-                    <div className={`${c.entourageLayout === "list" ? "w-12 h-12" : "w-20 h-20 mx-auto mb-3"} rounded-full bg-current/10 flex items-center justify-center text-xl font-bold`}>{p.name?.charAt(0)}</div>
+                    <div className={`${c.entourageLayout === "list" ? "w-12 h-12" : "w-20 h-20 mx-auto mb-3"} rounded-full bg-current/10 flex items-center justify-center text-xl font-bold group-hover:bg-current/20 transition-colors`}>{p.name?.charAt(0)}</div>
                   )}
                   <div>
                     <p className="font-semibold">{p.name}</p>
@@ -299,7 +340,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
             <div className={`grid grid-cols-${c.columns || 3} gap-2`}>
               {(c.images || []).map((img: any, i: number) => (
                 <motion.div key={i} initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                  className="overflow-hidden rounded-lg group">
+                  className="overflow-hidden rounded-lg group cursor-pointer">
                   <img src={img.url} alt={img.caption || ""} className="w-full aspect-square object-cover group-hover:scale-110 transition-transform duration-500" loading="lazy" />
                   {c.showCaptions && img.caption && <p className="text-xs opacity-60 mt-1 text-center">{img.caption}</p>}
                 </motion.div>
@@ -328,8 +369,8 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
           {c.dressCodeImage && <img src={c.dressCodeImage} alt="Dress code" className="w-full max-w-sm mx-auto rounded-xl mb-6" loading="lazy" />}
           <div className="flex justify-center gap-5 flex-wrap">
             {(c.colors || []).map((col: any, i: number) => (
-              <motion.div key={i} initial={{ scale: 0, rotate: -20 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, type: "spring", damping: 10 }} className="text-center">
-                <div className="w-16 h-16 rounded-full mx-auto border-2 border-white/20 shadow-lg ring-4 ring-current/5" style={{ backgroundColor: col.hex }} />
+              <motion.div key={i} initial={{ scale: 0, rotate: -20 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1, type: "spring", damping: 10 }} className="text-center group">
+                <div className="w-16 h-16 rounded-full mx-auto border-2 border-white/20 shadow-lg ring-4 ring-current/5 group-hover:ring-8 group-hover:scale-110 transition-all duration-300" style={{ backgroundColor: col.hex }} />
                 {col.name && <p className="text-xs mt-2 font-medium">{col.name}</p>}
                 {col.description && <p className="text-[10px] opacity-50">{col.description}</p>}
               </motion.div>
@@ -348,10 +389,10 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
           <div className="space-y-3 max-w-md mx-auto">
             {(c.items || []).map((item: any, i: number) => (
               <motion.div key={i} initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
-                className="p-4 rounded-xl bg-current/5 text-left hover:bg-current/10 transition-colors">
+                className="p-4 rounded-xl bg-current/5 text-left hover:bg-current/10 transition-colors group">
                 <div className="flex justify-between items-start">
                   <div className="flex items-start gap-3">
-                    {item.imageUrl && <img src={item.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0" loading="lazy" />}
+                    {item.imageUrl && <img src={item.imageUrl} alt="" className="w-12 h-12 rounded-lg object-cover shrink-0 group-hover:scale-105 transition-transform" loading="lazy" />}
                     <div>
                       <p className="font-semibold">{item.name}</p>
                       {item.category && <span className="text-[10px] px-2 py-0.5 rounded-full bg-current/10 font-medium">{item.category}</span>}
@@ -397,7 +438,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
       );
 
     case "icon_text": {
-      const iconMap: Record<string, any> = { Heart, Star, Gift, Music, Camera, MapPin, Clock, Users, Mail, Phone, Calendar, Sparkles };
+      const iconMap: Record<string, any> = { Heart, Star, Gift, Music, Camera, MapPin, Clock, Users, Mail, Phone, Calendar, Sparkles, Check, Eye, Download };
       const Icon = iconMap[c.iconName] || Star;
       const sizes = { sm: "h-8 w-8", md: "h-12 w-12", lg: "h-16 w-16" };
       return (
@@ -417,7 +458,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
           <div className="space-y-8 max-w-lg mx-auto">
             {(c.testimonials || []).map((t: any, i: number) => (
               <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
-                className="text-center p-6 rounded-2xl bg-current/5">
+                className="text-center p-6 rounded-2xl bg-current/5 hover:bg-current/8 transition-colors">
                 <QuoteIcon className="h-6 w-6 mx-auto mb-3 opacity-30" />
                 <p className="italic text-lg leading-relaxed mb-4">"{t.quote}"</p>
                 <div className="flex items-center justify-center gap-3">
@@ -488,7 +529,13 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
       return (
         <Wrap>
           <h3 className="font-display text-2xl md:text-3xl font-bold mb-4">{c.guestbookTitle || "Guestbook"}</h3>
-          <p className="text-sm opacity-70">Messages from guests will appear here.</p>
+          <p className="text-sm opacity-70 mb-6">Messages from guests will appear here.</p>
+          <div className="max-w-sm mx-auto p-4 rounded-xl bg-current/5">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="flex-1 h-9 rounded-lg border border-current/20 px-3 flex items-center text-sm opacity-40">Leave a message...</div>
+              <div className="w-9 h-9 rounded-lg bg-current/10 flex items-center justify-center"><Send className="h-4 w-4 opacity-40" /></div>
+            </div>
+          </div>
         </Wrap>
       );
 
@@ -553,7 +600,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
       return (
         <Wrap>
           <motion.div initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}
-            className="flex items-center gap-4 max-w-sm mx-auto p-5 rounded-2xl bg-current/5 shadow-sm">
+            className="flex items-center gap-4 max-w-sm mx-auto p-5 rounded-2xl bg-current/5 shadow-sm hover:shadow-md transition-shadow">
             <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-current/10 flex items-center justify-center">
               {c.musicCoverUrl ? <img src={c.musicCoverUrl} alt="" className="w-full h-full object-cover" loading="lazy" /> : <Disc3 className="h-10 w-10 opacity-40 animate-spin" style={{ animationDuration: "3s" }} />}
             </div>
@@ -572,10 +619,13 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
           <Camera className="h-10 w-10 mx-auto mb-4 opacity-60" />
           <h3 className="font-display text-2xl md:text-3xl font-bold mb-4">{c.wallTitle || "Photo Wall"}</h3>
           <p className="text-sm opacity-70 mb-4">Guests can upload and share photos here.</p>
-          <div className="max-w-xs mx-auto p-6 rounded-xl border-2 border-dashed border-current/20 text-center">
+          <motion.div
+            whileHover={{ scale: 1.02, borderColor: "currentColor" }}
+            className="max-w-xs mx-auto p-6 rounded-xl border-2 border-dashed border-current/20 text-center cursor-pointer transition-colors"
+          >
             <Camera className="h-8 w-8 mx-auto mb-2 opacity-30" />
             <p className="text-sm opacity-50">Tap to upload a photo</p>
-          </div>
+          </motion.div>
         </Wrap>
       );
 
@@ -586,10 +636,10 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-lg mx-auto">
             {(c.tables || []).map((table: any, i: number) => (
               <motion.div key={i} initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05, type: "spring" }}
-                className="p-4 rounded-2xl bg-current/5 text-center hover:bg-current/10 transition-colors">
-                <div className="w-14 h-14 rounded-full bg-current/10 mx-auto mb-3 flex items-center justify-center font-bold text-lg">{i + 1}</div>
+                className="p-4 rounded-2xl bg-current/5 text-center hover:bg-current/10 transition-colors group">
+                <div className="w-14 h-14 rounded-full bg-current/10 mx-auto mb-3 flex items-center justify-center font-bold text-lg group-hover:scale-110 transition-transform">{i + 1}</div>
                 <p className="font-semibold text-sm mb-2">{table.name}</p>
-                <div className="text-xs opacity-60 space-y-0.5">{(table.seats || []).map((s: string, j: number) => <p key={j}>{s}</p>)}</div>
+                <div className="text-xs opacity-60 space-y-0.5">{(table.seats || []).map((seat: string, j: number) => <p key={j}>{seat}</p>)}</div>
               </motion.div>
             ))}
           </div>
@@ -609,7 +659,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
                 {item.description && <p className="text-sm opacity-70 mb-3">{item.description}</p>}
                 {item.features && (
                   <ul className="text-sm opacity-60 space-y-1">
-                    {item.features.map((f: string, j: number) => <li key={j}>✓ {f}</li>)}
+                    {item.features.map((f: string, j: number) => <li key={j} className="flex items-center gap-1 justify-center"><Check className="h-3 w-3" /> {f}</li>)}
                   </ul>
                 )}
               </motion.div>
@@ -643,7 +693,7 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
       return (
         <Wrap>
           <motion.div initial={{ y: 20, opacity: 0 }} whileInView={{ y: 0, opacity: 1 }} viewport={{ once: true }}
-            className="max-w-sm mx-auto p-8 rounded-2xl bg-current/5 text-center shadow-sm">
+            className="max-w-sm mx-auto p-8 rounded-2xl bg-current/5 text-center shadow-sm hover:shadow-md transition-shadow">
             {c.contactImageUrl ? <img src={c.contactImageUrl} alt="" className="w-24 h-24 rounded-full mx-auto mb-4 object-cover ring-4 ring-current/10" loading="lazy" /> :
               <div className="w-24 h-24 rounded-full mx-auto mb-4 bg-current/10 flex items-center justify-center text-3xl font-bold">{c.contactName?.charAt(0) || "?"}</div>}
             <h3 className="font-display text-xl font-bold">{c.contactName || "Contact"}</h3>
@@ -662,6 +712,51 @@ function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; inde
 }
 
 // --- Sub-components ---
+
+// Image with click-to-expand lightbox
+function ImageWithLightbox({ src, alt, borderRadius }: { src: string; alt: string; borderRadius?: string }) {
+  const [expanded, setExpanded] = useState(false);
+  
+  return (
+    <>
+      <motion.img
+        src={src}
+        alt={alt}
+        className="w-full rounded-xl object-cover cursor-pointer"
+        style={{ borderRadius }}
+        initial={{ scale: 1.05, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 0.8 }}
+        loading="lazy"
+        onClick={() => setExpanded(true)}
+      />
+      <AnimatePresence>
+        {expanded && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] bg-black/90 flex items-center justify-center p-4 cursor-pointer"
+            onClick={() => setExpanded(false)}
+          >
+            <motion.img
+              src={src}
+              alt={alt}
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              className="max-w-full max-h-full object-contain rounded-xl"
+            />
+            <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition text-white">
+              <X className="h-5 w-5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </>
+  );
+}
 
 function CountdownTimer({ targetDate, show, style = "simple", flipTheme }: {
   targetDate?: string; show: Record<string, boolean>; style?: string; flipTheme?: string;
@@ -754,7 +849,7 @@ function FaqItem({ question, answer, style, index = 0 }: { question: string; ans
   );
 }
 
-// Gallery carousel component
+// Gallery carousel with improved navigation
 function GalleryCarousel({ images, showCaptions }: { images: { url: string; caption?: string }[]; showCaptions?: boolean }) {
   const [currentIdx, setCurrentIdx] = useState(0);
   if (!images.length) return null;
@@ -781,19 +876,21 @@ function GalleryCarousel({ images, showCaptions }: { images: { url: string; capt
       {images.length > 1 && (
         <>
           <button onClick={() => setCurrentIdx((currentIdx - 1 + images.length) % images.length)}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition">
+            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm">
             <ChevronLeft className="h-4 w-4" />
           </button>
           <button onClick={() => setCurrentIdx((currentIdx + 1) % images.length)}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition">
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 text-white flex items-center justify-center hover:bg-black/60 transition backdrop-blur-sm">
             <ChevronRight className="h-4 w-4" />
           </button>
-          {/* Dots */}
-          <div className="flex justify-center gap-1.5 mt-3">
-            {images.map((_, i) => (
+          {/* Enhanced dots with counter */}
+          <div className="flex items-center justify-center gap-1.5 mt-3">
+            {images.length <= 8 ? images.map((_, i) => (
               <button key={i} onClick={() => setCurrentIdx(i)}
-                className={`w-2 h-2 rounded-full transition-all ${i === currentIdx ? "bg-current w-6" : "bg-current/30"}`} />
-            ))}
+                className={`h-2 rounded-full transition-all duration-300 ${i === currentIdx ? "bg-current w-6" : "bg-current/30 w-2"}`} />
+            )) : (
+              <span className="text-xs opacity-50">{currentIdx + 1} / {images.length}</span>
+            )}
           </div>
         </>
       )}

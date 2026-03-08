@@ -179,7 +179,54 @@ export function BlockSettings({ block, onUpdate, onClose, onCopyStyle, onPasteSt
   );
 }
 
-function StyleSettings({ style, updateStyle }: { style: any; updateStyle: (k: string, v: any) => void }) {
+function StylePresetsPanel({ style, updateStyle, onUpdate, onCopyStyle, onPasteStyle, hasCopiedStyle }: {
+  style: any; updateStyle: (k: string, v: any) => void;
+  onUpdate: (content?: BlockContent, style?: BlockStyle) => void;
+  onCopyStyle?: () => void; onPasteStyle?: () => void; hasCopiedStyle?: boolean;
+}) {
+  return (
+    <>
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick Style Presets</p>
+      <div className="grid grid-cols-2 gap-1.5">
+        {STYLE_PRESETS.map(preset => (
+          <button
+            key={preset.name}
+            onClick={() => onUpdate(undefined, { ...style, ...preset.style } as BlockStyle)}
+            className="p-2 rounded-lg border border-border hover:border-primary/50 hover:shadow-sm transition-all text-left group"
+          >
+            <div className="h-8 rounded-md mb-1.5 transition-transform group-hover:scale-105" style={{
+              backgroundColor: preset.style.backgroundColor || "#f5f5f5",
+              background: preset.style.gradient || preset.style.backgroundColor || "#f5f5f5",
+              borderRadius: preset.style.borderRadius || "0.25rem",
+            }} />
+            <p className="text-[9px] font-medium truncate">{preset.name}</p>
+          </button>
+        ))}
+      </div>
+      <Separator />
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Style Clipboard</p>
+      <div className="flex gap-1.5">
+        {onCopyStyle && (
+          <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={onCopyStyle}>
+            <Copy className="h-3 w-3 mr-1" /> Copy Style
+          </Button>
+        )}
+        {onPasteStyle && (
+          <Button variant="outline" size="sm" className="flex-1 text-[10px] h-7" onClick={onPasteStyle} disabled={!hasCopiedStyle}>
+            <Wand2 className="h-3 w-3 mr-1" /> Paste Style
+          </Button>
+        )}
+      </div>
+      <Separator />
+      <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Quick Reset</p>
+      <Button variant="outline" size="sm" className="w-full text-[10px] h-7" onClick={() => onUpdate(undefined, { textAlign: "center", padding: "2rem 1rem" } as BlockStyle)}>
+        <RotateCcw className="h-3 w-3 mr-1" /> Reset to Default Style
+      </Button>
+    </>
+  );
+}
+
+
   return (
     <>
       {/* Text Alignment - Canva-style toggle */}

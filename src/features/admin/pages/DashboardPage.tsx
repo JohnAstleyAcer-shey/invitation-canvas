@@ -339,6 +339,7 @@ function InvitationCard({
                 ) : (
                   <>
                     <DropdownMenuItem asChild><Link to={`/admin/edit/${inv.id}`}><Edit className="h-4 w-4 mr-2" /> Edit</Link></DropdownMenuItem>
+                    <DropdownMenuItem asChild><Link to={`/admin/blocks/${inv.id}`}><LayoutGrid className="h-4 w-4 mr-2" /> Block Editor</Link></DropdownMenuItem>
                     <DropdownMenuItem asChild><Link to={`/admin/guests/${inv.id}`}><Users className="h-4 w-4 mr-2" /> Guests</Link></DropdownMenuItem>
                     <DropdownMenuItem onClick={onTogglePublish}>
                       {inv.is_published ? <><EyeOff className="h-4 w-4 mr-2" /> Unpublish</> : <><Eye className="h-4 w-4 mr-2" /> Publish</>}

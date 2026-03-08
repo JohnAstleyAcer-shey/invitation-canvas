@@ -17,6 +17,7 @@ import ActivityLogPage from "./features/admin/pages/ActivityLogPage";
 import TemplatesPage from "./features/admin/pages/TemplatesPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import HelpPage from "./features/admin/pages/HelpPage";
+import BlockEditorPage from "./features/blocks/pages/BlockEditorPage";
 import InvitationViewPage from "./features/invitation/pages/InvitationViewPage";
 import { CustomerAdminProvider } from "./features/customer-portal/hooks/useCustomerAdmin";
 import CustomerLoginPage from "./features/customer-portal/pages/CustomerLoginPage";
@@ -56,6 +57,7 @@ const App = () => (
               <Route path="templates" element={<TemplatesPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="help" element={<HelpPage />} />
+              <Route path="blocks/:id" element={<BlockEditorPage />} />
             </Route>
             <Route path="/invite/:slug" element={<InvitationViewPage />} />
             <Route path="/customer-admin" element={<CustomerAdminProvider><CustomerLoginPage /></CustomerAdminProvider>} />

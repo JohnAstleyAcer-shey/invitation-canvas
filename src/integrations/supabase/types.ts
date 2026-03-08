@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      block_templates: {
+        Row: {
+          blocks: Json
+          category: string
+          created_at: string
+          description: string | null
+          event_type: string | null
+          id: string
+          is_premium: boolean
+          name: string
+          sort_order: number
+          thumbnail_url: string | null
+        }
+        Insert: {
+          blocks?: Json
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_type?: string | null
+          id?: string
+          is_premium?: boolean
+          name: string
+          sort_order?: number
+          thumbnail_url?: string | null
+        }
+        Update: {
+          blocks?: Json
+          category?: string
+          created_at?: string
+          description?: string | null
+          event_type?: string | null
+          id?: string
+          is_premium?: boolean
+          name?: string
+          sort_order?: number
+          thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
       blue_bills: {
         Row: {
           created_at: string
@@ -330,6 +369,50 @@ export type Database = {
           },
         ]
       }
+      invitation_blocks: {
+        Row: {
+          block_type: string
+          content: Json
+          created_at: string
+          id: string
+          invitation_id: string
+          is_visible: boolean
+          sort_order: number
+          style: Json
+          updated_at: string
+        }
+        Insert: {
+          block_type: string
+          content?: Json
+          created_at?: string
+          id?: string
+          invitation_id: string
+          is_visible?: boolean
+          sort_order?: number
+          style?: Json
+          updated_at?: string
+        }
+        Update: {
+          block_type?: string
+          content?: Json
+          created_at?: string
+          id?: string
+          invitation_id?: string
+          is_visible?: boolean
+          sort_order?: number
+          style?: Json
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_blocks_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitation_pages: {
         Row: {
           created_at: string
@@ -512,6 +595,7 @@ export type Database = {
           slug: string
           title: string
           updated_at: string
+          use_blocks: boolean
           venue_address: string | null
           venue_lat: number | null
           venue_lng: number | null
@@ -537,6 +621,7 @@ export type Database = {
           slug: string
           title: string
           updated_at?: string
+          use_blocks?: boolean
           venue_address?: string | null
           venue_lat?: number | null
           venue_lng?: number | null
@@ -562,6 +647,7 @@ export type Database = {
           slug?: string
           title?: string
           updated_at?: string
+          use_blocks?: boolean
           venue_address?: string | null
           venue_lat?: number | null
           venue_lng?: number | null

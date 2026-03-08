@@ -7,6 +7,8 @@ import {
   usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures,
   usePublicBlueBills, usePublicGallery, usePublicDressCode, usePublicGiftItems, usePublicFaqs,
 } from "../hooks/usePublicInvitation";
+import { usePublicBlocks } from "@/features/blocks/hooks/useBlocks";
+import { BlockViewRenderer } from "@/features/blocks/components/BlockViewRenderer";
 import { useViewTracking } from "../hooks/useViewTracking";
 import { InvitationThemeProvider } from "../components/ThemeProvider";
 import { StoryNavigation } from "../components/StoryNavigation";
@@ -61,6 +63,7 @@ export default function InvitationViewPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: invitation, isLoading, error } = usePublicInvitation(slug || "");
   const invId = invitation?.id ?? "";
+  const useBlockMode = (invitation as any)?.use_blocks === true;
   const [unlocked, setUnlocked] = useState(false);
 
   // Track views
@@ -77,6 +80,7 @@ export default function InvitationViewPage() {
   const { data: dressCode } = usePublicDressCode(invId);
   const { data: giftItems } = usePublicGiftItems(invId);
   const { data: faqs } = usePublicFaqs(invId);
+  const { data: publicBlocks } = usePublicBlocks(useBlockMode ? invId : "");
 
   if (isLoading) return <InvitationViewSkeleton />;
 
@@ -133,6 +137,21 @@ export default function InvitationViewPage() {
       labels.push(page.custom_title || PAGE_TYPE_LABELS[page.page_type as keyof typeof PAGE_TYPE_LABELS] || page.page_type);
     }
   });
+
+  // Block-based rendering
+  if (useBlockMode && publicBlocks) {
+    return (
+      <InvitationThemeProvider theme={theme}>
+        <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
+        <ParticleCanvas effect={theme?.particle_effect} />
+        <FloatingShareButton slug={invitation.slug} title={invitation.title} />
+        {theme?.music_url && (
+          <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
+        )}
+        <BlockViewRenderer blocks={publicBlocks} />
+      </InvitationThemeProvider>
+    );
+  }
 
   return (
     <InvitationThemeProvider theme={theme}>

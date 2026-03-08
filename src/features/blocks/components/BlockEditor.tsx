@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -9,6 +9,9 @@ import {
   Palette, Wand2, RotateCcw, Fullscreen, Search, Bell, Clock, Hash, MousePointer,
   Crosshair, Move, Lock, Unlock, AlignLeft, AlignCenter, AlignRight,
   ChevronLeft, ChevronRight, Settings2, Sparkles, History, FileJson,
+  Command, Zap, LayoutTemplate, PanelLeft, Columns, Image, Type,
+  Timer, MapPin, Mail, Gift, HelpCircle, Music, MessageSquare, Code,
+  Share2, BookOpen, Star, Play, Phone, Camera, Shirt, Users,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -16,13 +19,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Progress } from "@/components/ui/progress";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { BlockSidebar } from "./BlockSidebar";
 import { BlockCanvas } from "./BlockCanvas";
 import { BlockSettings } from "./BlockSettings";
 import { BlockTemplatePanel } from "./BlockTemplatePanel";
 import { BlockLivePreview } from "./BlockLivePreview";
 import { useBlocks, useBlockHistory } from "../hooks/useBlocks";
-import { BLOCK_REGISTRY } from "../registry";
+import { BLOCK_REGISTRY, BLOCK_CATEGORIES, getBlocksByCategory } from "../registry";
 import type { BlockType, BlockContent, BlockStyle, InvitationBlock } from "../types";
 import { toast } from "sonner";
 
@@ -53,6 +58,8 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [scrollSyncEnabled, setScrollSyncEnabled] = useState(true);
   const [scrollPosition, setScrollPosition] = useState(0);
+  const [commandSearch, setCommandSearch] = useState("");
+  const commandInputRef = useRef<HTMLInputElement>(null);
 
   // Track save state from mutations
   useEffect(() => {
@@ -86,6 +93,44 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
         JSON.stringify(b.content).toLowerCase().includes(q);
     });
   }, [blocks, searchQuery]);
+
+  // Command palette items
+  const commandItems = useMemo(() => {
+    const items: { label: string; action: () => void; icon: React.ReactNode; category: string }[] = [
+      // Block actions
+      ...Object.values(BLOCK_REGISTRY).map(def => ({
+        label: `Add ${def.label}`,
+        action: () => { addBlock.mutate({ blockType: def.type }); setShowCommandBar(false); },
+        icon: <Zap className="h-3.5 w-3.5" />,
+        category: "Add Block",
+      })),
+      // Editor actions
+      { label: "Toggle Live Preview", action: () => { setShowLivePreview(p => !p); setShowCommandBar(false); }, icon: <SplitSquareHorizontal className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Mobile View", action: () => { setPreviewMode("mobile"); setShowCommandBar(false); }, icon: <Smartphone className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Tablet View", action: () => { setPreviewMode("tablet"); setShowCommandBar(false); }, icon: <Tablet className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Desktop View", action: () => { setPreviewMode("desktop"); setShowCommandBar(false); }, icon: <Monitor className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Toggle Fullscreen", action: () => { setIsFullscreen(p => !p); setShowCommandBar(false); }, icon: <Fullscreen className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Toggle Sidebar", action: () => { setSidebarCollapsed(p => !p); setShowCommandBar(false); }, icon: <PanelLeft className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Zoom In", action: () => { setZoom(z => Math.min(z + 10, 150)); setShowCommandBar(false); }, icon: <ZoomIn className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Zoom Out", action: () => { setZoom(z => Math.max(z - 10, 50)); setShowCommandBar(false); }, icon: <ZoomOut className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Reset Zoom", action: () => { setZoom(100); setShowCommandBar(false); }, icon: <Maximize2 className="h-3.5 w-3.5" />, category: "View" },
+      { label: "Export Blocks", action: () => { handleExportBlocks(); setShowCommandBar(false); }, icon: <Download className="h-3.5 w-3.5" />, category: "File" },
+      { label: "Import Blocks", action: () => { handleImportBlocks(); setShowCommandBar(false); }, icon: <Upload className="h-3.5 w-3.5" />, category: "File" },
+      { label: "Show All Blocks", action: () => { handleShowAll(); setShowCommandBar(false); }, icon: <Eye className="h-3.5 w-3.5" />, category: "Edit" },
+      { label: "Hide All Blocks", action: () => { handleHideAll(); setShowCommandBar(false); }, icon: <Eye className="h-3.5 w-3.5" />, category: "Edit" },
+      { label: "Clear All Blocks", action: () => { handleClearAll(); setShowCommandBar(false); }, icon: <Trash2 className="h-3.5 w-3.5" />, category: "Edit" },
+      { label: "Undo", action: () => { const r = undo(); if (r) batchUpdateBlocks.mutate(r); setShowCommandBar(false); }, icon: <Undo2 className="h-3.5 w-3.5" />, category: "Edit" },
+      { label: "Redo", action: () => { const r = redo(); if (r) batchUpdateBlocks.mutate(r); setShowCommandBar(false); }, icon: <Redo2 className="h-3.5 w-3.5" />, category: "Edit" },
+      { label: "Block Library", action: () => { setSidebarPanel("blocks"); setSidebarCollapsed(false); setShowCommandBar(false); }, icon: <Grid3X3 className="h-3.5 w-3.5" />, category: "Panels" },
+      { label: "Templates", action: () => { setSidebarPanel("templates"); setSidebarCollapsed(false); setShowCommandBar(false); }, icon: <LayoutTemplate className="h-3.5 w-3.5" />, category: "Panels" },
+      { label: "Layers", action: () => { setSidebarPanel("layers"); setSidebarCollapsed(false); setShowCommandBar(false); }, icon: <LayoutList className="h-3.5 w-3.5" />, category: "Panels" },
+      { label: "Open Live Page", action: () => { window.open(`/invite/${invitationSlug}`, "_blank"); setShowCommandBar(false); }, icon: <Share2 className="h-3.5 w-3.5" />, category: "Navigation" },
+    ];
+
+    if (!commandSearch) return items.slice(0, 15);
+    const q = commandSearch.toLowerCase();
+    return items.filter(i => i.label.toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
+  }, [commandSearch, addBlock, invitationSlug, undo, redo, batchUpdateBlocks]);
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -166,6 +211,7 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
       if ((e.ctrlKey || e.metaKey) && e.key === "k") {
         e.preventDefault();
         setShowCommandBar(prev => !prev);
+        setCommandSearch("");
       }
       // Fullscreen
       if (e.key === "F11" || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "f")) {
@@ -181,6 +227,13 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
     window.addEventListener("keydown", handler);
     return () => window.removeEventListener("keydown", handler);
   }, [selectedBlockId, blocks, removeBlock, duplicateBlock, updateBlock, undo, redo, batchUpdateBlocks]);
+
+  // Focus command input when opened
+  useEffect(() => {
+    if (showCommandBar) {
+      setTimeout(() => commandInputRef.current?.focus(), 100);
+    }
+  }, [showCommandBar]);
 
   const handleAddBlock = useCallback((type: BlockType) => {
     addBlock.mutate({ blockType: type });
@@ -252,11 +305,6 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
     };
     input.click();
   }, [addBlocksFromTemplate]);
-
-  const handleSelectAll = useCallback(() => {
-    // Select first block
-    if (blocks.length) setSelectedBlockId(blocks[0].id);
-  }, [blocks]);
 
   const handleHideAll = useCallback(() => {
     blocks.forEach(b => updateBlock.mutate({ id: b.id, is_visible: false }));
@@ -430,6 +478,16 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
 
         {/* Right: Actions */}
         <div className="flex items-center gap-1">
+          {/* Command palette */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setShowCommandBar(true); setCommandSearch(""); }}>
+                <Command className="h-3 w-3" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Command palette (Ctrl+K)</TooltipContent>
+          </Tooltip>
+
           {/* Search */}
           <Tooltip>
             <TooltipTrigger asChild>
@@ -453,7 +511,6 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
 
           <Separator orientation="vertical" className="h-5" />
 
-          {/* Quick actions */}
           <Tooltip>
             <TooltipTrigger asChild>
               <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFullscreen(!isFullscreen)}>
@@ -552,6 +609,65 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Command Palette Dialog */}
+      <Dialog open={showCommandBar} onOpenChange={setShowCommandBar}>
+        <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
+          <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
+            <Command className="h-4 w-4 text-muted-foreground shrink-0" />
+            <input
+              ref={commandInputRef}
+              value={commandSearch}
+              onChange={e => setCommandSearch(e.target.value)}
+              placeholder="Type a command or search..."
+              className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
+              onKeyDown={e => {
+                if (e.key === "Enter" && commandItems.length > 0) {
+                  commandItems[0].action();
+                }
+              }}
+            />
+            <kbd className="text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono">ESC</kbd>
+          </div>
+          <ScrollArea className="max-h-72">
+            <div className="p-2">
+              {commandItems.length === 0 && (
+                <p className="text-sm text-muted-foreground text-center py-6">No results found</p>
+              )}
+              {(() => {
+                let lastCat = "";
+                return commandItems.map((item, i) => {
+                  const showCat = item.category !== lastCat;
+                  lastCat = item.category;
+                  return (
+                    <div key={i}>
+                      {showCat && (
+                        <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold px-2 pt-2 pb-1">{item.category}</p>
+                      )}
+                      <button
+                        onClick={item.action}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm hover:bg-accent transition-colors text-left"
+                      >
+                        <span className="text-muted-foreground">{item.icon}</span>
+                        <span className="flex-1">{item.label}</span>
+                      </button>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </ScrollArea>
+          <div className="px-4 py-2 border-t border-border bg-muted/30">
+            <div className="flex items-center justify-between text-[9px] text-muted-foreground">
+              <span>{commandItems.length} results</span>
+              <div className="flex gap-2">
+                <span><kbd className="bg-muted px-1 rounded font-mono">↵</kbd> select</span>
+                <span><kbd className="bg-muted px-1 rounded font-mono">↑↓</kbd> navigate</span>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Keyboard shortcuts overlay */}
       <AnimatePresence>
@@ -709,18 +825,24 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
           )}
         </div>
         <div className="flex items-center gap-3">
-          {canUndo && <span>Undo available</span>}
+          {canUndo && <span className="text-primary">Undo available</span>}
           <span>{previewMode} view · {zoom}%</span>
           {lastSaved && (
-            <span className="text-green-600">Last saved: {lastSaved.toLocaleTimeString()}</span>
+            <span className="text-green-600 dark:text-green-400">
+              <CheckCircle2 className="h-2.5 w-2.5 inline mr-0.5" />
+              {lastSaved.toLocaleTimeString()}
+            </span>
           )}
+          <Badge variant="outline" className="text-[8px] h-4">
+            <Keyboard className="h-2 w-2 mr-0.5" /> Ctrl+K
+          </Badge>
         </div>
       </motion.div>
     </div>
   );
 }
 
-// Enhanced Layers panel with drag indicators and duplicate
+// Enhanced Layers panel
 function BlockLayersPanel({
   blocks, selectedBlockId, onSelectBlock, onToggleVisibility, onRemove, onDuplicate,
 }: {

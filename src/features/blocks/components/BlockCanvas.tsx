@@ -1,6 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { motion, Reorder, AnimatePresence } from "framer-motion";
-import { GripVertical, Eye, EyeOff, Copy, Trash2, ChevronUp, ChevronDown, Plus, Layers, Sparkles, ArrowUp, ArrowDown, MoreHorizontal, Hash, Grip, Move } from "lucide-react";
+import { GripVertical, Eye, EyeOff, Copy, Trash2, ChevronUp, ChevronDown, Plus, Layers, Sparkles, ArrowUp, ArrowDown, MoreHorizontal, Hash, Grip, Move, Lock, Unlock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -33,11 +33,25 @@ export function BlockCanvas({
   const [hoveredInsertIndex, setHoveredInsertIndex] = useState<number | null>(null);
   const [draggedBlockId, setDraggedBlockId] = useState<string | null>(null);
   const [hoveredBlockId, setHoveredBlockId] = useState<string | null>(null);
+  const [lockedBlocks, setLockedBlocks] = useState<Set<string>>(new Set());
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const handleReorder = useCallback((newOrder: InvitationBlock[]) => {
-    onReorder(newOrder.map(b => b.id));
-  }, [onReorder]);
+    // Skip if any involved block is locked
+    const reorderedIds = newOrder.map(b => b.id);
+    const originalIds = blocks.map(b => b.id);
+    const changed = reorderedIds.some((id, i) => id !== originalIds[i]);
+    if (changed && newOrder.some(b => lockedBlocks.has(b.id))) return;
+    onReorder(reorderedIds);
+  }, [onReorder, blocks, lockedBlocks]);
+
+  const toggleLock = useCallback((id: string) => {
+    setLockedBlocks(prev => {
+      const next = new Set(prev);
+      next.has(id) ? next.delete(id) : next.add(id);
+      return next;
+    });
+  }, []);
 
   // Auto-scroll selected block into view
   useEffect(() => {
@@ -87,7 +101,7 @@ export function BlockCanvas({
           </div>
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.8 }} className="pt-2">
             <p className="text-[10px] text-muted-foreground/50 flex items-center justify-center gap-1">
-              <Sparkles className="h-3 w-3" /> Pro tip: Use templates for instant layouts
+              <Sparkles className="h-3 w-3" /> Pro tip: Use Ctrl+K to open the command palette
             </p>
           </motion.div>
         </motion.div>
@@ -120,13 +134,15 @@ export function BlockCanvas({
               const isSelected = selectedBlockId === block.id;
               const isDragging = draggedBlockId === block.id;
               const isHovered = hoveredBlockId === block.id;
+              const isLocked = lockedBlocks.has(block.id);
 
               return (
                 <Reorder.Item
                   key={block.id}
                   value={block}
-                  onDragStart={() => setDraggedBlockId(block.id)}
+                  onDragStart={() => !isLocked && setDraggedBlockId(block.id)}
                   onDragEnd={() => setDraggedBlockId(null)}
+                  dragListener={!isLocked}
                 >
                   <motion.div
                     layout
@@ -141,7 +157,7 @@ export function BlockCanvas({
                           : isHovered
                             ? "border-primary/30"
                             : "border-transparent"
-                    } ${!block.is_visible ? "opacity-30" : ""}`}
+                    } ${!block.is_visible ? "opacity-30" : ""} ${isLocked ? "ring-1 ring-amber-500/20" : ""}`}
                     onClick={() => onSelectBlock(isSelected ? null : block.id)}
                   >
                     {/* Block toolbar */}
@@ -154,20 +170,27 @@ export function BlockCanvas({
                           className="absolute -top-0.5 left-0 right-0 flex items-center justify-between px-1.5 py-0.5 bg-primary text-primary-foreground text-[10px] z-10 rounded-t-sm"
                         >
                           <div className="flex items-center gap-1.5">
-                            <GripVertical className="h-3 w-3 cursor-grab active:cursor-grabbing" />
+                            <GripVertical className={`h-3 w-3 ${isLocked ? "opacity-30" : "cursor-grab active:cursor-grabbing"}`} />
                             <span className="font-medium">{def?.label || block.block_type}</span>
                             <span className="opacity-50 font-mono">#{index + 1}</span>
                             {!block.is_visible && (
                               <Badge variant="outline" className="h-3.5 text-[7px] border-primary-foreground/30 py-0">Hidden</Badge>
                             )}
+                            {isLocked && (
+                              <Lock className="h-2.5 w-2.5 opacity-60" />
+                            )}
                           </div>
                           <div className="flex items-center">
-                            <ToolbarButton icon={<ArrowUp className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveUp(index); }} disabled={index === 0} />
-                            <ToolbarButton icon={<ArrowDown className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveDown(index); }} disabled={index === blocks.length - 1} />
+                            <ToolbarButton icon={<ArrowUp className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveUp(index); }} disabled={index === 0 || isLocked} />
+                            <ToolbarButton icon={<ArrowDown className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onMoveDown(index); }} disabled={index === blocks.length - 1 || isLocked} />
+                            <ToolbarButton
+                              icon={isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+                              onClick={e => { e.stopPropagation(); toggleLock(block.id); }}
+                            />
                             <ToolbarButton icon={block.is_visible ? <Eye className="h-3 w-3" /> : <EyeOff className="h-3 w-3" />}
                               onClick={e => { e.stopPropagation(); onToggleVisibility(block.id, !block.is_visible); }} />
                             <ToolbarButton icon={<Copy className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onDuplicate(block.id); }} />
-                            <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger />
+                            <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger disabled={isLocked} />
                           </div>
                         </motion.div>
                       )}
@@ -183,10 +206,11 @@ export function BlockCanvas({
                         <div className="flex items-center gap-1.5">
                           <GripVertical className="h-3 w-3 cursor-grab active:cursor-grabbing" />
                           <span className="font-medium">{def?.label || block.block_type}</span>
+                          {isLocked && <Lock className="h-2.5 w-2.5 opacity-60" />}
                         </div>
                         <div className="flex items-center">
                           <ToolbarButton icon={<Copy className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onDuplicate(block.id); }} />
-                          <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger />
+                          <ToolbarButton icon={<Trash2 className="h-3 w-3" />} onClick={e => { e.stopPropagation(); onRemove(block.id); }} danger disabled={isLocked} />
                         </div>
                       </motion.div>
                     )}
@@ -223,6 +247,9 @@ export function BlockCanvas({
             <span className="flex items-center gap-1"><Eye className="h-3 w-3" /> {blocks.filter(b => b.is_visible).length} visible</span>
             {blocks.filter(b => !b.is_visible).length > 0 && (
               <span className="flex items-center gap-1"><EyeOff className="h-3 w-3" /> {blocks.filter(b => !b.is_visible).length} hidden</span>
+            )}
+            {lockedBlocks.size > 0 && (
+              <span className="flex items-center gap-1"><Lock className="h-3 w-3" /> {lockedBlocks.size} locked</span>
             )}
           </div>
           <p className="text-[9px] text-muted-foreground/50">Click a block to edit · Drag to reorder · Hover between blocks to insert</p>

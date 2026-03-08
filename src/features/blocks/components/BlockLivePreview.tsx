@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Maximize2, Zap, RefreshCw, ExternalLink, Moon, Sun, RotateCw, Minimize2 } from "lucide-react";
+import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Maximize2, Zap, RefreshCw, ExternalLink, Moon, Sun, RotateCw, Minimize2, Layers, Eye } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +24,6 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
   const [updateCount, setUpdateCount] = useState(0);
   const [showDarkPreview, setShowDarkPreview] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
 
   // Track updates
@@ -97,7 +96,7 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
         />
       </div>
 
-      {/* Enhanced live indicator bar */}
+      {/* Live indicator bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-muted/20">
         <div className="flex items-center gap-2">
           <motion.div

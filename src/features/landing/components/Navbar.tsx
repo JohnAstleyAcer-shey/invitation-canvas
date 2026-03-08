@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X } from "lucide-react";
+import { Menu, X, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, useMotionValueEvent, useScroll } from "framer-motion";
 
 const navLinks = [
   { label: "Features", id: "features" },
@@ -16,12 +16,19 @@ const navLinks = [
 export function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
+  const [hidden, setHidden] = useState(false);
+  const { scrollY } = useScroll();
 
-  useEffect(() => {
-    const handler = () => setIsScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handler, { passive: true });
-    return () => window.removeEventListener("scroll", handler);
-  }, []);
+  // Hide navbar on scroll down, show on scroll up
+  useMotionValueEvent(scrollY, "change", (latest) => {
+    const previous = scrollY.getPrevious() ?? 0;
+    setIsScrolled(latest > 20);
+    if (latest > previous && latest > 150) {
+      setHidden(true);
+    } else {
+      setHidden(false);
+    }
+  });
 
   // Lock body scroll when mobile menu is open
   useEffect(() => {
@@ -35,7 +42,9 @@ export function Navbar() {
   };
 
   return (
-    <nav
+    <motion.nav
+      animate={{ y: hidden && !isMobileOpen ? -100 : 0 }}
+      transition={{ duration: 0.3, ease: "easeInOut" }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
           ? "bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-sm"
@@ -61,15 +70,27 @@ export function Navbar() {
             </button>
           ))}
           <ThemeToggle />
-          <Button asChild size="sm" className="rounded-full px-6">
-            <Link to="/auth">Get Started</Link>
+          <Button asChild size="sm" className="rounded-full px-6 shadow-sm hover:shadow-md transition-shadow">
+            <Link to="/auth">
+              Get Started <ArrowRight className="ml-1 h-3.5 w-3.5" />
+            </Link>
           </Button>
         </div>
 
         <div className="flex md:hidden items-center gap-2">
           <ThemeToggle />
           <Button variant="ghost" size="icon" onClick={() => setIsMobileOpen(!isMobileOpen)} className="relative z-50">
-            {isMobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            <AnimatePresence mode="wait">
+              {isMobileOpen ? (
+                <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
+                  <X className="h-5 w-5" />
+                </motion.div>
+              ) : (
+                <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
+                  <Menu className="h-5 w-5" />
+                </motion.div>
+              )}
+            </AnimatePresence>
           </Button>
         </div>
       </div>
@@ -89,24 +110,32 @@ export function Navbar() {
               exit={{ opacity: 0, y: 20 }}
               className="section-container py-8 flex flex-col gap-2"
             >
-              {navLinks.map((link) => (
-                <button
+              {navLinks.map((link, i) => (
+                <motion.button
                   key={link.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: i * 0.1 }}
                   onClick={() => scrollTo(link.id)}
                   className="text-left text-lg font-display font-semibold py-3 px-4 rounded-xl hover:bg-accent transition-colors"
                 >
                   {link.label}
-                </button>
+                </motion.button>
               ))}
-              <div className="mt-4">
+              <motion.div
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="mt-4"
+              >
                 <Button asChild className="rounded-full w-full" size="lg">
-                  <Link to="/auth">Get Started</Link>
+                  <Link to="/auth">Get Started Free</Link>
                 </Button>
-              </div>
+              </motion.div>
             </motion.div>
           </motion.div>
         )}
       </AnimatePresence>
-    </nav>
+    </motion.nav>
   );
 }

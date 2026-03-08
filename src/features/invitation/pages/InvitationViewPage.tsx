@@ -63,6 +63,7 @@ export default function InvitationViewPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: invitation, isLoading, error } = usePublicInvitation(slug || "");
   const invId = invitation?.id ?? "";
+  const useBlockMode = (invitation as any)?.use_blocks === true;
   const [unlocked, setUnlocked] = useState(false);
 
   // Track views
@@ -79,6 +80,7 @@ export default function InvitationViewPage() {
   const { data: dressCode } = usePublicDressCode(invId);
   const { data: giftItems } = usePublicGiftItems(invId);
   const { data: faqs } = usePublicFaqs(invId);
+  const { data: publicBlocks } = usePublicBlocks(useBlockMode ? invId : "");
 
   if (isLoading) return <InvitationViewSkeleton />;
 

@@ -256,11 +256,23 @@ export default function EditInvitationPage() {
             <p className="text-xs text-muted-foreground">/invite/{invitation.slug}</p>
           </div>
         </div>
-        {unsavedChanges && (
-          <Button onClick={handleSaveDetails} disabled={updateInvitation.isPending} className="rounded-full" size="sm">
-            <Save className="h-4 w-4 mr-2" /> Save Changes
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {isSaving && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <Clock className="h-3 w-3 animate-spin" /> Saving...
+            </span>
+          )}
+          {lastSaved && !unsavedChanges && (
+            <span className="text-xs text-muted-foreground flex items-center gap-1">
+              <CheckCircle className="h-3 w-3 text-green-500" /> Saved
+            </span>
+          )}
+          {unsavedChanges && (
+            <Button onClick={handleSaveDetails} disabled={updateInvitation.isPending} className="rounded-full" size="sm">
+              <Save className="h-4 w-4 mr-2" /> Save Now
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Tabs */}

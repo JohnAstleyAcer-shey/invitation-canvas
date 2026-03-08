@@ -139,17 +139,39 @@ function BlockCard({ block, onAdd, disabled }: {
   disabled?: boolean;
 }) {
   const Icon = iconMap[block.icon] || Type;
+  const [isAdding, setIsAdding] = useState(false);
+
+  const handleAdd = () => {
+    setIsAdding(true);
+    onAdd();
+    setTimeout(() => setIsAdding(false), 500);
+  };
 
   return (
     <motion.button
-      whileHover={{ scale: 1.03 }}
-      whileTap={{ scale: 0.97 }}
-      onClick={onAdd}
-      disabled={disabled}
-      className="flex flex-col items-center gap-1 p-2.5 rounded-lg border border-border bg-background hover:bg-accent/50 hover:border-primary/30 transition-all text-center disabled:opacity-50 cursor-pointer"
+      whileHover={{ scale: 1.05, y: -2 }}
+      whileTap={{ scale: 0.92 }}
+      onClick={handleAdd}
+      disabled={disabled || isAdding}
+      className={`flex flex-col items-center gap-1 p-2.5 rounded-lg border border-border bg-background hover:bg-accent/50 hover:border-primary/30 hover:shadow-sm transition-all text-center disabled:opacity-50 cursor-pointer relative overflow-hidden ${
+        isAdding ? "ring-2 ring-primary/50" : ""
+      }`}
       title={block.description}
     >
-      <Icon className="h-4 w-4 text-muted-foreground" />
+      {isAdding && (
+        <motion.div
+          initial={{ scale: 0, opacity: 1 }}
+          animate={{ scale: 3, opacity: 0 }}
+          transition={{ duration: 0.5 }}
+          className="absolute inset-0 bg-primary/20 rounded-lg"
+        />
+      )}
+      <motion.div
+        animate={isAdding ? { scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] } : {}}
+        transition={{ duration: 0.4 }}
+      >
+        <Icon className="h-4 w-4 text-muted-foreground" />
+      </motion.div>
       <span className="text-[10px] font-medium leading-tight">{block.label}</span>
     </motion.button>
   );

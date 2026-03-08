@@ -49,7 +49,7 @@ export function TimelineSection({ events, variant = "classic" }: { events: Timel
                 <p className="font-semibold" style={{ color: "var(--inv-text)" }}>{ev.title}</p>
                 {ev.description && <p className="text-sm mt-1" style={{ color: "var(--inv-text-secondary)" }}>{ev.description}</p>}
               </div>
-              <div className="w-3 h-3 rounded-full shrink-0 z-10 ring-4" style={{ background: "var(--inv-primary)", ringColor: "var(--inv-secondary)" }} />
+              <div className="w-3 h-3 rounded-full shrink-0 z-10 shadow-[0_0_0_4px_var(--inv-secondary)]" style={{ background: "var(--inv-primary)" }} />
               <div className="flex-1" />
             </div>
           </motion.div>

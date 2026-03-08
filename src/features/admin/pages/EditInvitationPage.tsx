@@ -257,6 +257,11 @@ export default function EditInvitationPage() {
           </div>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" className="rounded-full text-xs" asChild>
+            <Link to={`/admin/blocks/${id}`}>
+              <Monitor className="h-3 w-3 mr-1" /> Block Editor
+            </Link>
+          </Button>
           {isSaving && (
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3 w-3 animate-spin" /> Saving...

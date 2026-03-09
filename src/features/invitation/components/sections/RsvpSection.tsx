@@ -455,18 +455,12 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <label className="flex items-center gap-2 text-xs sm:text-sm mb-1 text-left" style={{ color: "var(--inv-text-secondary)" }}>
-                  <Users className="w-3.5 h-3.5" />
-                  Number of companions (max {foundGuest?.max_companions})
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={foundGuest?.max_companions ?? 0}
-                  value={companions}
-                  onChange={e => setCompanions(Math.min(Number(e.target.value), foundGuest?.max_companions ?? 0))}
-                  className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-all"
-                  style={inputStyle}
+                <CompanionDetailsForm
+                  maxCompanions={foundGuest?.max_companions ?? 0}
+                  companions={companions}
+                  onCompanionsChange={setCompanions}
+                  companionDetails={companionDetails}
+                  onCompanionDetailsChange={setCompanionDetails}
                 />
               </motion.div>
             )}

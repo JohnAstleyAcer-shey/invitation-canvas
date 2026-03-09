@@ -54,7 +54,7 @@ export function NotificationCenter() {
         const view = payload.new as any;
         setNotifications(prev => [{
           id: view.id,
-          type: "view",
+          type: "view" as const,
           title: "New Page View",
           description: `Someone viewed your invitation (${view.device_type || "unknown"} device)`,
           timestamp: view.viewed_at,

@@ -36,48 +36,7 @@ import { toast } from "sonner";
 type PageType = Tables<"invitation_pages">["page_type"];
 type StyleVariant = "classic" | "modern" | "elegant" | "bold";
 
-function FloatingShareButton({ slug, title }: { slug: string; title: string }) {
-  const url = `${window.location.origin}/invite/${slug}`;
-  const [showTooltip, setShowTooltip] = useState(false);
-  
-  const share = async () => {
-    if (navigator.share) {
-      try {
-        await navigator.share({ title: `You're invited to ${title}!`, url });
-      } catch {}
-    } else {
-      await navigator.clipboard.writeText(url);
-      toast.success("Link copied to clipboard!");
-    }
-  };
-
-  return (
-    <motion.button
-      initial={{ opacity: 0, scale: 0.8, y: -20 }}
-      animate={{ opacity: 1, scale: 1, y: 0 }}
-      transition={{ delay: 1, type: "spring", stiffness: 200 }}
-      onClick={share}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
-      className="fixed top-4 right-4 z-50 p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-all hover:scale-110 active:scale-95 shadow-lg"
-      aria-label="Share invitation"
-    >
-      <Share2 className="w-5 h-5" />
-      <AnimatePresence>
-        {showTooltip && (
-          <motion.span
-            initial={{ opacity: 0, x: 10 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: 10 }}
-            className="absolute right-full mr-2 top-1/2 -translate-y-1/2 whitespace-nowrap text-xs bg-black/60 backdrop-blur-md px-3 py-1.5 rounded-full"
-          >
-            Share this invitation
-          </motion.span>
-        )}
-      </AnimatePresence>
-    </motion.button>
-  );
-}
+// FloatingShareButton replaced by SocialShareSheet
 
 // Floating scroll-to-top button
 function ScrollToTopButton() {

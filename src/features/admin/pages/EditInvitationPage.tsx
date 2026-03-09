@@ -32,6 +32,7 @@ import {
   deleteFile,
 } from "../hooks/useInvitationData";
 import { PAGE_TYPE_LABELS, STYLE_VARIANT_LABELS, type EventType, type StyleVariant } from "../types";
+import { DragDropPageList } from "../components/DragDropPageList";
 import { toast } from "sonner";
 
 // Color palette suggestions

@@ -284,7 +284,7 @@ export default function EditInvitationPage() {
           )}
           {lastSaved && !unsavedChanges && (
             <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <CheckCircle className="h-3 w-3 text-green-500" /> Saved
+              <CheckCircle className="h-3 w-3 text-primary" /> Saved
             </span>
           )}
           {unsavedChanges && (

@@ -15,6 +15,7 @@ import { InvitationThemeProvider } from "../components/ThemeProvider";
 import { StoryNavigation } from "../components/StoryNavigation";
 import { MusicPlayer } from "../components/MusicPlayer";
 import { ParticleCanvas } from "../components/ParticleCanvas";
+import { SocialShareSheet } from "../components/SocialShareSheet";
 import { PasswordGate } from "../components/sections/PasswordGate";
 import { CoverSection } from "../components/sections/CoverSection";
 import { MessageSection } from "../components/sections/MessageSection";

@@ -245,23 +245,38 @@ export default function EditInvitationPage() {
 
   const val = (field: string) => editForm[field] ?? (invitation as any)[field] ?? "";
 
+  const handleTogglePublish = async () => {
+    await updateInvitation.mutateAsync({ id: id!, is_published: !invitation.is_published });
+    toast.success(invitation.is_published ? "Invitation unpublished" : "Invitation published!");
+  };
+
+  const copyInviteLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/invite/${invitation.slug}`);
+    toast.success("Invitation link copied!");
+  };
+
+  const copyCustomerAdminLink = () => {
+    navigator.clipboard.writeText(`${window.location.origin}/customer-admin?event=${invitation.slug}`);
+    toast.success("Customer admin link copied!");
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div className="flex items-center gap-3 min-w-0">
           <Button variant="ghost" size="icon" asChild className="shrink-0"><Link to="/admin"><ArrowLeft className="h-4 w-4" /></Link></Button>
           <div className="min-w-0">
-            <h1 className="font-display text-xl font-bold truncate">{invitation.title}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="font-display text-xl font-bold truncate">{invitation.title}</h1>
+              <Badge variant={invitation.is_published ? "default" : "secondary"} className="text-[10px] shrink-0">
+                {invitation.is_published ? "Published" : "Draft"}
+              </Badge>
+            </div>
             <p className="text-xs text-muted-foreground">/invite/{invitation.slug}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="rounded-full text-xs" asChild>
-            <Link to={`/admin/blocks/${id}`}>
-              <Monitor className="h-3 w-3 mr-1" /> Block Editor
-            </Link>
-          </Button>
+        <div className="flex items-center gap-2 flex-wrap">
           {isSaving && (
             <span className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3 w-3 animate-spin" /> Saving...
@@ -274,11 +289,51 @@ export default function EditInvitationPage() {
           )}
           {unsavedChanges && (
             <Button onClick={handleSaveDetails} disabled={updateInvitation.isPending} className="rounded-full" size="sm">
-              <Save className="h-4 w-4 mr-2" /> Save Now
+              <Save className="h-4 w-4 mr-2" /> Save
             </Button>
           )}
+          <Button variant="outline" size="sm" className="rounded-full text-xs" asChild>
+            <Link to={`/admin/guests/${id}`}>
+              <Users className="h-3 w-3 mr-1" /> Guests
+            </Link>
+          </Button>
+          <Button variant="outline" size="sm" className="rounded-full text-xs" asChild>
+            <Link to={`/admin/blocks/${id}`}>
+              <Monitor className="h-3 w-3 mr-1" /> Blocks
+            </Link>
+          </Button>
+          <Button 
+            onClick={handleTogglePublish} 
+            variant={invitation.is_published ? "secondary" : "default"}
+            size="sm" 
+            className="rounded-full text-xs"
+          >
+            {invitation.is_published ? <><EyeOff className="h-3 w-3 mr-1" /> Unpublish</> : <><Eye className="h-3 w-3 mr-1" /> Publish</>}
+          </Button>
         </div>
       </div>
+
+      {/* Quick action bar when published */}
+      {invitation.is_published && (
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20"
+        >
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-700 dark:text-green-400 font-medium">Your invitation is live!</span>
+          <div className="flex gap-2 ml-auto">
+            <Button variant="outline" size="sm" className="h-7 text-xs rounded-full" onClick={copyInviteLink}>
+              <Copy className="h-3 w-3 mr-1" /> Copy Link
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 text-xs rounded-full" asChild>
+              <a href={`/invite/${invitation.slug}`} target="_blank" rel="noopener">
+                <ExternalLink className="h-3 w-3 mr-1" /> View
+              </a>
+            </Button>
+          </div>
+        </motion.div>
+      )}
 
       {/* Tabs */}
       <Tabs defaultValue="details">

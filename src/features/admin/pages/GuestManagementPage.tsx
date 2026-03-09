@@ -33,6 +33,8 @@ export default function GuestManagementPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RsvpStatus | "all">("all");
+  const [hasEmailFilter, setHasEmailFilter] = useState<boolean | null>(null);
+  const [hasPhoneFilter, setHasPhoneFilter] = useState<boolean | null>(null);
   const [showAddGuest, setShowAddGuest] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [bulkText, setBulkText] = useState("");

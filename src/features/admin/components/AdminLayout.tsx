@@ -66,6 +66,7 @@ export function AdminLayout() {
 
             <div className="flex items-center gap-1.5 sm:gap-2 ml-auto shrink-0">
               <CommandPalette />
+              <NotificationCenter />
               <ThemeToggle />
             </div>
           </header>

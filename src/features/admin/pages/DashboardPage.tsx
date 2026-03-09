@@ -399,6 +399,7 @@ function InvitationCard({
           </div>
         )}
       </div>
+      {showPreview && <InvitationPreviewDialog slug={inv.slug} open={showPreview} onOpenChange={setShowPreview} />}
     </motion.div>
   );
 }

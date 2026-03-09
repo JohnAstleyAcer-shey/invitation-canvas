@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Save, ArrowLeft, Image as ImageIcon, Trash2, Plus, Upload, X, ExternalLink, Monitor, Smartphone, RefreshCw, Eye, EyeOff, GripVertical, Music, Sparkles, Snowflake, Heart, Flower2, Clock, CheckCircle } from "lucide-react";
+import { Save, ArrowLeft, Image as ImageIcon, Trash2, Plus, Upload, X, ExternalLink, Monitor, Smartphone, RefreshCw, Eye, EyeOff, GripVertical, Music, Sparkles, Snowflake, Heart, Flower2, Clock, CheckCircle, Users, Copy } from "lucide-react";
 import { useAutosave } from "../hooks/useAutosave";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

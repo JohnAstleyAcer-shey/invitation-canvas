@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
-import { Share2, MessageCircle, ArrowLeft, Heart, Sparkles, ChevronUp, Volume2, VolumeX } from "lucide-react";
+import { MessageCircle, ArrowLeft, Heart, Sparkles, ChevronUp, Volume2, VolumeX } from "lucide-react";
 import { Flower2, Flame, Crown, Banknote } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
 import {

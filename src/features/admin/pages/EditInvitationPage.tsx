@@ -782,9 +782,28 @@ export default function EditInvitationPage() {
 
         {/* ACCESS TAB */}
         <TabsContent value="access" className="space-y-6 mt-6">
+          {/* Customer Admin Portal Link */}
+          {customerAdmins.data && customerAdmins.data.length > 0 && (
+            <div className="glass-card p-4 space-y-3">
+              <h3 className="font-display font-semibold flex items-center gap-2">
+                <ExternalLink className="h-4 w-4" />
+                Customer Admin Portal
+              </h3>
+              <p className="text-xs text-muted-foreground">Share this link with your clients so they can log in and view their event stats.</p>
+              <div className="flex items-center gap-2">
+                <code className="flex-1 px-3 py-2 rounded-lg bg-muted text-xs break-all">
+                  {window.location.origin}/customer-admin?event={invitation.slug}
+                </code>
+                <Button variant="outline" size="sm" className="shrink-0 rounded-full" onClick={copyCustomerAdminLink}>
+                  <Copy className="h-3 w-3 mr-1" /> Copy
+                </Button>
+              </div>
+            </div>
+          )}
+
           <div className="glass-card p-4 space-y-4">
             <h3 className="font-display font-semibold">Customer Admin Accounts</h3>
-            <p className="text-xs text-muted-foreground">Create accounts for clients to view their invitation stats (read-only).</p>
+            <p className="text-xs text-muted-foreground">Create accounts for clients to view their invitation stats and RSVP responses.</p>
             <QuickAddForm
               fields={[
                 { key: "username", label: "Username", required: true },
@@ -798,17 +817,63 @@ export default function EditInvitationPage() {
                 const hashArray = Array.from(new Uint8Array(hashBuffer));
                 const hashHex = hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
                 customerAdmins.create.mutate({ username: d.username, password_hash: hashHex, display_name: d.display_name });
+                toast.success("Customer admin account created!");
               }}
-              submitLabel="Create"
+              submitLabel="Create Account"
             />
-            <div className="space-y-1">
-              {customerAdmins.data?.map(ca => (
-                <div key={ca.id} className="flex items-center justify-between p-2 rounded-lg bg-accent/20 text-sm">
-                  <div><span className="font-medium">{ca.username}</span>{ca.display_name && <span className="text-muted-foreground ml-2">({ca.display_name})</span>}</div>
-                  <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => customerAdmins.remove.mutate(ca.id)}><Trash2 className="h-3 w-3" /></Button>
-                </div>
-              ))}
+            {customerAdmins.data?.length ? (
+              <div className="space-y-1">
+                {customerAdmins.data.map(ca => (
+                  <div key={ca.id} className="flex items-center justify-between p-3 rounded-xl bg-accent/30 text-sm">
+                    <div>
+                      <span className="font-medium">{ca.username}</span>
+                      {ca.display_name && <span className="text-muted-foreground ml-2">({ca.display_name})</span>}
+                    </div>
+                    <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive" onClick={() => customerAdmins.remove.mutate(ca.id)}>
+                      <Trash2 className="h-3 w-3" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <Users className="h-8 w-8 mx-auto mb-2 opacity-30" />
+                <p className="text-xs">No customer admin accounts yet</p>
+              </div>
+            )}
+          </div>
+
+          {/* Publish Settings */}
+          <div className="glass-card p-4 space-y-4">
+            <h3 className="font-display font-semibold">Publish Settings</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-sm">Public Status</p>
+                <p className="text-xs text-muted-foreground">
+                  {invitation.is_published 
+                    ? "Your invitation is visible to anyone with the link" 
+                    : "Your invitation is private (only visible in preview)"}
+                </p>
+              </div>
+              <Button 
+                onClick={handleTogglePublish}
+                variant={invitation.is_published ? "secondary" : "default"}
+                size="sm"
+                className="rounded-full"
+              >
+                {invitation.is_published ? <><EyeOff className="h-3 w-3 mr-1" /> Unpublish</> : <><Eye className="h-3 w-3 mr-1" /> Publish</>}
+              </Button>
             </div>
+            {invitation.is_published && (
+              <div className="flex items-center gap-2 pt-2 border-t border-border">
+                <code className="flex-1 px-3 py-2 rounded-lg bg-muted text-xs break-all">
+                  {window.location.origin}/invite/{invitation.slug}
+                </code>
+                <Button variant="outline" size="sm" className="shrink-0 rounded-full" onClick={copyInviteLink}>
+                  <Copy className="h-3 w-3 mr-1" /> Copy
+                </Button>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>

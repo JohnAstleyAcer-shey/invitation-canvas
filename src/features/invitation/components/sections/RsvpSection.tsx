@@ -76,6 +76,7 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [companionDetails, setCompanionDetails] = useState<{ name: string; dietary?: string }[]>([]);
 
   const lookupGuest = async () => {
     if (!code.trim()) return;

@@ -5,6 +5,7 @@ import { Check, X, HelpCircle, Send, Loader2, PartyPopper, Sparkles, Heart, Cale
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { CompanionDetailsForm } from "../CompanionDetailsForm";
 
 type Invitation = Tables<"invitations">;
 type Guest = Tables<"guests">;

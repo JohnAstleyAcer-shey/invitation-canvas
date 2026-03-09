@@ -43,7 +43,7 @@ export function NotificationCenter() {
         };
         setNotifications(prev => [{
           id: rsvp.id,
-          type: "rsvp",
+          type: "rsvp" as const,
           title: "New RSVP",
           description: `${guest?.full_name || "A guest"} ${statusMap[rsvp.status] || "responded"}`,
           timestamp: rsvp.created_at,

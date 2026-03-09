@@ -32,6 +32,7 @@ import {
   deleteFile,
 } from "../hooks/useInvitationData";
 import { PAGE_TYPE_LABELS, STYLE_VARIANT_LABELS, type EventType, type StyleVariant } from "../types";
+import { DragDropPageList } from "../components/DragDropPageList";
 import { toast } from "sonner";
 
 // Color palette suggestions
@@ -721,26 +722,16 @@ export default function EditInvitationPage() {
 
         {/* PAGES TAB */}
         <TabsContent value="pages" className="space-y-4 mt-6">
-          <p className="text-sm text-muted-foreground">Toggle sections on/off and choose style variants for each page.</p>
-          <div className="space-y-2">
-            {pages?.map((page, idx) => (
-              <div key={page.id} className="flex items-center gap-3 p-3 rounded-xl bg-accent/20">
-                <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab shrink-0" />
-                <Switch checked={page.is_enabled} onCheckedChange={(v) => togglePage.mutate({ id: page.id, is_enabled: v })} />
-                <span className={`text-sm font-medium flex-1 ${!page.is_enabled ? "text-muted-foreground line-through" : ""}`}>
-                  {PAGE_TYPE_LABELS[page.page_type]}
-                </span>
-                <Select value={page.style_variant} onValueChange={(v) => updateVariant.mutate({ id: page.id, style_variant: v as StyleVariant })}>
-                  <SelectTrigger className="w-28 h-8 text-xs rounded-lg"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {Object.entries(STYLE_VARIANT_LABELS).map(([k, v]) => (
-                      <SelectItem key={k} value={k}>{v}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            ))}
-          </div>
+          {pages && pages.length > 0 ? (
+            <DragDropPageList
+              pages={pages}
+              onToggle={(id, enabled) => togglePage.mutate({ id, is_enabled: enabled })}
+              onVariantChange={(id, variant) => updateVariant.mutate({ id, style_variant: variant })}
+              onReorder={(pageIds) => reorderPages.mutate(pageIds.map((id, i) => ({ id, sort_order: i })))}
+            />
+          ) : (
+            <p className="text-sm text-muted-foreground text-center py-8">No pages configured yet.</p>
+          )}
         </TabsContent>
 
         {/* PREVIEW TAB */}

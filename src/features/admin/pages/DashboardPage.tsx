@@ -26,6 +26,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { toast } from "sonner";
 import { InvitationExpiryBadge } from "../components/InvitationExpiryBadge";
 import { InvitationPreviewDialog } from "../components/InvitationPreviewDialog";
+import { RecentActivityFeed } from "../components/RecentActivityFeed";
 
 const statConfigs = [
   { key: "total", label: "Total Invitations", icon: Calendar, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
@@ -161,7 +162,19 @@ export default function DashboardPage() {
         ))}
       </div>
 
-      {/* Filters */}
+      {/* Recent Activity */}
+      <motion.div
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="rounded-2xl border border-border bg-card p-4"
+      >
+        <h3 className="font-display font-bold text-sm mb-3 flex items-center gap-2">
+          <Clock className="h-4 w-4 text-muted-foreground" /> Recent Activity
+        </h3>
+        <RecentActivityFeed />
+      </motion.div>
+
       <motion.div
         initial={{ opacity: 0, y: 8 }}
         animate={{ opacity: 1, y: 0 }}

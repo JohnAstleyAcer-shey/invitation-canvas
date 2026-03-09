@@ -5,6 +5,7 @@ import { Check, X, HelpCircle, Send, Loader2, PartyPopper, Sparkles, Heart, Cale
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
+import { CompanionDetailsForm } from "../CompanionDetailsForm";
 
 type Invitation = Tables<"invitations">;
 type Guest = Tables<"guests">;
@@ -75,6 +76,7 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
   const [loading, setLoading] = useState(false);
   const [done, setDone] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [companionDetails, setCompanionDetails] = useState<{ name: string; dietary?: string }[]>([]);
 
   const lookupGuest = async () => {
     if (!code.trim()) return;
@@ -102,16 +104,26 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
     if (!status) return;
     setLoading(true);
 
+    // Build combined dietary notes with companion info
+    const allDietary = [
+      dietary,
+      ...companionDetails
+        .filter(c => c.name)
+        .map(c => `${c.name}${c.dietary ? `: ${c.dietary}` : ""}`)
+    ].filter(Boolean).join("; ");
+
+    const companionNames = companionDetails.filter(c => c.name).map(c => c.name).join(", ");
+    const fullMessage = [message, companionNames ? `Companions: ${companionNames}` : ""].filter(Boolean).join("\n");
+
     try {
       if (foundGuest) {
-        // Guest with code
         const { error } = await supabase.from("rsvps").upsert({
           invitation_id: invitation.id,
           guest_id: foundGuest.id,
           status,
           num_companions: companions,
-          message: message || null,
-          dietary_notes: dietary || null,
+          message: fullMessage || null,
+          dietary_notes: allDietary || null,
           responded_at: new Date().toISOString(),
         }, { onConflict: "guest_id,invitation_id" });
         if (error) throw error;
@@ -453,18 +465,12 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 }}
               >
-                <label className="flex items-center gap-2 text-xs sm:text-sm mb-1 text-left" style={{ color: "var(--inv-text-secondary)" }}>
-                  <Users className="w-3.5 h-3.5" />
-                  Number of companions (max {foundGuest?.max_companions})
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  max={foundGuest?.max_companions ?? 0}
-                  value={companions}
-                  onChange={e => setCompanions(Math.min(Number(e.target.value), foundGuest?.max_companions ?? 0))}
-                  className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-all"
-                  style={inputStyle}
+                <CompanionDetailsForm
+                  maxCompanions={foundGuest?.max_companions ?? 0}
+                  companions={companions}
+                  onCompanionsChange={setCompanions}
+                  companionDetails={companionDetails}
+                  onCompanionDetailsChange={setCompanionDetails}
                 />
               </motion.div>
             )}

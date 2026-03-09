@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
     // Look up invitation by slug
     const { data: invitation, error: invErr } = await supabase
       .from("invitations")
-      .select("id, title, celebrant_name, event_type, event_date")
+      .select("id, title, celebrant_name, event_type, event_date, slug")
       .eq("slug", invitation_slug)
       .eq("is_published", true)
       .is("deleted_at", null)

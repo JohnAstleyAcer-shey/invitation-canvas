@@ -110,7 +110,9 @@ export default function CustomerDashboardPage() {
   ];
 
   const shareLink = () => {
-    const url = `${window.location.origin}/invite/${session!.invitation.title}`;
+    // Get the actual slug from the session
+    const slug = (session!.invitation as any).slug || session!.invitation.id;
+    const url = `${window.location.origin}/invite/${slug}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copied!");
   };

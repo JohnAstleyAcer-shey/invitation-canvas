@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, LayoutGrid, List, Filter, Calendar, Eye, EyeOff, Copy, Trash2, Edit, Users, RotateCcw, Trash, MoreVertical, Share2, ExternalLink, Keyboard, CheckSquare, TrendingUp, Zap, Clock, ArrowUpRight } from "lucide-react";
+import { Search, Plus, LayoutGrid, List, Filter, Calendar, Eye, EyeOff, Copy, Trash2, Edit, Users, RotateCcw, Trash, MoreVertical, Share2, ExternalLink, Keyboard, CheckSquare, TrendingUp, Zap, Clock, ArrowUpRight, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -24,6 +24,8 @@ import { useKeyboardShortcuts, KeyboardShortcutsDialog } from "../components/Key
 import { DashboardSkeleton } from "@/components/LoadingSkeletons";
 import { SEOHead } from "@/components/SEOHead";
 import { toast } from "sonner";
+import { InvitationExpiryBadge } from "../components/InvitationExpiryBadge";
+import { InvitationPreviewDialog } from "../components/InvitationPreviewDialog";
 
 const statConfigs = [
   { key: "total", label: "Total Invitations", icon: Calendar, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },
@@ -305,6 +307,7 @@ function InvitationCard({
   isSelected: boolean; onToggleSelect: () => void;
   onTogglePublish: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onShare: () => void;
 }) {
+  const [showPreview, setShowPreview] = useState(false);
   if (view === "list") {
     return (
       <motion.div
@@ -359,6 +362,7 @@ function InvitationCard({
           <Badge variant={inv.is_published ? "default" : "secondary"} className="text-[10px] shadow-sm backdrop-blur-sm">
             {inv.is_published ? "Published" : "Draft"}
           </Badge>
+          <InvitationExpiryBadge eventDate={inv.event_date} expiresAt={inv.expires_at} compact />
         </div>
         <Badge variant="outline" className="absolute bottom-3 left-3 text-[10px] bg-background/80 backdrop-blur-sm">
           {EVENT_TYPE_LABELS[inv.event_type as EventType]}
@@ -389,12 +393,13 @@ function InvitationCard({
             <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg flex-1" asChild>
               <Link to={`/admin/guests/${inv.id}`}><Users className="h-3 w-3 mr-1" /> Guests</Link>
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg flex-1" asChild>
-              <Link to={`/admin/blocks/${inv.id}`}><LayoutGrid className="h-3 w-3 mr-1" /> Blocks</Link>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg flex-1" onClick={() => setShowPreview(true)}>
+              <Monitor className="h-3 w-3 mr-1" /> Preview
             </Button>
           </div>
         )}
       </div>
+      {showPreview && <InvitationPreviewDialog slug={inv.slug} open={showPreview} onOpenChange={setShowPreview} />}
     </motion.div>
   );
 }

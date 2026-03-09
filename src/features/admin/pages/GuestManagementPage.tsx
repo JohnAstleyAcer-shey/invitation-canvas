@@ -33,6 +33,8 @@ export default function GuestManagementPage() {
 
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<RsvpStatus | "all">("all");
+  const [hasEmailFilter, setHasEmailFilter] = useState<boolean | null>(null);
+  const [hasPhoneFilter, setHasPhoneFilter] = useState<boolean | null>(null);
   const [showAddGuest, setShowAddGuest] = useState(false);
   const [showBulk, setShowBulk] = useState(false);
   const [bulkText, setBulkText] = useState("");
@@ -48,10 +50,16 @@ export default function GuestManagementPage() {
   });
 
   const filtered = guests.data?.filter(g => {
-    const matchSearch = !search || g.full_name.toLowerCase().includes(search.toLowerCase());
+    const searchLower = search.toLowerCase();
+    const matchSearch = !search || 
+      g.full_name.toLowerCase().includes(searchLower) ||
+      (g.email && g.email.toLowerCase().includes(searchLower)) ||
+      (g.phone && g.phone.includes(search));
     const rsvp = rsvpMap.get(g.id);
     const matchStatus = statusFilter === "all" || (rsvp?.status === statusFilter) || (!rsvp && statusFilter === "pending");
-    return matchSearch && matchStatus;
+    const matchEmail = hasEmailFilter === null || (hasEmailFilter ? !!g.email : !g.email);
+    const matchPhone = hasPhoneFilter === null || (hasPhoneFilter ? !!g.phone : !g.phone);
+    return matchSearch && matchStatus && matchEmail && matchPhone;
   }) || [];
 
   const totalGuests = guests.data?.length || 0;

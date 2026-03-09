@@ -4,6 +4,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { MobileNav } from "./MobileNav";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationCenter } from "./NotificationCenter";
 import { ChevronRight, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -65,6 +66,7 @@ export function AdminLayout() {
 
             <div className="flex items-center gap-1.5 sm:gap-2 ml-auto shrink-0">
               <CommandPalette />
+              <NotificationCenter />
               <ThemeToggle />
             </div>
           </header>

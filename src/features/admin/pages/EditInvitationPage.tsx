@@ -318,10 +318,10 @@ export default function EditInvitationPage() {
         <motion.div
           initial={{ opacity: 0, y: -8 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-green-500/10 border border-green-500/20"
+          className="flex flex-wrap items-center gap-2 p-3 rounded-xl bg-primary/10 border border-primary/20"
         >
-          <CheckCircle className="h-4 w-4 text-green-600" />
-          <span className="text-sm text-green-700 dark:text-green-400 font-medium">Your invitation is live!</span>
+          <CheckCircle className="h-4 w-4 text-primary" />
+          <span className="text-sm text-foreground font-medium">Your invitation is live!</span>
           <div className="flex gap-2 ml-auto">
             <Button variant="outline" size="sm" className="h-7 text-xs rounded-full" onClick={copyInviteLink}>
               <Copy className="h-3 w-3 mr-1" /> Copy Link

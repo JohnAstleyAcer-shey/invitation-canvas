@@ -727,7 +727,7 @@ export default function EditInvitationPage() {
               pages={pages}
               onToggle={(id, enabled) => togglePage.mutate({ id, is_enabled: enabled })}
               onVariantChange={(id, variant) => updateVariant.mutate({ id, style_variant: variant })}
-              onReorder={(pageIds) => reorderPages.mutate(pageIds)}
+              onReorder={(pageIds) => reorderPages.mutate(pageIds.map((id, i) => ({ id, sort_order: i })))}
             />
           ) : (
             <p className="text-sm text-muted-foreground text-center py-8">No pages configured yet.</p>

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { SectionWrapper } from "./SectionWrapper";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, HelpCircle, Send, Loader2, PartyPopper, Sparkles, Heart, Calendar, Users, MessageSquare, UtensilsCrossed } from "lucide-react";
+import { Check, X, HelpCircle, Send, Loader2, PartyPopper, Sparkles, Heart, Calendar, Users, MessageSquare, UtensilsCrossed, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Tables } from "@/integrations/supabase/types";
@@ -12,9 +12,9 @@ type RsvpStatus = "attending" | "not_attending" | "maybe";
 type Variant = "classic" | "modern" | "elegant" | "bold";
 
 const statusOptions = [
-  { key: "attending" as const, label: "Yes, I'll be there!", icon: Check, color: "from-green-500/20 to-emerald-500/20" },
+  { key: "attending" as const, label: "Yes, I'll be there!", icon: Check, color: "from-emerald-500/20 to-green-500/20" },
   { key: "maybe" as const, label: "Maybe", icon: HelpCircle, color: "from-amber-500/20 to-yellow-500/20" },
-  { key: "not_attending" as const, label: "Can't make it", icon: X, color: "from-red-500/20 to-rose-500/20" },
+  { key: "not_attending" as const, label: "Can't make it", icon: X, color: "from-rose-500/20 to-red-500/20" },
 ];
 
 const confettiColors = ["#ff6b6b", "#feca57", "#48dbfb", "#ff9ff3", "#1dd1a1", "#5f27cd"];
@@ -59,9 +59,15 @@ function SuccessAnimation() {
 }
 
 export function RsvpSection({ invitation, guest, variant = "classic" }: { invitation: Invitation; guest: Guest | null | undefined; variant?: Variant }) {
+  const [mode, setMode] = useState<"code" | "public">("code");
   const [step, setStep] = useState(0);
   const [code, setCode] = useState("");
   const [foundGuest, setFoundGuest] = useState<Guest | null>(guest ?? null);
+  
+  // Public mode fields
+  const [publicName, setPublicName] = useState("");
+  const [publicEmail, setPublicEmail] = useState("");
+  
   const [status, setStatus] = useState<RsvpStatus | null>(null);
   const [companions, setCompanions] = useState(0);
   const [message, setMessage] = useState("");
@@ -84,25 +90,68 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
     else toast.error("Invalid invitation code. Please try again.");
   };
 
+  const handlePublicRsvp = () => {
+    if (!publicName.trim()) {
+      toast.error("Please enter your name");
+      return;
+    }
+    setStep(1);
+  };
+
   const submitRsvp = async () => {
-    if (!foundGuest || !status) return;
+    if (!status) return;
     setLoading(true);
-    const { error } = await supabase.from("rsvps").upsert({
-      invitation_id: invitation.id,
-      guest_id: foundGuest.id,
-      status,
-      num_companions: companions,
-      message: message || null,
-      dietary_notes: dietary || null,
-      responded_at: new Date().toISOString(),
-    }, { onConflict: "guest_id,invitation_id" });
-    setLoading(false);
-    if (error) toast.error("Failed to submit RSVP");
-    else { 
+
+    try {
+      if (foundGuest) {
+        // Guest with code
+        const { error } = await supabase.from("rsvps").upsert({
+          invitation_id: invitation.id,
+          guest_id: foundGuest.id,
+          status,
+          num_companions: companions,
+          message: message || null,
+          dietary_notes: dietary || null,
+          responded_at: new Date().toISOString(),
+        }, { onConflict: "guest_id,invitation_id" });
+        if (error) throw error;
+      } else {
+        // Public RSVP - create guest then RSVP
+        const { data: newGuest, error: guestError } = await supabase
+          .from("guests")
+          .insert({
+            invitation_id: invitation.id,
+            full_name: publicName.trim(),
+            email: publicEmail.trim() || null,
+            max_companions: 0,
+          })
+          .select()
+          .single();
+        
+        if (guestError) throw guestError;
+
+        const { error: rsvpError } = await supabase.from("rsvps").insert({
+          invitation_id: invitation.id,
+          guest_id: newGuest.id,
+          status,
+          num_companions: companions,
+          message: message || null,
+          dietary_notes: dietary || null,
+          responded_at: new Date().toISOString(),
+        });
+        
+        if (rsvpError) throw rsvpError;
+      }
+
       setDone(true); 
       setShowConfetti(true);
       setTimeout(() => setShowConfetti(false), 3000);
       toast.success("RSVP submitted!"); 
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Failed to submit RSVP. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -206,7 +255,7 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
       </motion.h2>
 
       <AnimatePresence mode="wait">
-        {/* Step 0: Enter code */}
+        {/* Step 0: Enter code or public mode */}
         {step === 0 && !foundGuest && (
           <motion.div 
             key="code" 
@@ -214,57 +263,123 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
             animate={{ opacity: 1, y: 0, scale: 1 }} 
             exit={{ opacity: 0, y: -20, scale: 0.95 }} 
             transition={{ type: "spring", damping: 20 }}
-            className="space-y-4 max-w-xs mx-auto"
+            className="space-y-4 max-w-sm mx-auto"
           >
-            <p className="text-xs sm:text-sm flex items-center justify-center gap-2" style={{ color: "var(--inv-text-secondary)" }}>
-              <Calendar className="w-4 h-4" />
-              Enter your invitation code
-            </p>
-            <motion.div
-              whileFocus={{ scale: 1.02 }}
-              className="relative"
-            >
-              <input
-                value={code}
-                onChange={e => setCode(e.target.value.toUpperCase())}
-                placeholder="e.g. A1B2C3D4"
-                className="w-full px-4 py-3 rounded-xl border text-center text-lg tracking-widest focus:ring-2 focus:outline-none transition-all"
-                style={{ ...inputStyle, boxShadow: code ? "0 0 0 2px var(--inv-primary)" : undefined }}
-                maxLength={8}
-                onKeyDown={e => e.key === "Enter" && lookupGuest()}
-              />
-              {code.length === 8 && (
+            {mode === "code" ? (
+              <>
+                <p className="text-xs sm:text-sm flex items-center justify-center gap-2" style={{ color: "var(--inv-text-secondary)" }}>
+                  <Calendar className="w-4 h-4" />
+                  Enter your invitation code
+                </p>
                 <motion.div
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="absolute right-3 top-1/2 -translate-y-1/2"
+                  whileFocus={{ scale: 1.02 }}
+                  className="relative"
                 >
-                  <Check className="w-5 h-5" style={{ color: "var(--inv-primary)" }} />
+                  <input
+                    value={code}
+                    onChange={e => setCode(e.target.value.toUpperCase())}
+                    placeholder="e.g. A1B2C3D4"
+                    className="w-full px-4 py-3 rounded-xl border text-center text-lg tracking-widest focus:ring-2 focus:outline-none transition-all"
+                    style={{ ...inputStyle, boxShadow: code ? "0 0 0 2px var(--inv-primary)" : undefined }}
+                    maxLength={8}
+                    onKeyDown={e => e.key === "Enter" && lookupGuest()}
+                  />
+                  {code.length === 8 && (
+                    <motion.div
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      className="absolute right-3 top-1/2 -translate-y-1/2"
+                    >
+                      <Check className="w-5 h-5" style={{ color: "var(--inv-primary)" }} />
+                    </motion.div>
+                  )}
                 </motion.div>
-              )}
-            </motion.div>
-            <motion.button
-              onClick={lookupGuest}
-              disabled={loading || !code.trim()}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50 transition-all"
-              style={btnStyle}
-            >
-              {loading ? (
-                <Loader2 className="w-5 h-5 animate-spin mx-auto" />
-              ) : (
-                <span className="flex items-center justify-center gap-2">
-                  Find My Invitation
-                  <motion.span
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    →
-                  </motion.span>
-                </span>
-              )}
-            </motion.button>
+                <motion.button
+                  onClick={lookupGuest}
+                  disabled={loading || !code.trim()}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50 transition-all"
+                  style={btnStyle}
+                >
+                  {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin mx-auto" />
+                  ) : (
+                    <span className="flex items-center justify-center gap-2">
+                      Find My Invitation
+                      <motion.span
+                        animate={{ x: [0, 4, 0] }}
+                        transition={{ duration: 1.5, repeat: Infinity }}
+                      >
+                        →
+                      </motion.span>
+                    </span>
+                  )}
+                </motion.button>
+                <div className="flex items-center gap-3 text-xs" style={{ color: "var(--inv-text-secondary)" }}>
+                  <div className="flex-1 h-px" style={{ background: "var(--inv-accent)" }} />
+                  <span>or</span>
+                  <div className="flex-1 h-px" style={{ background: "var(--inv-accent)" }} />
+                </div>
+                <button
+                  onClick={() => setMode("public")}
+                  className="w-full px-6 py-3 rounded-xl border font-medium transition-all text-sm hover:opacity-80"
+                  style={{ borderColor: "var(--inv-accent)", color: "var(--inv-text)" }}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    <User className="w-4 h-4" />
+                    RSVP without code
+                  </span>
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs sm:text-sm flex items-center justify-center gap-2" style={{ color: "var(--inv-text-secondary)" }}>
+                  <User className="w-4 h-4" />
+                  Enter your details
+                </p>
+                <input
+                  value={publicName}
+                  onChange={e => setPublicName(e.target.value)}
+                  placeholder="Your full name *"
+                  className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-all"
+                  style={inputStyle}
+                />
+                <input
+                  value={publicEmail}
+                  onChange={e => setPublicEmail(e.target.value)}
+                  placeholder="Email (optional)"
+                  type="email"
+                  className="w-full px-4 py-3 rounded-xl border focus:ring-2 focus:outline-none transition-all"
+                  style={inputStyle}
+                />
+                <motion.button
+                  onClick={handlePublicRsvp}
+                  disabled={!publicName.trim()}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                  className="w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50 transition-all"
+                  style={btnStyle}
+                >
+                  <span className="flex items-center justify-center gap-2">
+                    Continue
+                    <motion.span
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.5, repeat: Infinity }}
+                    >
+                      →
+                    </motion.span>
+                  </span>
+                </motion.button>
+                <button
+                  onClick={() => setMode("code")}
+                  className="text-xs underline opacity-60 hover:opacity-100 transition-opacity"
+                  style={{ color: "var(--inv-text-secondary)" }}
+                >
+                  I have an invitation code
+                </button>
+              </>
+            )}
           </motion.div>
         )}
 
@@ -286,7 +401,7 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
               transition={{ delay: 0.1 }}
             >
               <Users className="w-4 h-4" />
-              Hi, {foundGuest?.full_name}!
+              Hi, {foundGuest?.full_name || publicName}!
             </motion.p>
             <p className="text-xs sm:text-sm" style={{ color: "var(--inv-text-secondary)" }}>
               Will you be attending?

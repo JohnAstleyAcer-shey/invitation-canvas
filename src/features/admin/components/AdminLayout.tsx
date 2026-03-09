@@ -4,6 +4,7 @@ import { AdminSidebar } from "./AdminSidebar";
 import { MobileNav } from "./MobileNav";
 import { CommandPalette } from "./CommandPalette";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { NotificationCenter } from "./NotificationCenter";
 import { ChevronRight, Home } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 

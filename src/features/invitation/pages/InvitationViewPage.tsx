@@ -250,7 +250,7 @@ export default function InvitationViewPage() {
       <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
       <PageProgressBar />
       <ParticleCanvas effect={theme?.particle_effect} />
-      <FloatingShareButton slug={invitation.slug} title={invitation.title} />
+      <SocialShareSheet slug={invitation.slug} title={invitation.title} />
       <FloatingReactionButton />
       <ScrollToTopButton />
       {theme?.music_url && (

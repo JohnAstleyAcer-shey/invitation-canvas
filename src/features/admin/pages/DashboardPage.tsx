@@ -307,6 +307,7 @@ function InvitationCard({
   isSelected: boolean; onToggleSelect: () => void;
   onTogglePublish: () => void; onDuplicate: () => void; onDelete: () => void; onRestore: () => void; onShare: () => void;
 }) {
+  const [showPreview, setShowPreview] = useState(false);
   if (view === "list") {
     return (
       <motion.div

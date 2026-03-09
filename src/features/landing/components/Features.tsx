@@ -53,7 +53,7 @@ const itemVariants = {
   hidden: { opacity: 0, y: 20, scale: 0.95 },
   visible: { 
     opacity: 1, 
-    y: 0, 
+    y: 0,
     scale: 1,
     transition: { type: "spring", stiffness: 300, damping: 25 }
   }

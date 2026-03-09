@@ -26,6 +26,7 @@ import { SEOHead } from "@/components/SEOHead";
 import { toast } from "sonner";
 import { InvitationExpiryBadge } from "../components/InvitationExpiryBadge";
 import { InvitationPreviewDialog } from "../components/InvitationPreviewDialog";
+import { RecentActivityFeed } from "../components/RecentActivityFeed";
 
 const statConfigs = [
   { key: "total", label: "Total Invitations", icon: Calendar, gradient: "from-primary/10 to-primary/5", iconColor: "text-primary" },

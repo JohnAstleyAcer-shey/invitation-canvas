@@ -362,6 +362,7 @@ function InvitationCard({
           <Badge variant={inv.is_published ? "default" : "secondary"} className="text-[10px] shadow-sm backdrop-blur-sm">
             {inv.is_published ? "Published" : "Draft"}
           </Badge>
+          <InvitationExpiryBadge eventDate={inv.event_date} expiresAt={inv.expires_at} compact />
         </div>
         <Badge variant="outline" className="absolute bottom-3 left-3 text-[10px] bg-background/80 backdrop-blur-sm">
           {EVENT_TYPE_LABELS[inv.event_type as EventType]}

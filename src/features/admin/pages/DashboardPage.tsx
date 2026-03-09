@@ -393,8 +393,8 @@ function InvitationCard({
             <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg flex-1" asChild>
               <Link to={`/admin/guests/${inv.id}`}><Users className="h-3 w-3 mr-1" /> Guests</Link>
             </Button>
-            <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg flex-1" asChild>
-              <Link to={`/admin/blocks/${inv.id}`}><LayoutGrid className="h-3 w-3 mr-1" /> Blocks</Link>
+            <Button variant="ghost" size="sm" className="h-7 text-[10px] rounded-lg flex-1" onClick={() => setShowPreview(true)}>
+              <Monitor className="h-3 w-3 mr-1" /> Preview
             </Button>
           </div>
         )}

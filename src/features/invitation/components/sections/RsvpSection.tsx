@@ -104,16 +104,26 @@ export function RsvpSection({ invitation, guest, variant = "classic" }: { invita
     if (!status) return;
     setLoading(true);
 
+    // Build combined dietary notes with companion info
+    const allDietary = [
+      dietary,
+      ...companionDetails
+        .filter(c => c.name)
+        .map(c => `${c.name}${c.dietary ? `: ${c.dietary}` : ""}`)
+    ].filter(Boolean).join("; ");
+
+    const companionNames = companionDetails.filter(c => c.name).map(c => c.name).join(", ");
+    const fullMessage = [message, companionNames ? `Companions: ${companionNames}` : ""].filter(Boolean).join("\n");
+
     try {
       if (foundGuest) {
-        // Guest with code
         const { error } = await supabase.from("rsvps").upsert({
           invitation_id: invitation.id,
           guest_id: foundGuest.id,
           status,
           num_companions: companions,
-          message: message || null,
-          dietary_notes: dietary || null,
+          message: fullMessage || null,
+          dietary_notes: allDietary || null,
           responded_at: new Date().toISOString(),
         }, { onConflict: "guest_id,invitation_id" });
         if (error) throw error;

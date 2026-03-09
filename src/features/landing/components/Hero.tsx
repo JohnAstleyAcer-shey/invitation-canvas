@@ -1,6 +1,6 @@
 import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from "framer-motion";
-import { ArrowRight, Sparkles, Play, Star, Shield, Zap, Clock } from "lucide-react";
+import { ArrowRight, Sparkles, Play, Star, Shield, Zap, Clock, CheckCircle2, Users, Calendar, TrendingUp, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRef, useState, useEffect } from "react";
 
@@ -18,29 +18,67 @@ const trustBadges = [
   { icon: Clock, label: "24/7 Support" },
 ];
 
-function AnimatedCounter({ target, suffix = "" }: { target: string; suffix?: string }) {
-  const [display, setDisplay] = useState("0");
-  const numericPart = parseInt(target.replace(/[^0-9]/g, ""));
-  const prefix = target.replace(/[0-9.]+.*/, "");
-  const textSuffix = target.replace(/^[0-9.]+/, "");
+const stats = [
+  { value: 10000, suffix: "+", label: "Invitations Created", icon: Calendar },
+  { value: 50000, suffix: "+", label: "Guests Managed", icon: Users },
+  { value: 99.9, suffix: "%", label: "Uptime", icon: TrendingUp },
+  { value: 4.9, suffix: "★", label: "Rating", icon: Award },
+];
+
+function AnimatedCounter({ target, suffix = "" }: { target: number; suffix?: string }) {
+  const [count, setCount] = useState(0);
+  const [inView, setInView] = useState(false);
+  const ref = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
-    let start = 0;
-    const end = numericPart;
+    const observer = new IntersectionObserver(
+      ([entry]) => setInView(entry.isIntersecting),
+      { threshold: 0.5 }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!inView) return;
     const duration = 2000;
     const startTime = Date.now();
     const timer = setInterval(() => {
       const elapsed = Date.now() - startTime;
       const progress = Math.min(elapsed / duration, 1);
-      const eased = 1 - Math.pow(1 - progress, 3);
-      const current = Math.floor(eased * end);
-      setDisplay(`${prefix}${current.toLocaleString()}${textSuffix}`);
+      const eased = 1 - Math.pow(1 - progress, 4);
+      setCount(Math.floor(eased * target * 10) / 10);
       if (progress >= 1) clearInterval(timer);
-    }, 30);
+    }, 16);
     return () => clearInterval(timer);
-  }, [numericPart, prefix, textSuffix]);
+  }, [inView, target]);
 
-  return <span>{display}{suffix}</span>;
+  const displayValue = Number.isInteger(target) 
+    ? Math.floor(count).toLocaleString() 
+    : count.toFixed(1);
+
+  return <span ref={ref}>{displayValue}{suffix}</span>;
+}
+
+function FloatingParticle({ delay, size, x, y }: { delay: number; size: number; x: string; y: string }) {
+  return (
+    <motion.div
+      className="absolute rounded-full bg-primary/10"
+      style={{ width: size, height: size, left: x, top: y }}
+      initial={{ opacity: 0, scale: 0 }}
+      animate={{ 
+        opacity: [0, 0.6, 0],
+        scale: [0, 1, 0.5],
+        y: [0, -100, -200]
+      }}
+      transition={{ 
+        delay,
+        duration: 4,
+        repeat: Infinity,
+        ease: "easeOut"
+      }}
+    />
+  );
 }
 
 export function Hero() {
@@ -49,6 +87,7 @@ export function Hero() {
   const bgY = useTransform(scrollYProgress, [0, 1], [0, 200]);
   const opacity = useTransform(scrollYProgress, [0, 0.8], [1, 0]);
   const scale = useTransform(scrollYProgress, [0, 0.8], [1, 0.95]);
+  const textY = useTransform(scrollYProgress, [0, 1], [0, 100]);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -62,6 +101,16 @@ export function Hero() {
     mouseY.set((e.clientY - rect.top - rect.height / 2) * 0.02);
   };
 
+  const [currentWord, setCurrentWord] = useState(0);
+  const words = ["Reimagined", "Simplified", "Perfected", "Elevated"];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentWord((prev) => (prev + 1) % words.length);
+    }, 3000);
+    return () => clearInterval(timer);
+  }, []);
+
   return (
     <section
       ref={ref}
@@ -70,41 +119,106 @@ export function Hero() {
     >
       {/* Animated background with parallax */}
       <motion.div style={{ y: bgY }} className="absolute inset-0">
-        <div className="absolute inset-0 bg-[linear-gradient(hsl(var(--border))_1px,transparent_1px),linear-gradient(90deg,hsl(var(--border))_1px,transparent_1px)] bg-[size:60px_60px] opacity-20" />
+        {/* Grid pattern */}
+        <div className="absolute inset-0 bg-grid opacity-20" />
+        
+        {/* Animated gradient orbs */}
         <motion.div
           style={{ x: springX, y: springY }}
           className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary/5 blur-3xl"
         />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/30 blur-3xl" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/3 blur-[100px]" />
+        <motion.div
+          animate={{ 
+            scale: [1, 1.2, 1],
+            opacity: [0.3, 0.5, 0.3]
+          }}
+          transition={{ duration: 8, repeat: Infinity }}
+          className="absolute bottom-1/4 right-1/4 w-80 h-80 rounded-full bg-accent/30 blur-3xl"
+        />
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-border/20"
+        />
+        <motion.div
+          animate={{ rotate: -360 }}
+          transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-border/10"
+        />
+        
+        {/* Floating particles */}
+        <FloatingParticle delay={0} size={8} x="20%" y="30%" />
+        <FloatingParticle delay={0.5} size={6} x="80%" y="40%" />
+        <FloatingParticle delay={1} size={10} x="60%" y="70%" />
+        <FloatingParticle delay={1.5} size={5} x="30%" y="60%" />
+        <FloatingParticle delay={2} size={7} x="70%" y="20%" />
       </motion.div>
+      
+      {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
 
       <motion.div style={{ opacity, scale }} className="section-container relative z-10 text-center">
+        {/* Badge with animated border */}
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}
+          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
           transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
           className="mb-6"
         >
-          <span className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-5 py-2 text-xs font-medium text-muted-foreground tracking-widest uppercase">
+          <motion.span 
+            className="inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-5 py-2 text-xs font-medium text-muted-foreground tracking-widest uppercase relative overflow-hidden"
+            whileHover={{ scale: 1.02 }}
+          >
+            <motion.div
+              className="absolute inset-0 bg-gradient-to-r from-transparent via-primary/10 to-transparent"
+              animate={{ x: ["-100%", "100%"] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+            />
             <Sparkles className="h-3.5 w-3.5" />
-            Premium Digital Invitations
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-          </span>
+            <span className="relative">Premium Digital Invitations</span>
+            <motion.span 
+              className="w-1.5 h-1.5 rounded-full bg-green-500"
+              animate={{ scale: [1, 1.2, 1], opacity: [1, 0.7, 1] }}
+              transition={{ duration: 2, repeat: Infinity }}
+            />
+          </motion.span>
         </motion.div>
 
-        <motion.h1
-          initial={{ opacity: 0, y: 40 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-          className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[0.9] mb-6"
-        >
-          Digital Invitations
-          <br />
-          <span className="text-gradient bg-clip-text">— Reimagined</span>
-        </motion.h1>
+        {/* Main heading with word animation */}
+        <motion.div style={{ y: textY }}>
+          <motion.h1
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
+            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-black tracking-tight leading-[0.9] mb-6"
+          >
+            <motion.span
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
+              Digital Invitations
+            </motion.span>
+            <br />
+            <span className="relative inline-block">
+              <span className="text-gradient">— </span>
+              <AnimatePresence mode="wait">
+                <motion.span
+                  key={currentWord}
+                  initial={{ opacity: 0, y: 20, filter: "blur(8px)" }}
+                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                  exit={{ opacity: 0, y: -20, filter: "blur(8px)" }}
+                  transition={{ duration: 0.5 }}
+                  className="text-gradient inline-block"
+                >
+                  {words[currentWord]}
+                </motion.span>
+              </AnimatePresence>
+            </span>
+          </motion.h1>
+        </motion.div>
 
+        {/* Description with character animation */}
         <motion.p
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -115,46 +229,88 @@ export function Hero() {
           Christenings, and Corporate events — in minutes, not hours.
         </motion.p>
 
-        {/* Trust badges */}
+        {/* Trust badges with stagger */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.35 }}
           className="flex items-center justify-center gap-4 sm:gap-6 mb-8 flex-wrap px-4"
         >
-          {trustBadges.map((badge) => (
-            <div key={badge.label} className="flex items-center gap-1.5 text-muted-foreground">
-              <badge.icon className="h-3.5 w-3.5" />
+          {trustBadges.map((badge, i) => (
+            <motion.div 
+              key={badge.label} 
+              className="flex items-center gap-1.5 text-muted-foreground group"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 + i * 0.1 }}
+              whileHover={{ scale: 1.05 }}
+            >
+              <motion.div
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+              >
+                <badge.icon className="h-3.5 w-3.5 group-hover:text-primary transition-colors" />
+              </motion.div>
               <span className="text-xs font-medium">{badge.label}</span>
-            </div>
+            </motion.div>
           ))}
         </motion.div>
 
+        {/* CTA Buttons with enhanced hover effects */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center px-4"
         >
-          <Button asChild size="lg" className="rounded-full px-8 text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-[1.02] active:scale-[0.98]">
-            <Link to="/auth">
-              Get Started Free <ArrowRight className="ml-2 h-4 w-4" />
-            </Link>
-          </Button>
-          <Button
-            variant="outline"
-            size="lg"
-            className="rounded-full px-8 text-base font-semibold group hover:bg-accent/50"
-            onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
-            See How It Works
-          </Button>
+            <Button 
+              asChild 
+              size="lg" 
+              className="rounded-full px-8 text-base font-semibold shadow-lg hover:shadow-xl transition-all relative overflow-hidden group"
+            >
+              <Link to="/auth">
+                <motion.span
+                  className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary-foreground/20 to-primary/0"
+                  initial={{ x: "-100%" }}
+                  whileHover={{ x: "100%" }}
+                  transition={{ duration: 0.5 }}
+                />
+                <span className="relative flex items-center">
+                  Get Started Free 
+                  <motion.span
+                    className="ml-2"
+                    animate={{ x: [0, 4, 0] }}
+                    transition={{ duration: 1.5, repeat: Infinity }}
+                  >
+                    <ArrowRight className="h-4 w-4" />
+                  </motion.span>
+                </span>
+              </Link>
+            </Button>
+          </motion.div>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Button
+              variant="outline"
+              size="lg"
+              className="rounded-full px-8 text-base font-semibold group hover:bg-accent/50"
+              onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
+              See How It Works
+            </Button>
+          </motion.div>
         </motion.div>
 
         {/* Floating event cards - hidden on mobile */}
         <div className="hidden lg:block">
-          {floatingCards.map((card) => (
+          {floatingCards.map((card, i) => (
             <motion.div
               key={card.label}
               initial={{ opacity: 0, scale: 0.8 }}
@@ -164,9 +320,14 @@ export function Hero() {
               style={{ x: card.x, y: card.y }}
             >
               <motion.div
-                animate={{ y: [0, -10, 0], rotate: [0, 2, -2, 0] }}
+                animate={{ 
+                  y: [0, -10, 0], 
+                  rotate: [0, 2, -2, 0],
+                  scale: [1, 1.02, 1]
+                }}
                 transition={{ duration: 4 + card.delay, repeat: Infinity, ease: "easeInOut" }}
-                className="px-4 py-2 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg text-sm font-medium"
+                whileHover={{ scale: 1.1 }}
+                className="px-4 py-2 rounded-2xl bg-card/80 backdrop-blur-xl border border-border/50 shadow-lg text-sm font-medium cursor-pointer pointer-events-auto"
               >
                 {card.label}
               </motion.div>
@@ -179,53 +340,91 @@ export function Hero() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.7 }}
-          className="mt-16 sm:mt-20 flex flex-wrap justify-center gap-6 sm:gap-12 text-center px-4"
+          className="mt-16 sm:mt-20 grid grid-cols-2 sm:grid-cols-4 gap-6 sm:gap-8 max-w-3xl mx-auto px-4"
         >
-          {[
-            { value: "10000", display: "10K+", label: "Invitations Created" },
-            { value: "50000", display: "50K+", label: "Guests Managed" },
-            { value: "99.9", display: "99.9%", label: "Uptime" },
-            { value: "4.9", display: "4.9★", label: "Rating" },
-          ].map((stat, i) => (
+          {stats.map((stat, i) => (
             <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.8 + i * 0.1 }}
-              className="group cursor-default"
+              whileHover={{ scale: 1.05, y: -5 }}
+              className="group cursor-default text-center"
             >
-              <p className="font-display text-xl sm:text-2xl font-black group-hover:scale-110 transition-transform">{stat.display}</p>
+              <motion.div
+                className="w-10 h-10 mx-auto mb-2 rounded-xl bg-primary/5 flex items-center justify-center group-hover:bg-primary/10 transition-colors"
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+              >
+                <stat.icon className="h-5 w-5 text-muted-foreground group-hover:text-foreground transition-colors" />
+              </motion.div>
+              <p className="font-display text-xl sm:text-2xl font-black group-hover:text-primary transition-colors">
+                <AnimatedCounter target={stat.value} suffix={stat.suffix} />
+              </p>
               <p className="text-xs text-muted-foreground">{stat.label}</p>
             </motion.div>
           ))}
         </motion.div>
 
-        {/* Social proof */}
+        {/* Social proof with avatar stack */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 1.2 }}
-          className="mt-8 flex items-center justify-center gap-2"
+          className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3"
         >
           <div className="flex -space-x-2">
             {["MS", "JC", "CR", "SM", "AT"].map((initials, i) => (
               <motion.div
                 key={initials}
-                initial={{ opacity: 0, scale: 0 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 1.3 + i * 0.08 }}
-                className="w-7 h-7 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[9px] font-bold"
+                initial={{ opacity: 0, scale: 0, x: -10 }}
+                animate={{ opacity: 1, scale: 1, x: 0 }}
+                transition={{ delay: 1.3 + i * 0.08, type: "spring", stiffness: 200 }}
+                whileHover={{ scale: 1.2, zIndex: 10 }}
+                className="w-8 h-8 rounded-full bg-primary/10 border-2 border-background flex items-center justify-center text-[10px] font-bold cursor-pointer hover:bg-primary/20 transition-colors"
               >
                 {initials}
               </motion.div>
             ))}
           </div>
-          <div className="flex items-center gap-1">
-            {[...Array(5)].map((_, i) => (
-              <Star key={i} className="h-3 w-3 fill-foreground text-foreground" />
-            ))}
+          <div className="flex flex-col sm:flex-row items-center gap-2">
+            <div className="flex items-center gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, scale: 0 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.5 + i * 0.05, type: "spring" }}
+                >
+                  <Star className="h-3.5 w-3.5 fill-foreground text-foreground" />
+                </motion.div>
+              ))}
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Loved by <span className="font-semibold text-foreground">10,000+</span> users
+            </span>
           </div>
-          <span className="text-xs text-muted-foreground">Loved by 10,000+ users</span>
+        </motion.div>
+
+        {/* Feature highlights */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 1.4 }}
+          className="mt-8 flex flex-wrap justify-center gap-3 px-4"
+        >
+          {["No Credit Card Required", "Free Forever Plan", "Setup in 2 Minutes"].map((text, i) => (
+            <motion.div
+              key={text}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.5 + i * 0.1 }}
+              className="flex items-center gap-1.5 text-xs text-muted-foreground"
+            >
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-500" />
+              <span>{text}</span>
+            </motion.div>
+          ))}
         </motion.div>
       </motion.div>
 
@@ -233,16 +432,17 @@ export function Hero() {
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.5 }}
+        transition={{ delay: 1.8 }}
         className="absolute bottom-8 left-1/2 -translate-x-1/2"
       >
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 2, repeat: Infinity }}
-          className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1.5"
+          className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex items-start justify-center p-1.5 cursor-pointer hover:border-primary/50 transition-colors"
+          onClick={() => document.getElementById("how-it-works")?.scrollIntoView({ behavior: "smooth" })}
         >
           <motion.div
-            animate={{ opacity: [0.5, 1, 0.5] }}
+            animate={{ opacity: [0.5, 1, 0.5], y: [0, 8, 0] }}
             transition={{ duration: 2, repeat: Infinity }}
             className="w-1.5 h-2.5 rounded-full bg-muted-foreground/50"
           />

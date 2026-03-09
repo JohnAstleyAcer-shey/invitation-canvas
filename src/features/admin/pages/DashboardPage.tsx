@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Search, Plus, LayoutGrid, List, Filter, Calendar, Eye, EyeOff, Copy, Trash2, Edit, Users, RotateCcw, Trash, MoreVertical, Share2, ExternalLink, Keyboard, CheckSquare, TrendingUp, Zap, Clock, ArrowUpRight } from "lucide-react";
+import { Search, Plus, LayoutGrid, List, Filter, Calendar, Eye, EyeOff, Copy, Trash2, Edit, Users, RotateCcw, Trash, MoreVertical, Share2, ExternalLink, Keyboard, CheckSquare, TrendingUp, Zap, Clock, ArrowUpRight, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";

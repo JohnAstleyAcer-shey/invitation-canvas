@@ -56,6 +56,7 @@ const App = () => (
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="activity" element={<ActivityLogPage />} />
               <Route path="templates" element={<TemplatesPage />} />
+              <Route path="customers" element={<CustomersPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="help" element={<HelpPage />} />
               <Route path="blocks/:id" element={<BlockEditorPage />} />

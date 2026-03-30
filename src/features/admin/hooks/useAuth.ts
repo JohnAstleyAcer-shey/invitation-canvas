@@ -2,32 +2,35 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { User } from "@supabase/supabase-js";
-import type { Profile } from "../types";
+import type { Profile, AppRole } from "../types";
 
 export function useAuth() {
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchProfileAndRole = async (userId: string) => {
+      const [profileRes, roleRes] = await Promise.all([
+        supabase.from("profiles").select("*").eq("user_id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
+      ]);
+      setProfile(profileRes.data);
+      setRole((roleRes.data?.role as AppRole) || null);
+      setLoading(false);
+    };
+
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (_event, session) => {
         if (session?.user) {
           setUser(session.user);
-          // Fetch profile with setTimeout to avoid deadlock
-          setTimeout(async () => {
-            const { data } = await supabase
-              .from("profiles")
-              .select("*")
-              .eq("user_id", session.user.id)
-              .maybeSingle();
-            setProfile(data);
-            setLoading(false);
-          }, 0);
+          setTimeout(() => fetchProfileAndRole(session.user.id), 0);
         } else {
           setUser(null);
           setProfile(null);
+          setRole(null);
           setLoading(false);
         }
       }
@@ -36,15 +39,7 @@ export function useAuth() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUser(session.user);
-        supabase
-          .from("profiles")
-          .select("*")
-          .eq("user_id", session.user.id)
-          .maybeSingle()
-          .then(({ data }) => {
-            setProfile(data);
-            setLoading(false);
-          });
+        fetchProfileAndRole(session.user.id);
       } else {
         setLoading(false);
       }
@@ -58,5 +53,8 @@ export function useAuth() {
     navigate("/auth");
   };
 
-  return { user, profile, loading, signOut };
+  const isSuperAdmin = role === "superadmin";
+  const isCustomer = role === "customer";
+
+  return { user, profile, role, loading, signOut, isSuperAdmin, isCustomer };
 }

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Plus, BarChart3, Activity, BookTemplate, Settings, HelpCircle, LogOut, ChevronDown } from "lucide-react";
+import { LayoutDashboard, Plus, BarChart3, Activity, BookTemplate, Settings, HelpCircle, LogOut, Users, Package, ChevronDown } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -23,24 +23,38 @@ import logoDark from "@/assets/logo-dark.png";
 import logoLight from "@/assets/logo-light.png";
 import { motion } from "framer-motion";
 
-const mainNav = [
+const superAdminNav = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: null },
   { title: "New Invitation", url: "/admin/create", icon: Plus, badge: null },
+  { title: "Customers", url: "/admin/customers", icon: Users, badge: null },
+  { title: "Templates", url: "/admin/templates", icon: BookTemplate, badge: null },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: null },
   { title: "Activity Log", url: "/admin/activity", icon: Activity, badge: "Live" },
-  { title: "Templates", url: "/admin/templates", icon: BookTemplate, badge: null },
 ];
 
-const bottomNav = [
+const customerNav = [
+  { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: null },
+  { title: "My Invitations", url: "/admin", icon: Plus, badge: null },
+  { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: null },
+];
+
+const superAdminBottomNav = [
   { title: "Settings", url: "/admin/settings", icon: Settings },
+  { title: "Help", url: "/admin/help", icon: HelpCircle },
+];
+
+const customerBottomNav = [
   { title: "Help", url: "/admin/help", icon: HelpCircle },
 ];
 
 export function AdminSidebar() {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
-  const { user, profile, signOut } = useAuth();
+  const { user, profile, signOut, isSuperAdmin } = useAuth();
   const location = useLocation();
+
+  const mainNav = isSuperAdmin ? superAdminNav : customerNav;
+  const bottomNav = isSuperAdmin ? superAdminBottomNav : customerBottomNav;
 
   const isActive = (path: string) => {
     if (path === "/admin") return location.pathname === "/admin";
@@ -62,7 +76,9 @@ export function AdminSidebar() {
         </div>
 
         <SidebarGroup>
-          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest">Menu</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-[10px] uppercase tracking-widest">
+            {isSuperAdmin ? "Admin Menu" : "Menu"}
+          </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {mainNav.map((item) => {
@@ -143,7 +159,9 @@ export function AdminSidebar() {
           {!collapsed && (
             <div className="flex-1 min-w-0">
               <p className="text-xs font-medium truncate">{profile?.full_name || "User"}</p>
-              <p className="text-[10px] text-muted-foreground truncate">{user?.email}</p>
+              <p className="text-[10px] text-muted-foreground truncate">
+                {isSuperAdmin ? "SuperAdmin" : "Customer"} · {user?.email}
+              </p>
             </div>
           )}
         </div>

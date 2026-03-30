@@ -17,6 +17,7 @@ const breadcrumbMap: Record<string, string> = {
   activity: "Activity Log",
   templates: "Templates",
   settings: "Settings",
+  customers: "Customers",
   help: "Help",
   blocks: "Block Editor",
 };

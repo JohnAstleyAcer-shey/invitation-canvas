@@ -72,7 +72,7 @@ export function AdminLayout() {
           </header>
 
           {/* Main content with page transitions */}
-          <main className="flex-1 p-3 sm:p-4 md:p-6 pb-24 md:pb-6 w-full">
+          <main className="flex-1 p-3 sm:p-4 md:p-6 pb-24 md:pb-6 w-full max-w-[1920px] mx-auto">
             <AnimatePresence mode="wait">
               <motion.div
                 key={location.pathname}

@@ -256,42 +256,13 @@ export function Hero() {
           ))}
         </motion.div>
 
-        {/* CTA Buttons with enhanced hover effects */}
+        {/* CTA Buttons - showcase focused */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.4 }}
           className="flex flex-col sm:flex-row gap-4 justify-center px-4"
         >
-          <motion.div
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <Button 
-              asChild 
-              size="lg" 
-              className="rounded-full px-8 text-base font-semibold shadow-lg hover:shadow-xl transition-all relative overflow-hidden group"
-            >
-              <Link to="/auth">
-                <motion.span
-                  className="absolute inset-0 bg-gradient-to-r from-primary/0 via-primary-foreground/20 to-primary/0"
-                  initial={{ x: "-100%" }}
-                  whileHover={{ x: "100%" }}
-                  transition={{ duration: 0.5 }}
-                />
-                <span className="relative flex items-center">
-                  Get Started Free 
-                  <motion.span
-                    className="ml-2"
-                    animate={{ x: [0, 4, 0] }}
-                    transition={{ duration: 1.5, repeat: Infinity }}
-                  >
-                    <ArrowRight className="h-4 w-4" />
-                  </motion.span>
-                </span>
-              </Link>
-            </Button>
-          </motion.div>
           <motion.div
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -304,6 +275,25 @@ export function Hero() {
             >
               <Play className="mr-2 h-4 w-4 group-hover:scale-110 transition-transform" />
               See How It Works
+            </Button>
+          </motion.div>
+          <motion.div
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            <Button
+              size="lg"
+              className="rounded-full px-8 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+              onClick={() => document.getElementById("pricing")?.scrollIntoView({ behavior: "smooth" })}
+            >
+              View Packages
+              <motion.span
+                className="ml-2"
+                animate={{ x: [0, 4, 0] }}
+                transition={{ duration: 1.5, repeat: Infinity }}
+              >
+                <ArrowRight className="h-4 w-4" />
+              </motion.span>
             </Button>
           </motion.div>
         </motion.div>

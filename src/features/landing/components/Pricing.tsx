@@ -1,7 +1,6 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Check, Star, Zap, HelpCircle, X, Sparkles, ArrowRight, Shield, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -191,29 +190,21 @@ function PricingCard({ pkg, index }: { pkg: typeof packages[0]; index: number })
         ))}
       </ul>
 
-      {/* CTA Button */}
+      {/* CTA Button - Contact instead of sign up */}
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
         <Button
-          asChild
           variant={pkg.popular ? "default" : "outline"}
           className={`relative w-full rounded-full transition-all overflow-hidden ${
             pkg.popular ? "shadow-md hover:shadow-lg" : ""
           }`}
           size="lg"
+          onClick={() => window.location.href = "mailto:support@lynxinvitation.com?subject=Interested in " + pkg.name + " Package"}
         >
-          <Link to="/auth">
-            <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.5 }}
-            />
-            <span className="relative">Get Started</span>
-            <ArrowRight className="ml-2 h-4 w-4 relative" />
-          </Link>
+          <span className="relative">Inquire Now</span>
+          <ArrowRight className="ml-2 h-4 w-4 relative" />
         </Button>
       </motion.div>
 
@@ -374,7 +365,7 @@ export function Pricing() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-muted-foreground mb-4">
-            Need a custom solution? <Link to="/auth" className="text-primary hover:underline">Contact us</Link>
+            Need a custom solution? <a href="mailto:support@lynxinvitation.com" className="text-primary hover:underline">Contact us</a>
           </p>
         </motion.div>
       </div>

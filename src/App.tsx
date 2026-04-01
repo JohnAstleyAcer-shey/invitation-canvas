@@ -17,7 +17,6 @@ import ActivityLogPage from "./features/admin/pages/ActivityLogPage";
 import TemplatesPage from "./features/admin/pages/TemplatesPage";
 import SettingsPage from "./features/admin/pages/SettingsPage";
 import HelpPage from "./features/admin/pages/HelpPage";
-import CustomersPage from "./features/admin/pages/CustomersPage";
 import BlockEditorPage from "./features/blocks/pages/BlockEditorPage";
 import InvitationViewPage from "./features/invitation/pages/InvitationViewPage";
 import { CustomerAdminProvider } from "./features/customer-portal/hooks/useCustomerAdmin";
@@ -31,7 +30,7 @@ import NotFound from "./pages/NotFound";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 1000 * 60 * 2, // 2 min cache
+      staleTime: 1000 * 60 * 2,
       retry: 2,
       refetchOnWindowFocus: false,
     },
@@ -56,7 +55,6 @@ const App = () => (
               <Route path="analytics" element={<AnalyticsPage />} />
               <Route path="activity" element={<ActivityLogPage />} />
               <Route path="templates" element={<TemplatesPage />} />
-              <Route path="customers" element={<CustomersPage />} />
               <Route path="settings" element={<SettingsPage />} />
               <Route path="help" element={<HelpPage />} />
               <Route path="blocks/:id" element={<BlockEditorPage />} />

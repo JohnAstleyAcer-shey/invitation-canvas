@@ -18,8 +18,17 @@ export function useAuth() {
         supabase.from("user_roles").select("role").eq("user_id", userId).maybeSingle(),
       ]);
       setProfile(profileRes.data);
-      setRole((roleRes.data?.role as AppRole) || null);
+      const userRole = (roleRes.data?.role as AppRole) || null;
+      setRole(userRole);
       setLoading(false);
+
+      // Only superadmin can access admin panel
+      if (userRole !== "superadmin") {
+        await supabase.auth.signOut();
+        setUser(null);
+        setProfile(null);
+        setRole(null);
+      }
     };
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -54,7 +63,6 @@ export function useAuth() {
   };
 
   const isSuperAdmin = role === "superadmin";
-  const isCustomer = role === "customer";
 
-  return { user, profile, role, loading, signOut, isSuperAdmin, isCustomer };
+  return { user, profile, role, loading, signOut, isSuperAdmin };
 }

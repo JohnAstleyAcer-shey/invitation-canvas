@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Menu, X, ArrowRight } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import logoDark from "@/assets/logo-dark.png";
@@ -10,6 +10,7 @@ import { motion, AnimatePresence, useMotionValueEvent, useScroll } from "framer-
 const navLinks = [
   { label: "Features", id: "features" },
   { label: "How It Works", id: "how-it-works" },
+  { label: "Showcase", id: "showcase" },
   { label: "Pricing", id: "pricing" },
 ];
 
@@ -19,7 +20,6 @@ export function Navbar() {
   const [hidden, setHidden] = useState(false);
   const { scrollY } = useScroll();
 
-  // Hide navbar on scroll down, show on scroll up
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious() ?? 0;
     setIsScrolled(latest > 20);
@@ -30,7 +30,6 @@ export function Navbar() {
     }
   });
 
-  // Lock body scroll when mobile menu is open
   useEffect(() => {
     document.body.style.overflow = isMobileOpen ? "hidden" : "";
     return () => { document.body.style.overflow = ""; };
@@ -51,7 +50,7 @@ export function Navbar() {
           : "bg-transparent"
       }`}
     >
-      <div className="section-container flex h-16 items-center justify-between">
+      <div className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 flex h-16 items-center justify-between">
         <Link to="/" className="flex items-center gap-2 shrink-0">
           <img src={logoDark} alt="LynxInvitation" className="hidden dark:block h-8 w-8" />
           <img src={logoLight} alt="LynxInvitation" className="block dark:hidden h-8 w-8" />
@@ -70,11 +69,6 @@ export function Navbar() {
             </button>
           ))}
           <ThemeToggle />
-          <Button asChild size="sm" className="rounded-full px-6 shadow-sm hover:shadow-md transition-shadow">
-            <Link to="/auth">
-              Get Started <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Link>
-          </Button>
         </div>
 
         <div className="flex md:hidden items-center gap-2">
@@ -108,7 +102,7 @@ export function Navbar() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
-              className="section-container py-8 flex flex-col gap-2"
+              className="w-full px-4 sm:px-6 py-8 flex flex-col gap-2"
             >
               {navLinks.map((link, i) => (
                 <motion.button
@@ -122,16 +116,6 @@ export function Navbar() {
                   {link.label}
                 </motion.button>
               ))}
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.3 }}
-                className="mt-4"
-              >
-                <Button asChild className="rounded-full w-full" size="lg">
-                  <Link to="/auth">Get Started Free</Link>
-                </Button>
-              </motion.div>
             </motion.div>
           </motion.div>
         )}

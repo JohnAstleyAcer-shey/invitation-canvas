@@ -1,25 +1,17 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Plus, BarChart3, Activity, Settings, Users } from "lucide-react";
+import { LayoutDashboard, Plus, BarChart3, Activity, Settings } from "lucide-react";
 import { motion } from "framer-motion";
-import { useAuth } from "../hooks/useAuth";
 
-const superAdminItems = [
+const items = [
   { title: "Home", url: "/admin", icon: LayoutDashboard },
   { title: "Create", url: "/admin/create", icon: Plus, primary: true },
-  { title: "Customers", url: "/admin/customers", icon: Users },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
+  { title: "Activity", url: "/admin/activity", icon: Activity },
   { title: "Settings", url: "/admin/settings", icon: Settings },
-];
-
-const customerItems = [
-  { title: "Home", url: "/admin", icon: LayoutDashboard },
-  { title: "Analytics", url: "/admin/analytics", icon: BarChart3 },
 ];
 
 export function MobileNav() {
   const location = useLocation();
-  const { isSuperAdmin } = useAuth();
-  const items = isSuperAdmin ? superAdminItems : customerItems;
 
   const isActive = (path: string) => {
     if (path === "/admin") return location.pathname === "/admin";

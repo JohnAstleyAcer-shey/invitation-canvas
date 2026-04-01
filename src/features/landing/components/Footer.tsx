@@ -12,17 +12,15 @@ const footerLinks = [
     links: [
       { label: "Features", href: "#features" },
       { label: "Pricing", href: "#pricing" },
-      { label: "Templates", href: "/auth" },
-      { label: "Block Editor", href: "/auth" },
+      { label: "Showcase", href: "#showcase" },
+      { label: "How It Works", href: "#how-it-works" },
     ],
   },
   {
     title: "Support",
     links: [
-      { label: "Help Center", href: "/auth" },
       { label: "Contact Us", href: "mailto:support@lynxinvitation.com" },
       { label: "FAQ", href: "#pricing" },
-      { label: "Status", href: "#" },
     ],
   },
   {

@@ -366,7 +366,7 @@ export function Pricing() {
           className="mt-12 text-center"
         >
           <p className="text-sm text-muted-foreground mb-4">
-            Need a custom solution? <Link to="/auth" className="text-primary hover:underline">Contact us</Link>
+            Need a custom solution? <a href="mailto:support@lynxinvitation.com" className="text-primary hover:underline">Contact us</a>
           </p>
         </motion.div>
       </div>

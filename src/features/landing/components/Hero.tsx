@@ -157,7 +157,7 @@ export function Hero() {
       {/* Gradient overlay */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-background" />
 
-      <motion.div style={{ opacity, scale }} className="section-container relative z-10 text-center">
+      <motion.div style={{ opacity, scale }} className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 relative z-10 text-center">
         {/* Badge with animated border */}
         <motion.div
           initial={{ opacity: 0, y: 40, filter: "blur(10px)" }}

@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { motion, useScroll, useTransform, useMotionValue, useSpring, AnimatePresence } from "framer-motion";
 import { ArrowRight, Sparkles, Play, Star, Shield, Zap, Clock, CheckCircle2, Users, Calendar, TrendingUp, Award } from "lucide-react";
 import { Button } from "@/components/ui/button";

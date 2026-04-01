@@ -191,29 +191,21 @@ function PricingCard({ pkg, index }: { pkg: typeof packages[0]; index: number })
         ))}
       </ul>
 
-      {/* CTA Button */}
+      {/* CTA Button - Contact instead of sign up */}
       <motion.div
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
       >
         <Button
-          asChild
           variant={pkg.popular ? "default" : "outline"}
           className={`relative w-full rounded-full transition-all overflow-hidden ${
             pkg.popular ? "shadow-md hover:shadow-lg" : ""
           }`}
           size="lg"
+          onClick={() => window.location.href = "mailto:support@lynxinvitation.com?subject=Interested in " + pkg.name + " Package"}
         >
-          <Link to="/auth">
-            <motion.span
-              className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.5 }}
-            />
-            <span className="relative">Get Started</span>
-            <ArrowRight className="ml-2 h-4 w-4 relative" />
-          </Link>
+          <span className="relative">Inquire Now</span>
+          <ArrowRight className="ml-2 h-4 w-4 relative" />
         </Button>
       </motion.div>
 

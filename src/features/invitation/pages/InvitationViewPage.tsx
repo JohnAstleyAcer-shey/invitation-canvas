@@ -220,8 +220,31 @@ export default function InvitationViewPage() {
     }
   });
 
-  // Block-based rendering
-  if (useBlockMode && publicBlocks) {
+  // Block-based rendering — page by page using StoryNavigation
+  if (useBlockMode && publicBlocks && publicBlocks.length > 0) {
+    // Group blocks into pages: each block is its own "page" for story-style navigation
+    const blockSections = publicBlocks.map((block) => (
+      <div key={block.id} className="w-full">
+        <BlockViewRenderer blocks={[block]} invitationId={invId} />
+      </div>
+    ));
+    const blockLabels = publicBlocks.map((block) => {
+      const c = block.content as any;
+      if (block.block_type === "cover_hero") return c.overlayText || "Cover";
+      if (block.block_type === "heading") return c.text || "Heading";
+      if (block.block_type === "rsvp") return c.rsvpTitle || "RSVP";
+      if (block.block_type === "countdown" || block.block_type === "countdown_flip") return "Countdown";
+      if (block.block_type === "location") return c.venueName || "Location";
+      if (block.block_type === "timeline") return "Schedule";
+      if (block.block_type === "entourage") return c.entourageTitle || "Entourage";
+      if (block.block_type === "gallery") return "Gallery";
+      if (block.block_type === "dress_code") return "Dress Code";
+      if (block.block_type === "gift_registry") return c.registryTitle || "Gift Guide";
+      if (block.block_type === "faq") return c.faqTitle || "FAQ";
+      if (block.block_type === "text") return "Message";
+      return block.block_type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
+    });
+
     return (
       <InvitationThemeProvider theme={theme}>
         <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
@@ -233,14 +256,7 @@ export default function InvitationViewPage() {
         {theme?.music_url && (
           <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
         )}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.5 }}
-          className="w-full overflow-x-hidden"
-        >
-          <BlockViewRenderer blocks={publicBlocks} />
-        </motion.div>
+        <StoryNavigation pageLabels={blockLabels}>{blockSections}</StoryNavigation>
       </InvitationThemeProvider>
     );
   }

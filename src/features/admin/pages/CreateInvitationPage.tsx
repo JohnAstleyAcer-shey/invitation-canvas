@@ -93,7 +93,7 @@ export default function CreateInvitationPage() {
         invitation_message: message || null,
       });
       setShowConfetti(true);
-      setTimeout(() => navigate(`/admin/edit/${inv.id}`), 2000);
+      setTimeout(() => navigate(`/admin/blocks/${inv.id}`), 2000);
     } catch {}
   };
 

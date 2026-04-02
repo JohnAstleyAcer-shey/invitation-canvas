@@ -475,10 +475,10 @@ function AdvancedStyleSettings({ style, updateStyle }: { style: any; updateStyle
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Max Width</Label>
-        <Select value={style.maxWidth || ""} onValueChange={v => updateStyle("maxWidth", v)}>
+        <Select value={style.maxWidth || "__full__"} onValueChange={v => updateStyle("maxWidth", v === "__full__" ? "" : v)}>
           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Full width" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Full width</SelectItem>
+            <SelectItem value="__full__">Full width</SelectItem>
             <SelectItem value="400px">Narrow (400px)</SelectItem>
             <SelectItem value="600px">Medium (600px)</SelectItem>
             <SelectItem value="800px">Wide (800px)</SelectItem>

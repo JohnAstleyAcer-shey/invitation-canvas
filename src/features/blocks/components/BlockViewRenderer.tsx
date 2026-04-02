@@ -673,14 +673,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
     case "rsvp":
       return (
         <Wrap>
-          <motion.div initial={{ scale: 0, rotate: -10 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}>
-            <Mail className="h-10 w-10 mx-auto mb-4 opacity-60" />
-          </motion.div>
-          <motion.h3 initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
-            className="font-display text-2xl md:text-3xl font-bold mb-2">{c.rsvpTitle || "RSVP"}</motion.h3>
-          {c.rsvpSubtitle && <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 0.7 }} viewport={{ once: true }} transition={{ delay: 0.25 }} className="text-sm mb-4">{c.rsvpSubtitle}</motion.p>}
-          <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 0.5, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.35 }}
-            className="text-sm bg-current/5 rounded-xl p-4 max-w-sm mx-auto">RSVP form appears with invitation codes.</motion.p>
+          <BlockRsvpForm invitationId={invitationId || block.invitation_id} content={c} />
         </Wrap>
       );
 

@@ -446,10 +446,10 @@ function AdvancedStyleSettings({ style, updateStyle }: { style: any; updateStyle
       </div>
       <div className="space-y-1">
         <Label className="text-xs">Font Family</Label>
-        <Select value={style.fontFamily || ""} onValueChange={v => updateStyle("fontFamily", v)}>
+        <Select value={style.fontFamily || "__default__"} onValueChange={v => updateStyle("fontFamily", v === "__default__" ? "" : v)}>
           <SelectTrigger className="h-8 text-xs"><SelectValue placeholder="Default" /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Default</SelectItem>
+            <SelectItem value="__default__">Default</SelectItem>
             <SelectItem value="serif">Serif</SelectItem>
             <SelectItem value="sans-serif">Sans Serif</SelectItem>
             <SelectItem value="monospace">Monospace</SelectItem>

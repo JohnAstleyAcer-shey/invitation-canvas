@@ -105,12 +105,12 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
         {current + 1} / {total}
       </motion.div>
 
-      {/* Progress dots with hover tooltips */}
+      {/* Progress dots - hidden on very small screens, compact on mobile */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
         transition={{ delay: 0.8 }}
-        className="fixed right-4 top-1/2 -translate-y-1/2 z-50 flex flex-col gap-2"
+        className="fixed right-2 sm:right-4 top-1/2 -translate-y-1/2 z-50 hidden sm:flex flex-col gap-2"
       >
         {pageLabels.map((label, i) => (
           <button

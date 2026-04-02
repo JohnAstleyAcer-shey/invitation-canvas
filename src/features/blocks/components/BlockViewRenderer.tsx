@@ -978,6 +978,190 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
   }
 }
 
+// --- BlockRsvpForm: Functional RSVP form inside blocks ---
+
+type RsvpStatus = "attending" | "not_attending" | "maybe";
+
+function BlockRsvpForm({ invitationId, content }: { invitationId: string; content: any }) {
+  const [mode, setMode] = useState<"code" | "public">("code");
+  const [step, setStep] = useState(0);
+  const [code, setCode] = useState("");
+  const [foundGuest, setFoundGuest] = useState<any>(null);
+  const [publicName, setPublicName] = useState("");
+  const [publicEmail, setPublicEmail] = useState("");
+  const [status, setStatus] = useState<RsvpStatus | null>(null);
+  const [companions, setCompanions] = useState(0);
+  const [message, setMessage] = useState("");
+  const [dietary, setDietary] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+
+  const statusOptions = [
+    { key: "attending" as const, label: "Yes, I'll be there!", icon: Check },
+    { key: "maybe" as const, label: "Maybe", icon: HelpCircle },
+    { key: "not_attending" as const, label: "Can't make it", icon: X },
+  ];
+
+  const lookupGuest = async () => {
+    if (!code.trim()) return;
+    setLoading(true);
+    const { data } = await supabase
+      .from("guests")
+      .select("*")
+      .eq("invitation_id", invitationId)
+      .eq("invitation_code", code.trim().toUpperCase())
+      .maybeSingle();
+    setLoading(false);
+    if (data) { setFoundGuest(data); setStep(1); }
+    else toast.error("Invalid invitation code.");
+  };
+
+  const submitRsvp = async () => {
+    if (!status) return;
+    setLoading(true);
+    try {
+      if (foundGuest) {
+        const { error } = await supabase.from("rsvps").upsert({
+          invitation_id: invitationId,
+          guest_id: foundGuest.id,
+          status,
+          num_companions: companions,
+          message: message || null,
+          dietary_notes: dietary || null,
+          responded_at: new Date().toISOString(),
+        }, { onConflict: "guest_id,invitation_id" });
+        if (error) throw error;
+      } else {
+        const { data: newGuest, error: guestError } = await supabase
+          .from("guests")
+          .insert({ invitation_id: invitationId, full_name: publicName.trim(), email: publicEmail.trim() || null, max_companions: 0 })
+          .select().single();
+        if (guestError) throw guestError;
+        const { error: rsvpError } = await supabase.from("rsvps").insert({
+          invitation_id: invitationId, guest_id: newGuest.id, status,
+          num_companions: companions, message: message || null, dietary_notes: dietary || null,
+          responded_at: new Date().toISOString(),
+        });
+        if (rsvpError) throw rsvpError;
+      }
+      setDone(true);
+      toast.success("RSVP submitted!");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Failed to submit RSVP. Please try again.");
+    } finally { setLoading(false); }
+  };
+
+  if (done) {
+    return (
+      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="space-y-4 py-8">
+        <motion.div animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ delay: 0.3, duration: 0.5 }}
+          className="w-20 h-20 mx-auto rounded-full bg-current/10 flex items-center justify-center">
+          <PartyPopper className="w-10 h-10 opacity-70" />
+        </motion.div>
+        <h3 className="font-display text-2xl font-bold">Thank You!</h3>
+        <p className="text-sm opacity-70">Your response has been recorded.</p>
+        {status === "attending" && <p className="text-sm opacity-60 flex items-center justify-center gap-1"><Heart className="w-4 h-4" /> We can't wait to see you!</p>}
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-4 max-w-sm mx-auto">
+      <motion.div initial={{ scale: 0, rotate: -10 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}>
+        <Send className="h-8 w-8 mx-auto mb-2 opacity-60" />
+      </motion.div>
+      <h3 className="font-display text-2xl md:text-3xl font-bold">{content.rsvpTitle || "RSVP"}</h3>
+      {content.rsvpSubtitle && <p className="text-sm opacity-70">{content.rsvpSubtitle}</p>}
+
+      <AnimatePresence mode="wait">
+        {step === 0 && !foundGuest && (
+          <motion.div key="entry" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-3">
+            {mode === "code" ? (
+              <>
+                <p className="text-xs opacity-60 flex items-center justify-center gap-1"><Calendar className="w-3 h-3" /> Enter your invitation code</p>
+                <input value={code} onChange={e => setCode(e.target.value.toUpperCase())} placeholder="e.g. A1B2C3D4"
+                  className="w-full px-4 py-3 rounded-xl border text-center text-lg tracking-widest focus:ring-2 focus:outline-none bg-transparent border-current/20"
+                  maxLength={8} onKeyDown={e => e.key === "Enter" && lookupGuest()} />
+                <button onClick={lookupGuest} disabled={loading || !code.trim()}
+                  className="w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50 bg-current/10 hover:bg-current/20 transition-all">
+                  {loading ? <Loader2 className="w-5 h-5 animate-spin mx-auto" /> : "Find My Invitation →"}
+                </button>
+                <div className="flex items-center gap-3 text-xs opacity-40"><div className="flex-1 h-px bg-current" /><span>or</span><div className="flex-1 h-px bg-current" /></div>
+                <button onClick={() => setMode("public")} className="w-full px-6 py-3 rounded-xl border border-current/20 font-medium text-sm hover:bg-current/5 transition-all flex items-center justify-center gap-2">
+                  <User className="w-4 h-4" /> RSVP without code
+                </button>
+              </>
+            ) : (
+              <>
+                <p className="text-xs opacity-60 flex items-center justify-center gap-1"><User className="w-3 h-3" /> Enter your details</p>
+                <input value={publicName} onChange={e => setPublicName(e.target.value)} placeholder="Your full name *"
+                  className="w-full px-4 py-3 rounded-xl border bg-transparent border-current/20 focus:ring-2 focus:outline-none" />
+                <input value={publicEmail} onChange={e => setPublicEmail(e.target.value)} placeholder="Email (optional)" type="email"
+                  className="w-full px-4 py-3 rounded-xl border bg-transparent border-current/20 focus:ring-2 focus:outline-none" />
+                <button onClick={() => { if (publicName.trim()) setStep(1); else toast.error("Please enter your name"); }} disabled={!publicName.trim()}
+                  className="w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50 bg-current/10 hover:bg-current/20 transition-all">Continue →</button>
+                <button onClick={() => setMode("code")} className="text-xs underline opacity-50 hover:opacity-100 transition">I have an invitation code</button>
+              </>
+            )}
+          </motion.div>
+        )}
+
+        {step === 1 && (
+          <motion.div key="status" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+            <p className="text-base font-medium flex items-center justify-center gap-2">
+              <Users className="w-4 h-4" /> Hi, {foundGuest?.full_name || publicName}!
+            </p>
+            <p className="text-sm opacity-60">Will you be attending?</p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              {statusOptions.map(opt => (
+                <motion.button key={opt.key} whileHover={{ scale: 1.03, y: -2 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => { setStatus(opt.key); setStep(2); }}
+                  className="flex items-center justify-center gap-2 px-5 py-3 rounded-xl border-2 border-current/20 font-medium text-sm hover:bg-current/10 transition-all">
+                  <opt.icon className="w-4 h-4" /> {opt.label}
+                </motion.button>
+              ))}
+            </div>
+          </motion.div>
+        )}
+
+        {step === 2 && (
+          <motion.div key="details" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-4">
+            {content.showCompanions !== false && foundGuest && (foundGuest.max_companions ?? 0) > 0 && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium flex items-center gap-1"><Users className="w-3 h-3" /> Companions</label>
+                <select value={companions} onChange={e => setCompanions(Number(e.target.value))}
+                  className="w-full px-4 py-3 rounded-xl border bg-transparent border-current/20">
+                  {Array.from({ length: (foundGuest.max_companions ?? 0) + 1 }, (_, i) => <option key={i} value={i}>{i}</option>)}
+                </select>
+              </div>
+            )}
+            {content.showDietaryNotes !== false && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium flex items-center gap-1"><UtensilsCrossed className="w-3 h-3" /> Dietary Notes</label>
+                <input value={dietary} onChange={e => setDietary(e.target.value)} placeholder="Any dietary requirements?"
+                  className="w-full px-4 py-3 rounded-xl border bg-transparent border-current/20 focus:ring-2 focus:outline-none" />
+              </div>
+            )}
+            {content.showMessage !== false && (
+              <div className="space-y-1">
+                <label className="text-xs font-medium flex items-center gap-1"><MessageSquare className="w-3 h-3" /> Message</label>
+                <textarea value={message} onChange={e => setMessage(e.target.value)} placeholder="Leave a message..."
+                  className="w-full px-4 py-3 rounded-xl border bg-transparent border-current/20 focus:ring-2 focus:outline-none min-h-[80px] resize-none" />
+              </div>
+            )}
+            <motion.button onClick={submitRsvp} disabled={loading} whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}
+              className="w-full px-6 py-3 rounded-xl font-medium disabled:opacity-50 bg-current/10 hover:bg-current/20 transition-all flex items-center justify-center gap-2">
+              {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Submit RSVP</>}
+            </motion.button>
+            <button onClick={() => setStep(1)} className="text-xs underline opacity-50 hover:opacity-100 transition">← Change response</button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 // --- Sub-components with enhanced animations ---
 
 function ImageWithLightbox({ src, alt, borderRadius }: { src: string; alt: string; borderRadius?: string }) {

@@ -146,7 +146,7 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
         ))}
       </motion.div>
 
-      {/* Nav arrows - centered with larger tap targets */}
+      {/* Nav arrows - perfectly centered with large mobile tap targets */}
       <AnimatePresence>
         {current > 0 && (
           <motion.button
@@ -156,10 +156,11 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
             whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
             whileTap={{ scale: 0.9 }}
             onClick={prev}
-            className="fixed top-6 left-1/2 -translate-x-1/2 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-sm text-white transition-colors"
+            className="fixed top-4 left-1/2 z-50 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white transition-colors shadow-lg"
+            style={{ transform: "translateX(-50%)" }}
             aria-label="Previous page"
           >
-            <ChevronUp className="w-5 h-5" />
+            <ChevronUp className="w-6 h-6 sm:w-5 sm:h-5" />
           </motion.button>
         )}
       </AnimatePresence>
@@ -173,10 +174,11 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
             whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
             whileTap={{ scale: 0.9 }}
             onClick={next}
-            className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 w-10 h-10 flex items-center justify-center rounded-full bg-black/20 backdrop-blur-sm text-white transition-colors"
+            className="fixed bottom-4 left-1/2 z-50 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white transition-colors shadow-lg"
+            style={{ transform: "translateX(-50%)" }}
             aria-label="Next page"
           >
-            <ChevronDown className="w-5 h-5" />
+            <ChevronDown className="w-6 h-6 sm:w-5 sm:h-5" />
           </motion.button>
         )}
       </AnimatePresence>

@@ -56,10 +56,10 @@ const staggerItem = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
-export function BlockViewRenderer({ blocks }: { blocks: InvitationBlock[] }) {
+export function BlockViewRenderer({ blocks, invitationId }: { blocks: InvitationBlock[]; invitationId?: string }) {
   return (
     <div className="w-full">
-      {blocks.map((block, idx) => <BlockView key={block.id} block={block} index={idx} totalBlocks={blocks.length} />)}
+      {blocks.map((block, idx) => <BlockView key={block.id} block={block} index={idx} totalBlocks={blocks.length} invitationId={invitationId} />)}
     </div>
   );
 }

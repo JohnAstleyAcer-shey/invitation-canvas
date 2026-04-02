@@ -73,7 +73,7 @@ function useParallax(offset = 50) {
   return { ref, y: smoothY };
 }
 
-function BlockView({ block, index, totalBlocks }: { block: InvitationBlock; index: number; totalBlocks: number }) {
+function BlockView({ block, index, totalBlocks, invitationId }: { block: InvitationBlock; index: number; totalBlocks: number; invitationId?: string }) {
   const c = block.content as any;
   const s = block.style as any;
   const anim = animationVariants[s.animation] || {};

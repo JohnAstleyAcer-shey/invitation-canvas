@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { Invitation, InvitationInsert, InvitationUpdate, EventType } from "../types";
-import { DEFAULT_PAGES_BY_EVENT } from "../types";
+import { BLOCK_REGISTRY } from "@/features/blocks/registry";
 import { BLOCK_REGISTRY } from "@/features/blocks/registry";
 import type { BlockType } from "@/features/blocks/types";
 import { toast } from "sonner";

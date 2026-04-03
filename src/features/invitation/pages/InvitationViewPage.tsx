@@ -1,13 +1,8 @@
 import { useState } from "react";
 import { useParams } from "react-router-dom";
 import { MessageCircle, ArrowLeft, Heart, Sparkles, ChevronUp, Volume2, VolumeX } from "lucide-react";
-import { Flower2, Flame, Crown, Banknote } from "lucide-react";
 import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
-import {
-  usePublicInvitation, usePublicTheme, usePublicPages,
-  usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures,
-  usePublicBlueBills, usePublicGallery, usePublicDressCode, usePublicGiftItems, usePublicFaqs,
-} from "../hooks/usePublicInvitation";
+import { usePublicInvitation, usePublicTheme } from "../hooks/usePublicInvitation";
 import { usePublicBlocks } from "@/features/blocks/hooks/useBlocks";
 import { BlockViewRenderer } from "@/features/blocks/components/BlockViewRenderer";
 import { useViewTracking } from "../hooks/useViewTracking";
@@ -17,33 +12,14 @@ import { MusicPlayer } from "../components/MusicPlayer";
 import { ParticleCanvas } from "../components/ParticleCanvas";
 import { SocialShareSheet } from "../components/SocialShareSheet";
 import { PasswordGate } from "../components/sections/PasswordGate";
-import { CoverSection } from "../components/sections/CoverSection";
-import { MessageSection } from "../components/sections/MessageSection";
-import { CountdownSection } from "../components/sections/CountdownSection";
-import { LocationSection } from "../components/sections/LocationSection";
-import { TimelineSection } from "../components/sections/TimelineSection";
-import { EntourageSection } from "../components/sections/EntourageSection";
-import { DressCodeSection } from "../components/sections/DressCodeSection";
-import { GallerySection } from "../components/sections/GallerySection";
-import { GiftGuideSection } from "../components/sections/GiftGuideSection";
-import { FaqSection } from "../components/sections/FaqSection";
-import { RsvpSection } from "../components/sections/RsvpSection";
 import { InvitationSEO } from "@/components/SEOHead";
 import { InvitationViewSkeleton } from "@/components/LoadingSkeletons";
-import type { Tables } from "@/integrations/supabase/types";
-import { PAGE_TYPE_LABELS } from "@/features/admin/types";
-import { toast } from "sonner";
-
-type PageType = Tables<"invitation_pages">["page_type"];
-type StyleVariant = "classic" | "modern" | "elegant" | "bold";
-
-// FloatingShareButton replaced by SocialShareSheet
 
 // Floating scroll-to-top button
 function ScrollToTopButton() {
   const [show, setShow] = useState(false);
   const { scrollY } = useScroll();
-  
+
   useMotionValueEvent(scrollY, "change", (v) => {
     setShow(v > 500);
   });
@@ -80,7 +56,6 @@ function FloatingReactionButton() {
   return (
     <div className="fixed bottom-6 left-6 z-50">
       <div className="relative">
-        {/* Floating hearts */}
         <AnimatePresence>
           {hearts.map(id => (
             <motion.div
@@ -117,41 +92,65 @@ function FloatingReactionButton() {
   );
 }
 
-// Progress indicator
-function PageProgressBar() {
-  const { scrollYProgress } = useScroll();
-  
-  return (
-    <motion.div
-      className="fixed top-0 left-0 right-0 h-0.5 bg-white/20 z-[60] origin-left"
-      style={{ scaleX: scrollYProgress }}
-    >
-      <div className="h-full bg-white/70 backdrop-blur" />
-    </motion.div>
-  );
+// Block label helper
+function getBlockLabel(block: any): string {
+  const c = block.content as any;
+  switch (block.block_type) {
+    case "cover_hero": return c?.overlayText || "Cover";
+    case "heading": return c?.text?.substring(0, 20) || "Heading";
+    case "text": return "Message";
+    case "message_card": return "Message";
+    case "countdown":
+    case "countdown_flip": return "Countdown";
+    case "rsvp": return c?.rsvpTitle || "RSVP";
+    case "location": return c?.venueName || "Location";
+    case "map_embed": return "Map";
+    case "timeline": return "Schedule";
+    case "entourage": return c?.entourageTitle || "Entourage";
+    case "gallery": return "Gallery";
+    case "photo_collage": return "Photos";
+    case "dress_code": return "Dress Code";
+    case "gift_registry": return c?.registryTitle || "Gift Guide";
+    case "faq": return c?.faqTitle || "FAQ";
+    case "guestbook": return "Guestbook";
+    case "social_links": return "Social";
+    case "contact_card": return "Contact";
+    case "video":
+    case "hero_video": return "Video";
+    case "quote": return "Quote";
+    case "testimonial": return "Testimonials";
+    case "seating_chart": return "Seating";
+    case "weather_widget": return "Weather";
+    case "qr_code": return "QR Code";
+    case "music_player":
+    case "audio_player": return "Music";
+    case "photo_upload_wall": return "Photo Wall";
+    case "pricing_table": return "Packages";
+    case "embed": return "Media";
+    case "accordion": return "Info";
+    case "icon_text": return c?.title || "Info";
+    case "marquee_text": return "Banner";
+    case "separator_fancy":
+    case "divider": return "Divider";
+    case "spacer": return "—";
+    case "button": return c?.label || "Button";
+    case "image": return "Image";
+    case "two_column":
+    case "three_column": return "Columns";
+    default: return block.block_type.replace(/_/g, " ").replace(/\b\w/g, (l: string) => l.toUpperCase());
+  }
 }
 
 export default function InvitationViewPage() {
   const { slug } = useParams<{ slug: string }>();
   const { data: invitation, isLoading, error } = usePublicInvitation(slug || "");
   const invId = invitation?.id ?? "";
-  const useBlockMode = (invitation as any)?.use_blocks === true;
   const [unlocked, setUnlocked] = useState(false);
 
   useViewTracking(invitation?.id);
 
   const { data: theme } = usePublicTheme(invId);
-  const { data: pages } = usePublicPages(invId);
-  const { data: timeline } = usePublicTimeline(invId);
-  const { data: roses } = usePublicRoses(invId);
-  const { data: candles } = usePublicCandles(invId);
-  const { data: treasures } = usePublicTreasures(invId);
-  const { data: blueBills } = usePublicBlueBills(invId);
-  const { data: gallery } = usePublicGallery(invId);
-  const { data: dressCode } = usePublicDressCode(invId);
-  const { data: giftItems } = usePublicGiftItems(invId);
-  const { data: faqs } = usePublicFaqs(invId);
-  const { data: publicBlocks } = usePublicBlocks(useBlockMode ? invId : "");
+  const { data: publicBlocks } = usePublicBlocks(invId);
 
   if (isLoading) return <InvitationViewSkeleton />;
 
@@ -189,99 +188,44 @@ export default function InvitationViewPage() {
     );
   }
 
-  const buildSection = (pageType: PageType, variant: StyleVariant): React.ReactNode | null => {
-    switch (pageType) {
-      case "cover": return <CoverSection invitation={invitation} variant={variant} />;
-      case "message": return <MessageSection invitation={invitation} variant={variant} />;
-      case "countdown": return <CountdownSection invitation={invitation} variant={variant} />;
-      case "location": return <LocationSection invitation={invitation} variant={variant} />;
-      case "timeline": return timeline?.length ? <TimelineSection events={timeline} variant={variant} /> : null;
-      case "roses": return roses?.length ? <EntourageSection title="18 Roses" icon={<Flower2 className="w-8 h-8 mx-auto" style={{ color: "var(--inv-accent)" }} />} people={roses} variant={variant} descKey="role_description" /> : null;
-      case "candles": return candles?.length ? <EntourageSection title="18 Candles" icon={<Flame className="w-8 h-8 mx-auto" style={{ color: "var(--inv-accent)" }} />} people={candles} variant={variant} descKey="message" /> : null;
-      case "treasures": return treasures?.length ? <EntourageSection title="18 Treasures" icon={<Crown className="w-8 h-8 mx-auto" style={{ color: "var(--inv-accent)" }} />} people={treasures} variant={variant} descKey="gift_description" /> : null;
-      case "blue_bills": return blueBills?.length ? <EntourageSection title="18 Blue Bills" icon={<Banknote className="w-8 h-8 mx-auto" style={{ color: "var(--inv-accent)" }} />} people={blueBills} variant={variant} descKey="message" /> : null;
-      case "dress_code": return dressCode?.length ? <DressCodeSection colors={dressCode} variant={variant} /> : null;
-      case "gallery": return gallery?.length ? <GallerySection images={gallery} variant={variant} /> : null;
-      case "gift_guide": return giftItems?.length ? <GiftGuideSection items={giftItems} variant={variant} /> : null;
-      case "faq": return faqs?.length ? <FaqSection faqs={faqs} variant={variant} /> : null;
-      case "rsvp": return <RsvpSection invitation={invitation} guest={null} variant={variant} />;
-      default: return null;
-    }
-  };
+  // Blocks are the single source of truth for the published invitation
+  const blocks = publicBlocks ?? [];
 
-  const enabledPages = pages ?? [];
-  const sections: React.ReactNode[] = [];
-  const labels: string[] = [];
-  enabledPages.forEach(page => {
-    const section = buildSection(page.page_type, page.style_variant as StyleVariant);
-    if (section) {
-      sections.push(section);
-      labels.push(page.custom_title || PAGE_TYPE_LABELS[page.page_type as keyof typeof PAGE_TYPE_LABELS] || page.page_type);
-    }
-  });
-
-  // Block-based rendering — page by page using StoryNavigation
-  if (useBlockMode && publicBlocks && publicBlocks.length > 0) {
-    // Group blocks into pages: each block is its own "page" for story-style navigation
-    const blockSections = publicBlocks.map((block) => (
-      <div key={block.id} className="w-full">
-        <BlockViewRenderer blocks={[block]} invitationId={invId} />
-      </div>
-    ));
-    const blockLabels = publicBlocks.map((block) => {
-      const c = block.content as any;
-      if (block.block_type === "cover_hero") return c.overlayText || "Cover";
-      if (block.block_type === "heading") return c.text || "Heading";
-      if (block.block_type === "rsvp") return c.rsvpTitle || "RSVP";
-      if (block.block_type === "countdown" || block.block_type === "countdown_flip") return "Countdown";
-      if (block.block_type === "location") return c.venueName || "Location";
-      if (block.block_type === "timeline") return "Schedule";
-      if (block.block_type === "entourage") return c.entourageTitle || "Entourage";
-      if (block.block_type === "gallery") return "Gallery";
-      if (block.block_type === "dress_code") return "Dress Code";
-      if (block.block_type === "gift_registry") return c.registryTitle || "Gift Guide";
-      if (block.block_type === "faq") return c.faqTitle || "FAQ";
-      if (block.block_type === "text") return "Message";
-      return block.block_type.replace(/_/g, " ").replace(/\b\w/g, l => l.toUpperCase());
-    });
-
+  if (!blocks.length) {
     return (
       <InvitationThemeProvider theme={theme}>
         <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
-        <PageProgressBar />
-        <ParticleCanvas effect={theme?.particle_effect} />
-        <SocialShareSheet slug={invitation.slug} title={invitation.title} />
-        <FloatingReactionButton />
-        <ScrollToTopButton />
-        {theme?.music_url && (
-          <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
-        )}
-        <StoryNavigation pageLabels={blockLabels}>{blockSections}</StoryNavigation>
+        <div className="min-h-screen flex items-center justify-center px-6">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
+            <Sparkles className="w-10 h-10 mx-auto mb-4 opacity-30" style={{ color: "var(--inv-text-secondary)" }} />
+            <p style={{ color: "var(--inv-text-secondary)" }}>This invitation is being prepared. Check back soon!</p>
+          </motion.div>
+        </div>
       </InvitationThemeProvider>
     );
   }
 
+  // Each block = one page in story navigation (page-by-page)
+  const blockSections = blocks.map((block) => (
+    <div key={block.id} className="w-full min-h-screen flex items-center justify-center">
+      <div className="w-full">
+        <BlockViewRenderer blocks={[block]} invitationId={invId} />
+      </div>
+    </div>
+  ));
+
+  const blockLabels = blocks.map(getBlockLabel);
+
   return (
     <InvitationThemeProvider theme={theme}>
       <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
-      <PageProgressBar />
       <ParticleCanvas effect={theme?.particle_effect} />
       <SocialShareSheet slug={invitation.slug} title={invitation.title} />
       <FloatingReactionButton />
-      <ScrollToTopButton />
       {theme?.music_url && (
         <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
       )}
-      {sections.length > 0 ? (
-        <StoryNavigation pageLabels={labels}>{sections}</StoryNavigation>
-      ) : (
-        <div className="min-h-screen flex items-center justify-center px-6">
-          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center">
-            <Sparkles className="w-10 h-10 mx-auto mb-4 opacity-30" style={{ color: "var(--inv-text-secondary)" }} />
-            <p style={{ color: "var(--inv-text-secondary)" }}>This invitation has no pages configured yet.</p>
-          </motion.div>
-        </div>
-      )}
+      <StoryNavigation pageLabels={blockLabels}>{blockSections}</StoryNavigation>
     </InvitationThemeProvider>
   );
 }

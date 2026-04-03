@@ -142,17 +142,6 @@ export function useCreateInvitation() {
       // Create default theme
       await supabase.from("invitation_themes").insert({ invitation_id: inv.id });
 
-      // Create default pages based on event type
-      const pages = DEFAULT_PAGES_BY_EVENT[inv.event_type as keyof typeof DEFAULT_PAGES_BY_EVENT] || DEFAULT_PAGES_BY_EVENT.wedding;
-      await supabase.from("invitation_pages").insert(
-        pages.map((pt, i) => ({
-          invitation_id: inv.id,
-          page_type: pt,
-          sort_order: i,
-          is_enabled: true,
-        }))
-      );
-
       // Auto-seed blocks from invitation data
       const blockTemplates = DEFAULT_BLOCKS_BY_EVENT[inv.event_type] || DEFAULT_BLOCKS_BY_EVENT.wedding;
       const blockInserts = blockTemplates.map((bt, i) => {

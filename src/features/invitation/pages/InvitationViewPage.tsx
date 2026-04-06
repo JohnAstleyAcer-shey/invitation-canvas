@@ -207,10 +207,8 @@ export default function InvitationViewPage() {
 
   // Each block = one page in story navigation (page-by-page)
   const blockSections = blocks.map((block) => (
-    <div key={block.id} className="w-full min-h-screen flex items-center justify-center">
-      <div className="w-full">
-        <BlockViewRenderer blocks={[block]} invitationId={invId} />
-      </div>
+    <div key={block.id} className="w-full">
+      <BlockViewRenderer blocks={[block]} invitationId={invId} />
     </div>
   ));
 

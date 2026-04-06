@@ -59,7 +59,13 @@ const staggerItem = {
 export function BlockViewRenderer({ blocks, invitationId }: { blocks: InvitationBlock[]; invitationId?: string }) {
   return (
     <div className="w-full">
-      {blocks.map((block, idx) => <BlockView key={block.id} block={block} index={idx} totalBlocks={blocks.length} invitationId={invitationId} />)}
+      {blocks.map((block, idx) => (
+        <div key={block.id} className="w-full min-h-screen flex items-center justify-center">
+          <div className="w-full">
+            <BlockView block={block} index={idx} totalBlocks={blocks.length} invitationId={invitationId} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -85,13 +91,13 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
     backgroundColor: s.backgroundColor || undefined,
     color: s.textColor || undefined,
     textAlign: s.textAlign || "center",
-    padding: s.padding || "1rem",
+    padding: s.padding || "2rem 1rem",
     fontFamily: s.fontFamily || undefined,
     fontSize: s.fontSize || undefined,
-    minHeight: s.fullHeight ? "100vh" : undefined,
-    display: s.fullHeight ? "flex" : undefined,
-    alignItems: s.fullHeight ? "center" : undefined,
-    justifyContent: s.fullHeight ? "center" : undefined,
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     position: "relative" as const,
     overflow: "hidden" as const,
     backgroundImage: s.gradient || (s.backgroundImage ? `url(${s.backgroundImage})` : undefined),
@@ -121,7 +127,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
     >
       {s.backgroundImage && !s.gradient && <motion.img src={s.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" style={{ y: parallaxY }} />}
       {s.backgroundOverlay && <div className="absolute inset-0 transition-colors" style={{ backgroundColor: s.backgroundOverlay }} />}
-      <div className={`relative z-10 w-full max-w-2xl mx-auto ${glassClass}`}>{children}</div>
+      <div className={`relative z-10 w-full max-w-2xl mx-auto px-4 sm:px-6 ${glassClass}`}>{children}</div>
     </motion.div>
   );
 
@@ -186,7 +192,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
       );
 
     case "spacer":
-      return <div style={{ height: c.height || 48 }} />;
+      return <div style={{ height: c.height || 48, minHeight: 0 }} />;
 
     case "divider":
       return (
@@ -266,48 +272,84 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 1.5, ease: [0.22, 1, 0.36, 1] }}
-          style={{ ...wrapStyle, backgroundImage: c.imageUrl ? `url(${c.imageUrl})` : s.gradient || undefined, backgroundSize: "cover", backgroundPosition: "center" }}
+          style={{ ...wrapStyle, backgroundImage: undefined }}
+          className="!p-0"
         >
+          {/* Ken Burns zoom effect on cover image — matches invitation CoverSection */}
+          {c.imageUrl && (
+            <div className="absolute inset-0">
+              <motion.img
+                initial={{ scale: 1.15 }}
+                animate={{ scale: 1 }}
+                transition={{ duration: 8, ease: "linear" }}
+                src={c.imageUrl}
+                alt=""
+                className="w-full h-full object-cover"
+                loading="eager"
+              />
+            </div>
+          )}
           {c.overlay && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 2 }}
-              className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/70"
+              transition={{ duration: 1.5 }}
+              className="absolute inset-0 bg-gradient-to-b from-black/10 via-black/40 to-black/65"
             />
           )}
-          <div className="relative z-10 text-white text-center px-6">
+          {!c.imageUrl && !s.gradient && (
+            <div className="absolute inset-0" style={{ background: s.backgroundColor || "linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)" }} />
+          )}
+          <div className="relative z-10 text-white text-center px-6 space-y-6">
+            <motion.p
+              initial={{ opacity: 0, y: -15, filter: "blur(4px)" }}
+              animate={{ opacity: 0.8, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="text-xs sm:text-sm tracking-[0.3em] uppercase"
+            >
+              You are invited to
+            </motion.p>
             <motion.h1
-              initial={{ y: 50, opacity: 0, filter: "blur(15px)", scale: 0.95 }}
+              initial={{ y: 40, opacity: 0, filter: "blur(12px)", scale: 0.95 }}
               animate={{ y: 0, opacity: 1, filter: "blur(0px)", scale: 1 }}
-              transition={{ delay: 0.4, duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
-              className="font-display text-5xl md:text-7xl lg:text-8xl font-bold mb-4 drop-shadow-2xl"
+              transition={{ delay: 0.6, duration: 1, ease: [0.22, 1, 0.36, 1] }}
+              className="font-display text-4xl sm:text-5xl md:text-7xl lg:text-8xl font-bold leading-tight drop-shadow-2xl"
             >{c.overlayText || "You're Invited"}</motion.h1>
             {c.overlaySubtext && (
               <motion.p
-                initial={{ y: 30, opacity: 0, filter: "blur(8px)" }}
-                animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
+                initial={{ opacity: 0, letterSpacing: "0.1em" }}
+                animate={{ opacity: 0.8, letterSpacing: "0.25em" }}
                 transition={{ delay: 1, duration: 0.8 }}
-                className="text-xl md:text-2xl opacity-90 font-light tracking-wide"
+                className="text-base sm:text-lg md:text-xl tracking-widest font-light"
               >{c.overlaySubtext}</motion.p>
             )}
             <motion.div
-              initial={{ scaleX: 0 }}
-              animate={{ scaleX: 1 }}
-              transition={{ delay: 1.4, duration: 0.8 }}
-              className="w-20 h-px bg-white/40 mx-auto mt-6 origin-center"
+              initial={{ scaleX: 0, opacity: 0 }}
+              animate={{ scaleX: 1, opacity: 1 }}
+              transition={{ delay: 1.3, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+              className="w-16 h-px bg-white/50 mx-auto origin-center"
             />
             {index === 0 && totalBlocks > 1 && (
               <motion.div
                 className="absolute bottom-8 left-1/2 -translate-x-1/2"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, y: [0, 12, 0] }}
-                transition={{ opacity: { delay: 2 }, y: { repeat: Infinity, duration: 2, ease: "easeInOut" } }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 2, duration: 0.8 }}
               >
-                <div className="flex flex-col items-center gap-2">
-                  <span className="text-[10px] uppercase tracking-[0.3em] opacity-40">Scroll</span>
-                  <ArrowDown className="w-5 h-5 text-white/50" />
-                </div>
+                <motion.div
+                  animate={{ y: [0, 8, 0] }}
+                  transition={{ repeat: Infinity, duration: 1.8, ease: "easeInOut" }}
+                  className="flex flex-col items-center gap-1.5"
+                >
+                  <span className="text-[10px] uppercase tracking-[0.3em] opacity-60">Scroll</span>
+                  <ArrowDown className="w-5 h-5 opacity-60" />
+                </motion.div>
+                {/* Pulse ring */}
+                <motion.div
+                  className="absolute inset-0 rounded-full border border-white/20"
+                  animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
+                />
               </motion.div>
             )}
           </div>
@@ -1052,16 +1094,56 @@ function BlockRsvpForm({ invitationId, content }: { invitationId: string; conten
     } finally { setLoading(false); }
   };
 
+  const confettiColors = ["#ff6b6b", "#feca57", "#48dbfb", "#ff9ff3", "#1dd1a1", "#5f27cd"];
+
   if (done) {
     return (
-      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="space-y-4 py-8">
-        <motion.div animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ delay: 0.3, duration: 0.5 }}
-          className="w-20 h-20 mx-auto rounded-full bg-current/10 flex items-center justify-center">
-          <PartyPopper className="w-10 h-10 opacity-70" />
+      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="space-y-6 py-8 relative">
+        {/* Confetti animation */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-3 h-3 rounded-sm left-1/2"
+              style={{ backgroundColor: confettiColors[i % confettiColors.length] }}
+              initial={{ opacity: 1, y: 0, x: 0, rotate: 0, scale: 1 }}
+              animate={{
+                opacity: 0,
+                y: [-20, 200],
+                x: [0, Math.random() * 200 - 100],
+                rotate: Math.random() * 720 - 360,
+                scale: [1, 0.5],
+              }}
+              transition={{ duration: 2, delay: i * 0.05, ease: "easeOut" }}
+            />
+          ))}
+        </div>
+        <motion.div
+          animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="w-24 h-24 mx-auto rounded-full bg-current/10 flex items-center justify-center relative"
+        >
+          <PartyPopper className="w-12 h-12 opacity-70" />
+          {/* Pulse rings */}
+          <motion.div className="absolute inset-0 rounded-full border-2 border-current/30"
+            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }} />
+          <motion.div className="absolute inset-0 rounded-full border-2 border-current/30"
+            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }} />
         </motion.div>
-        <h3 className="font-display text-2xl font-bold">Thank You!</h3>
-        <p className="text-sm opacity-70">Your response has been recorded.</p>
-        {status === "attending" && <p className="text-sm opacity-60 flex items-center justify-center gap-1"><Heart className="w-4 h-4" /> We can't wait to see you!</p>}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+          <h3 className="font-display text-2xl sm:text-3xl font-bold flex items-center justify-center gap-2">
+            Thank You! <Sparkles className="w-6 h-6 opacity-60" />
+          </h3>
+          <p className="text-sm opacity-70 mt-2">Your response has been recorded.</p>
+        </motion.div>
+        {status === "attending" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+            className="flex items-center justify-center gap-2 text-sm opacity-60">
+            <Heart className="w-4 h-4" /> We can't wait to see you!
+          </motion.div>
+        )}
       </motion.div>
     );
   }

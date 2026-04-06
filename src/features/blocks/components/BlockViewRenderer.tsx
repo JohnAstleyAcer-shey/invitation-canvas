@@ -91,13 +91,13 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
     backgroundColor: s.backgroundColor || undefined,
     color: s.textColor || undefined,
     textAlign: s.textAlign || "center",
-    padding: s.padding || "1rem",
+    padding: s.padding || "2rem 1rem",
     fontFamily: s.fontFamily || undefined,
     fontSize: s.fontSize || undefined,
-    minHeight: s.fullHeight ? "100vh" : undefined,
-    display: s.fullHeight ? "flex" : undefined,
-    alignItems: s.fullHeight ? "center" : undefined,
-    justifyContent: s.fullHeight ? "center" : undefined,
+    minHeight: "100vh",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     position: "relative" as const,
     overflow: "hidden" as const,
     backgroundImage: s.gradient || (s.backgroundImage ? `url(${s.backgroundImage})` : undefined),
@@ -127,7 +127,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
     >
       {s.backgroundImage && !s.gradient && <motion.img src={s.backgroundImage} alt="" className="absolute inset-0 w-full h-full object-cover" loading="lazy" style={{ y: parallaxY }} />}
       {s.backgroundOverlay && <div className="absolute inset-0 transition-colors" style={{ backgroundColor: s.backgroundOverlay }} />}
-      <div className={`relative z-10 w-full max-w-2xl mx-auto ${glassClass}`}>{children}</div>
+      <div className={`relative z-10 w-full max-w-2xl mx-auto px-4 sm:px-6 ${glassClass}`}>{children}</div>
     </motion.div>
   );
 

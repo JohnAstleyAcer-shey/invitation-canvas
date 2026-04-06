@@ -59,7 +59,13 @@ const staggerItem = {
 export function BlockViewRenderer({ blocks, invitationId }: { blocks: InvitationBlock[]; invitationId?: string }) {
   return (
     <div className="w-full">
-      {blocks.map((block, idx) => <BlockView key={block.id} block={block} index={idx} totalBlocks={blocks.length} invitationId={invitationId} />)}
+      {blocks.map((block, idx) => (
+        <div key={block.id} className="w-full min-h-screen flex items-center justify-center">
+          <div className="w-full">
+            <BlockView block={block} index={idx} totalBlocks={blocks.length} invitationId={invitationId} />
+          </div>
+        </div>
+      ))}
     </div>
   );
 }

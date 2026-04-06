@@ -1094,16 +1094,56 @@ function BlockRsvpForm({ invitationId, content }: { invitationId: string; conten
     } finally { setLoading(false); }
   };
 
+  const confettiColors = ["#ff6b6b", "#feca57", "#48dbfb", "#ff9ff3", "#1dd1a1", "#5f27cd"];
+
   if (done) {
     return (
-      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="space-y-4 py-8">
-        <motion.div animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }} transition={{ delay: 0.3, duration: 0.5 }}
-          className="w-20 h-20 mx-auto rounded-full bg-current/10 flex items-center justify-center">
-          <PartyPopper className="w-10 h-10 opacity-70" />
+      <motion.div initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: "spring", damping: 12 }} className="space-y-6 py-8 relative">
+        {/* Confetti animation */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          {Array.from({ length: 30 }).map((_, i) => (
+            <motion.div
+              key={i}
+              className="absolute w-3 h-3 rounded-sm left-1/2"
+              style={{ backgroundColor: confettiColors[i % confettiColors.length] }}
+              initial={{ opacity: 1, y: 0, x: 0, rotate: 0, scale: 1 }}
+              animate={{
+                opacity: 0,
+                y: [-20, 200],
+                x: [0, Math.random() * 200 - 100],
+                rotate: Math.random() * 720 - 360,
+                scale: [1, 0.5],
+              }}
+              transition={{ duration: 2, delay: i * 0.05, ease: "easeOut" }}
+            />
+          ))}
+        </div>
+        <motion.div
+          animate={{ rotate: [0, -10, 10, -10, 0], scale: [1, 1.1, 1] }}
+          transition={{ delay: 0.3, duration: 0.5 }}
+          className="w-24 h-24 mx-auto rounded-full bg-current/10 flex items-center justify-center relative"
+        >
+          <PartyPopper className="w-12 h-12 opacity-70" />
+          {/* Pulse rings */}
+          <motion.div className="absolute inset-0 rounded-full border-2 border-current/30"
+            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity }} />
+          <motion.div className="absolute inset-0 rounded-full border-2 border-current/30"
+            animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
+            transition={{ duration: 1.5, repeat: Infinity, delay: 0.5 }} />
         </motion.div>
-        <h3 className="font-display text-2xl font-bold">Thank You!</h3>
-        <p className="text-sm opacity-70">Your response has been recorded.</p>
-        {status === "attending" && <p className="text-sm opacity-60 flex items-center justify-center gap-1"><Heart className="w-4 h-4" /> We can't wait to see you!</p>}
+        <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }}>
+          <h3 className="font-display text-2xl sm:text-3xl font-bold flex items-center justify-center gap-2">
+            Thank You! <Sparkles className="w-6 h-6 opacity-60" />
+          </h3>
+          <p className="text-sm opacity-70 mt-2">Your response has been recorded.</p>
+        </motion.div>
+        {status === "attending" && (
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.7 }}
+            className="flex items-center justify-center gap-2 text-sm opacity-60">
+            <Heart className="w-4 h-4" /> We can't wait to see you!
+          </motion.div>
+        )}
       </motion.div>
     );
   }

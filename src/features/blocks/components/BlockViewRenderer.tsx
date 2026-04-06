@@ -192,7 +192,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
       );
 
     case "spacer":
-      return <div style={{ height: c.height || 48 }} />;
+      return <div style={{ height: c.height || 48, minHeight: 0 }} />;
 
     case "divider":
       return (

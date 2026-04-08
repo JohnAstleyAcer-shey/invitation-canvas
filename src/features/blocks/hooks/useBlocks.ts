@@ -137,7 +137,7 @@ export function useBlocks(invitationId: string) {
     mutationFn: async ({ id, content, style, is_visible }: {
       id: string; content?: BlockContent; style?: BlockStyle; is_visible?: boolean;
     }) => {
-      const updates: Record<string, any> = {};
+      const updates: { content?: any; style?: any; is_visible?: boolean } = {};
       if (content !== undefined) updates.content = content;
       if (style !== undefined) updates.style = style;
       if (is_visible !== undefined) updates.is_visible = is_visible;

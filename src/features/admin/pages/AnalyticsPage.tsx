@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, AreaChart, Area } from "recharts";
 import { useRsvpStats, useGuestsPerInvitation, useRsvpTimeline } from "../hooks/useInvitationData";
 import { useInvitationStats } from "../hooks/useInvitations";
-import { TrendingUp, Users, CheckCircle, XCircle, HelpCircle, Clock, Eye, Smartphone, Monitor, Tablet, ArrowUpRight, Activity, RefreshCw } from "lucide-react";
+import { TrendingUp, Users, CheckCircle, XCircle, HelpCircle, Clock, Eye, Smartphone, Monitor, Tablet, ArrowUpRight, Activity, RefreshCw, Heart } from "lucide-react";
 import { SEOHead } from "@/components/SEOHead";
 import { AnalyticsSkeleton } from "@/components/LoadingSkeletons";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ const statConfigs = [
   { key: "totalGuests", label: "Total Guests", icon: Users, gradient: "from-blue-500/10 to-blue-500/5" },
   { key: "attending", label: "Attending", icon: CheckCircle, gradient: "from-green-500/10 to-green-500/5" },
   { key: "views", label: "Page Views", icon: Eye, gradient: "from-purple-500/10 to-purple-500/5" },
+  { key: "reactions", label: "Reactions", icon: Heart, gradient: "from-red-500/10 to-red-500/5" },
   { key: "conversion", label: "RSVP Conversion", icon: ArrowUpRight, gradient: "from-amber-500/10 to-amber-500/5", suffix: "%" },
 ];
 
@@ -83,6 +84,27 @@ export default function AnalyticsPage() {
     },
   });
 
+  const { data: totalReactions, refetch: refetchReactions } = useQuery({
+    queryKey: ["analytics-total-reactions"],
+    queryFn: async () => {
+      const { count } = await supabase.from("invitation_reactions" as any).select("*", { count: "exact", head: true });
+      return count ?? 0;
+    },
+  });
+
+  const { data: reactionsTimeline } = useQuery({
+    queryKey: ["analytics-reactions-timeline"],
+    queryFn: async () => {
+      const { data } = await supabase.from("invitation_reactions" as any).select("reacted_at").order("reacted_at");
+      const grouped: Record<string, number> = {};
+      (data as any[])?.forEach((v: any) => {
+        const date = v.reacted_at?.split("T")[0];
+        if (date) grouped[date] = (grouped[date] || 0) + 1;
+      });
+      return Object.entries(grouped).map(([date, reactions]) => ({ date, reactions }));
+    },
+  });
+
   const { data: viewsByDevice } = useQuery({
     queryKey: ["analytics-views-device"],
     queryFn: async () => {
@@ -126,12 +148,13 @@ export default function AnalyticsPage() {
     stats?.totalGuests || 0,
     rsvpStats?.attending || 0,
     totalViews || 0,
+    totalReactions || 0,
     conversionRate,
   ];
 
   const handleRefresh = async () => {
     setRefreshing(true);
-    await refetchViews();
+    await Promise.all([refetchViews(), refetchReactions()]);
     setTimeout(() => setRefreshing(false), 600);
   };
 
@@ -155,7 +178,7 @@ export default function AnalyticsPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
         {statConfigs.map((config, i) => (
           <AnimatedNumber
             key={config.key}
@@ -263,6 +286,26 @@ export default function AnalyticsPage() {
                     <YAxis tick={{ fontSize: 11 }} />
                     <Tooltip />
                     <Area type="monotone" dataKey="views" stroke="hsl(var(--foreground))" fill="hsl(var(--foreground))" fillOpacity={0.08} strokeWidth={2} animationDuration={1200} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </ChartCard>
+        )}
+      </AnimatePresence>
+
+      {/* Reactions over time */}
+      <AnimatePresence>
+        {reactionsTimeline && reactionsTimeline.length > 0 && (
+          <ChartCard title="❤️ Reactions Over Time" delay={0.48}>
+            <div className="w-full overflow-x-auto -mx-2">
+              <div className="min-w-[400px] px-2">
+                <ResponsiveContainer width="100%" height={200}>
+                  <AreaChart data={reactionsTimeline}>
+                    <XAxis dataKey="date" tick={{ fontSize: 11 }} />
+                    <YAxis tick={{ fontSize: 11 }} />
+                    <Tooltip />
+                    <Area type="monotone" dataKey="reactions" stroke="hsl(var(--destructive))" fill="hsl(var(--destructive))" fillOpacity={0.1} strokeWidth={2} animationDuration={1200} />
                   </AreaChart>
                 </ResponsiveContainer>
               </div>

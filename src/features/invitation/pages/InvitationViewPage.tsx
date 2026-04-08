@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useCallback, useRef } from "react";
 import { useParams } from "react-router-dom";
-import { MessageCircle, ArrowLeft, Heart, Sparkles, ChevronUp, Volume2, VolumeX } from "lucide-react";
-import { motion, AnimatePresence, useScroll, useMotionValueEvent } from "framer-motion";
+import { MessageCircle, ArrowLeft, Heart, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { usePublicInvitation, usePublicTheme } from "../hooks/usePublicInvitation";
 import { usePublicBlocks } from "@/features/blocks/hooks/useBlocks";
 import { BlockViewRenderer } from "@/features/blocks/components/BlockViewRenderer";
@@ -14,44 +14,47 @@ import { SocialShareSheet } from "../components/SocialShareSheet";
 import { PasswordGate } from "../components/sections/PasswordGate";
 import { InvitationSEO } from "@/components/SEOHead";
 import { InvitationViewSkeleton } from "@/components/LoadingSkeletons";
+import { supabase } from "@/integrations/supabase/client";
 
-// Floating scroll-to-top button
-function ScrollToTopButton() {
-  const [show, setShow] = useState(false);
-  const { scrollY } = useScroll();
-
-  useMotionValueEvent(scrollY, "change", (v) => {
-    setShow(v > 500);
-  });
-
-  return (
-    <AnimatePresence>
-      {show && (
-        <motion.button
-          initial={{ opacity: 0, scale: 0.5, y: 20 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.5, y: 20 }}
-          onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-          className="fixed bottom-6 right-6 z-50 p-3 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-all hover:scale-110 active:scale-95 shadow-lg"
-        >
-          <ChevronUp className="w-5 h-5" />
-        </motion.button>
-      )}
-    </AnimatePresence>
-  );
+// Generate a stable session ID for anonymous reaction tracking
+function getSessionId(): string {
+  const key = "inv_session_id";
+  let id = sessionStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    sessionStorage.setItem(key, id);
+  }
+  return id;
 }
 
-// Like/reaction floating button
-function FloatingReactionButton() {
+// Like/reaction floating button — persists to database
+function FloatingReactionButton({ invitationId }: { invitationId: string }) {
   const [hearts, setHearts] = useState<number[]>([]);
   const [count, setCount] = useState(0);
+  const throttle = useRef(false);
 
-  const addHeart = () => {
+  const addHeart = useCallback(async () => {
+    // Visual animation always fires
     const id = Date.now();
     setHearts(prev => [...prev, id]);
     setCount(c => c + 1);
     setTimeout(() => setHearts(prev => prev.filter(h => h !== id)), 2000);
-  };
+
+    // Persist to DB (throttle: max 1 insert per second)
+    if (throttle.current || !invitationId) return;
+    throttle.current = true;
+    setTimeout(() => { throttle.current = false; }, 1000);
+
+    try {
+      await supabase.from("invitation_reactions" as any).insert({
+        invitation_id: invitationId,
+        reaction_type: "heart",
+        session_id: getSessionId(),
+      });
+    } catch {
+      // Silently fail — reaction is cosmetic
+    }
+  }, [invitationId]);
 
   return (
     <div className="fixed bottom-6 left-6 z-50">
@@ -188,7 +191,6 @@ export default function InvitationViewPage() {
     );
   }
 
-  // Blocks are the single source of truth for the published invitation
   const blocks = publicBlocks ?? [];
 
   if (!blocks.length) {
@@ -205,7 +207,6 @@ export default function InvitationViewPage() {
     );
   }
 
-  // Each block = one page in story navigation (page-by-page)
   const blockSections = blocks.map((block) => (
     <div key={block.id} className="w-full">
       <BlockViewRenderer blocks={[block]} invitationId={invId} />
@@ -219,7 +220,7 @@ export default function InvitationViewPage() {
       <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
       <ParticleCanvas effect={theme?.particle_effect} />
       <SocialShareSheet slug={invitation.slug} title={invitation.title} />
-      <FloatingReactionButton />
+      <FloatingReactionButton invitationId={invId} />
       {theme?.music_url && (
         <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
       )}

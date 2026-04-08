@@ -1,13 +1,12 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import { ChevronUp, ChevronDown } from "lucide-react";
-import { AnimatePresence, motion, useMotionValue, useTransform } from "framer-motion";
+import { AnimatePresence, motion } from "framer-motion";
 
 interface StoryNavigationProps {
   children: React.ReactNode[];
   pageLabels: string[];
 }
 
-// Page transition variants for cinematic feel
 const pageVariants = {
   enter: (direction: number) => ({
     opacity: 0,
@@ -95,7 +94,7 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
         </motion.div>
       </div>
 
-      {/* Page counter with fade */}
+      {/* Page counter */}
       <motion.div
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -105,7 +104,7 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
         {current + 1} / {total}
       </motion.div>
 
-      {/* Progress dots - hidden on very small screens, compact on mobile */}
+      {/* Progress dots - hidden on mobile */}
       <motion.div
         initial={{ opacity: 0, x: 20 }}
         animate={{ opacity: 1, x: 0 }}
@@ -146,7 +145,7 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
         ))}
       </motion.div>
 
-      {/* Nav arrows - perfectly centered with large mobile tap targets */}
+      {/* Nav arrows — properly centered using inset-x-0 + mx-auto */}
       <AnimatePresence>
         {current > 0 && (
           <motion.button
@@ -156,8 +155,7 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
             whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
             whileTap={{ scale: 0.9 }}
             onClick={prev}
-            className="fixed top-4 left-1/2 z-50 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white transition-colors shadow-lg"
-            style={{ transform: "translateX(-50%)" }}
+            className="fixed top-4 inset-x-0 mx-auto z-50 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white transition-colors shadow-lg"
             aria-label="Previous page"
           >
             <ChevronUp className="w-6 h-6 sm:w-5 sm:h-5" />
@@ -174,8 +172,7 @@ export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) 
             whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
             whileTap={{ scale: 0.9 }}
             onClick={next}
-            className="fixed bottom-4 left-1/2 z-50 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white transition-colors shadow-lg"
-            style={{ transform: "translateX(-50%)" }}
+            className="fixed bottom-4 inset-x-0 mx-auto z-50 w-12 h-12 sm:w-10 sm:h-10 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white transition-colors shadow-lg"
             aria-label="Next page"
           >
             <ChevronDown className="w-6 h-6 sm:w-5 sm:h-5" />

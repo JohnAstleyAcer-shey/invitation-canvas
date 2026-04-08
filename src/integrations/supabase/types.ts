@@ -492,6 +492,38 @@ export type Database = {
           },
         ]
       }
+      invitation_reactions: {
+        Row: {
+          id: string
+          invitation_id: string
+          reacted_at: string
+          reaction_type: string
+          session_id: string | null
+        }
+        Insert: {
+          id?: string
+          invitation_id: string
+          reacted_at?: string
+          reaction_type?: string
+          session_id?: string | null
+        }
+        Update: {
+          id?: string
+          invitation_id?: string
+          reacted_at?: string
+          reaction_type?: string
+          session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_reactions_invitation_id_fkey"
+            columns: ["invitation_id"]
+            isOneToOne: false
+            referencedRelation: "invitations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       invitation_themes: {
         Row: {
           background_opacity: number | null

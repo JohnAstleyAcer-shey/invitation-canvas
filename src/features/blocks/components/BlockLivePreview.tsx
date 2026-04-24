@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Zap, RefreshCw, Moon, Sun, ChevronUp, ChevronDown, Layers, LayoutList, ScrollText } from "lucide-react";
+import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Zap, RefreshCw, Moon, Sun, ChevronUp, ChevronDown, Layers, LayoutList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -79,7 +79,7 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
   const [updateCount, setUpdateCount] = useState(0);
   const [showDarkPreview, setShowDarkPreview] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [viewMode, setViewMode] = useState<"pages" | "scroll">("pages");
+  // Page-by-page is the only mode (matches published output 1:1)
 
   // Page-by-page state
   const [currentPage, setCurrentPage] = useState(0);
@@ -152,16 +152,14 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
 
   return (
     <div className="flex flex-col h-full">
-      {/* Top progress bar (page mode) */}
-      {viewMode === "pages" && (
-        <div className="h-0.5 bg-border/50 relative">
-          <motion.div
-            className="h-full bg-primary/60"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </div>
-      )}
+      {/* Top progress bar */}
+      <div className="h-0.5 bg-border/50 relative">
+        <motion.div
+          className="h-full bg-primary/60"
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
 
       {/* Live indicator bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-muted/20">
@@ -174,25 +172,12 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
           <span className="text-[9px] text-muted-foreground font-medium">
             {isLive ? "Syncing..." : "Up to date"}
           </span>
-          {viewMode === "pages" && (
-            <span className="text-[9px] text-muted-foreground font-mono ml-1">
-              {currentPage + 1}/{visibleBlocks.length}
-            </span>
-          )}
+          <Badge variant="secondary" className="text-[8px] py-0 h-4 ml-1 bg-primary/10 text-primary gap-1">
+            <LayoutList className="h-2.5 w-2.5" />
+            Page {currentPage + 1}/{visibleBlocks.length}
+          </Badge>
         </div>
         <div className="flex items-center gap-1.5">
-          {/* View mode toggle */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setViewMode(v => v === "pages" ? "scroll" : "pages")}
-                className={`p-0.5 rounded transition-colors ${viewMode === "pages" ? "bg-primary/10 text-primary" : "hover:bg-accent text-muted-foreground/40"}`}
-              >
-                {viewMode === "pages" ? <LayoutList className="h-3 w-3" /> : <ScrollText className="h-3 w-3" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="text-[10px]">{viewMode === "pages" ? "Page-by-page (published)" : "Scroll mode"}</TooltipContent>
-          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={() => setShowDarkPreview(!showDarkPreview)} className="p-0.5 rounded hover:bg-accent transition-colors">
@@ -218,132 +203,109 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
         </div>
       </div>
 
-      {/* Preview content */}
-      {viewMode === "pages" ? (
-        /* Page-by-page mode — matches published StoryNavigation */
-        <div className={`flex-1 relative overflow-hidden ${showDarkPreview ? "bg-gray-900" : "bg-background"}`}>
-          {/* Page navigation arrows */}
-          <AnimatePresence>
-            {currentPage > 0 && (
-              <motion.button
-                initial={{ opacity: 0, y: -5 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -5 }}
-                whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
-                whileTap={{ scale: 0.9 }}
-                onClick={prevPage}
-                className="absolute top-2 left-1/2 -translate-x-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white shadow-lg"
-              >
-                <ChevronUp className="w-4 h-4" />
-              </motion.button>
-            )}
-          </AnimatePresence>
-          <AnimatePresence>
-            {currentPage < visibleBlocks.length - 1 && (
-              <motion.button
-                initial={{ opacity: 0, y: 5 }}
-                animate={{ opacity: 1, y: [0, 4, 0] }}
-                exit={{ opacity: 0, y: 5 }}
-                transition={{ y: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } }}
-                whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
-                whileTap={{ scale: 0.9 }}
-                onClick={nextPage}
-                className="absolute bottom-2 left-1/2 -translate-x-1/2 z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white shadow-lg"
-              >
-                <ChevronDown className="w-4 h-4" />
-              </motion.button>
-            )}
-          </AnimatePresence>
-
-          {/* Progress dots on right */}
-          <div className="absolute right-1 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1">
-            {visibleBlocks.map((block, i) => (
-              <Tooltip key={block.id}>
-                <TooltipTrigger asChild>
-                  <button
-                    onClick={() => goToPage(i)}
-                    className="group relative flex items-center justify-end"
-                  >
-                    <motion.div
-                      animate={{
-                        width: i === currentPage ? 8 : 5,
-                        height: i === currentPage ? 8 : 5,
-                        scale: i === currentPage ? 1.2 : 1,
-                      }}
-                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-                      className="rounded-full"
-                      style={{
-                        background: i === currentPage ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
-                        opacity: i === currentPage ? 1 : 0.3,
-                        boxShadow: i === currentPage ? "0 0 6px hsl(var(--primary) / 0.4)" : "none",
-                      }}
-                    />
-                  </button>
-                </TooltipTrigger>
-                <TooltipContent side="left" className="text-[10px]">{getBlockLabel(block)}</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-
-          {/* Page content with cinematic transitions */}
-          <AnimatePresence mode="wait" custom={direction}>
-            <motion.div
-              key={currentPage}
-              custom={direction}
-              variants={pageVariants}
-              initial="enter"
-              animate="center"
-              exit="exit"
-              transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className={`h-full w-full flex items-center justify-center overflow-auto ${showDarkPreview ? "dark" : ""}`}
+      {/* Preview content — page-by-page only (matches published StoryNavigation 1:1) */}
+      <div className={`flex-1 relative overflow-hidden ${showDarkPreview ? "bg-gray-900" : "bg-background"}`}>
+        {/* Page navigation arrows — centered */}
+        <AnimatePresence>
+          {currentPage > 0 && (
+            <motion.button
+              initial={{ opacity: 0, y: -5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
+              whileTap={{ scale: 0.9 }}
+              onClick={prevPage}
+              className="absolute top-2 inset-x-0 mx-auto z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white shadow-lg"
+              aria-label="Previous page"
             >
-              <div className="w-full min-h-full flex items-center justify-center">
-                <div className="w-full">
-                  <BlockViewRenderer blocks={[visibleBlocks[currentPage]]} />
-                </div>
+              <ChevronUp className="w-4 h-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+        <AnimatePresence>
+          {currentPage < visibleBlocks.length - 1 && (
+            <motion.button
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: [0, 4, 0] }}
+              exit={{ opacity: 0, y: 5 }}
+              transition={{ y: { repeat: Infinity, duration: 1.5, ease: "easeInOut" } }}
+              whileHover={{ scale: 1.15, backgroundColor: "rgba(0,0,0,0.4)" }}
+              whileTap={{ scale: 0.9 }}
+              onClick={nextPage}
+              className="absolute bottom-2 inset-x-0 mx-auto z-30 w-8 h-8 flex items-center justify-center rounded-full bg-black/25 backdrop-blur-md text-white shadow-lg"
+              aria-label="Next page"
+            >
+              <ChevronDown className="w-4 h-4" />
+            </motion.button>
+          )}
+        </AnimatePresence>
+
+        {/* Progress dots on right */}
+        <div className="absolute right-1 top-1/2 -translate-y-1/2 z-30 flex flex-col gap-1">
+          {visibleBlocks.map((block, i) => (
+            <Tooltip key={block.id}>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={() => goToPage(i)}
+                  className="group relative flex items-center justify-end"
+                  aria-label={`Go to page ${i + 1}: ${getBlockLabel(block)}`}
+                >
+                  <motion.div
+                    animate={{
+                      width: i === currentPage ? 8 : 5,
+                      height: i === currentPage ? 8 : 5,
+                      scale: i === currentPage ? 1.2 : 1,
+                    }}
+                    transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                    className="rounded-full"
+                    style={{
+                      background: i === currentPage ? "hsl(var(--primary))" : "hsl(var(--muted-foreground))",
+                      opacity: i === currentPage ? 1 : 0.3,
+                      boxShadow: i === currentPage ? "0 0 6px hsl(var(--primary) / 0.4)" : "none",
+                    }}
+                  />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side="left" className="text-[10px]">{getBlockLabel(block)}</TooltipContent>
+            </Tooltip>
+          ))}
+        </div>
+
+        {/* Page content with cinematic transitions */}
+        <AnimatePresence mode="wait" custom={direction}>
+          <motion.div
+            key={currentPage}
+            custom={direction}
+            variants={pageVariants}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+            className={`h-full w-full flex items-center justify-center overflow-auto ${showDarkPreview ? "dark" : ""}`}
+          >
+            <div className="w-full min-h-full flex items-center justify-center">
+              <div className="w-full">
+                <BlockViewRenderer blocks={[visibleBlocks[currentPage]]} />
               </div>
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      ) : (
-        /* Scroll mode — continuous */
-        <div
-          className={`flex-1 overflow-y-auto transition-colors ${showDarkPreview ? "bg-gray-900" : ""}`}
-          ref={scrollRef}
-        >
-          <div className="min-h-full">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={updateCount}
-                initial={autoRefresh ? { opacity: 0.95 } : false}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.15 }}
-                className={showDarkPreview ? "dark" : ""}
-              >
-                <BlockViewRenderer blocks={visibleBlocks} />
-              </motion.div>
-            </AnimatePresence>
-          </div>
-        </div>
-      )}
+            </div>
+          </motion.div>
+        </AnimatePresence>
+      </div>
 
       {/* Bottom bar with block summary */}
       <div className="px-3 py-1 border-t border-border bg-muted/20">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1 overflow-x-auto">
-            {viewMode === "pages" && visibleBlocks[currentPage] && (
+            {visibleBlocks[currentPage] && (
               <Badge variant="secondary" className="text-[7px] py-0 h-4 shrink-0 bg-primary/10 text-primary">
                 {getBlockLabel(visibleBlocks[currentPage])}
               </Badge>
             )}
-            {Array.from(blockSummary.entries()).slice(0, viewMode === "pages" ? 3 : 5).map(([type, count]) => (
+            {Array.from(blockSummary.entries()).slice(0, 3).map(([type, count]) => (
               <Badge key={type} variant="outline" className="text-[7px] py-0 h-4 shrink-0">
                 {type.replace(/_/g, " ")} {count > 1 ? `×${count}` : ""}
               </Badge>
             ))}
-            {blockSummary.size > 5 && viewMode !== "pages" && (
-              <span className="text-[8px] text-muted-foreground">+{blockSummary.size - 5} more</span>
-            )}
           </div>
           <span className="text-[8px] text-muted-foreground shrink-0">
             {lastUpdate.toLocaleTimeString()}

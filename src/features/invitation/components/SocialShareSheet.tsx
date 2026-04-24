@@ -11,14 +11,19 @@ interface SocialShareSheetProps {
 export function SocialShareSheet({ slug, title }: SocialShareSheetProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const url = `${window.location.origin}/invite/${slug}`;
-  const encodedUrl = encodeURIComponent(url);
+  const directUrl = `${window.location.origin}/invite/${slug}`;
+  // Share URL points to the social-preview edge function so WhatsApp / Facebook
+  // / iMessage can fetch the cover image + title via Open Graph tags before
+  // redirecting the visitor to the live invitation.
+  const projectRef = "znbjzhrytnkysoatwuhi";
+  const shareUrl = `https://${projectRef}.supabase.co/functions/v1/social-preview?slug=${encodeURIComponent(slug)}&target=${encodeURIComponent(directUrl)}`;
+  const encodedUrl = encodeURIComponent(shareUrl);
   const encodedText = encodeURIComponent(`You're invited to ${title}! 🎉`);
 
   const copyLink = async () => {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    toast.success("Link copied!");
+    toast.success("Link copied! Cover image will preview on WhatsApp & Facebook.");
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -33,7 +38,7 @@ export function SocialShareSheet({ slug, title }: SocialShareSheetProps) {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `You're invited to ${title}!`, url });
+        await navigator.share({ title: `You're invited to ${title}!`, url: shareUrl });
         return;
       } catch {}
     }

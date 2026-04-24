@@ -11,8 +11,13 @@ interface SocialShareSheetProps {
 export function SocialShareSheet({ slug, title }: SocialShareSheetProps) {
   const [open, setOpen] = useState(false);
   const [copied, setCopied] = useState(false);
-  const url = `${window.location.origin}/invite/${slug}`;
-  const encodedUrl = encodeURIComponent(url);
+  const directUrl = `${window.location.origin}/invite/${slug}`;
+  // Share URL points to the social-preview edge function so WhatsApp / Facebook
+  // / iMessage can fetch the cover image + title via Open Graph tags before
+  // redirecting the visitor to the live invitation.
+  const projectRef = "znbjzhrytnkysoatwuhi";
+  const shareUrl = `https://${projectRef}.supabase.co/functions/v1/social-preview?slug=${encodeURIComponent(slug)}&target=${encodeURIComponent(directUrl)}`;
+  const encodedUrl = encodeURIComponent(shareUrl);
   const encodedText = encodeURIComponent(`You're invited to ${title}! 🎉`);
 
   const copyLink = async () => {

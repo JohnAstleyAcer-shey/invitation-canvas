@@ -1,6 +1,6 @@
 import { useRef, useEffect, useState, useMemo, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Zap, RefreshCw, Moon, Sun, ChevronUp, ChevronDown, Layers, LayoutList, ScrollText } from "lucide-react";
+import { Smartphone, Monitor, Tablet, Wifi, WifiOff, Zap, RefreshCw, Moon, Sun, ChevronUp, ChevronDown, Layers, LayoutList } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";

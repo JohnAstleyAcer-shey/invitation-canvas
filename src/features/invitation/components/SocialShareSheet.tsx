@@ -21,9 +21,9 @@ export function SocialShareSheet({ slug, title }: SocialShareSheetProps) {
   const encodedText = encodeURIComponent(`You're invited to ${title}! 🎉`);
 
   const copyLink = async () => {
-    await navigator.clipboard.writeText(url);
+    await navigator.clipboard.writeText(shareUrl);
     setCopied(true);
-    toast.success("Link copied!");
+    toast.success("Link copied! Cover image will preview on WhatsApp & Facebook.");
     setTimeout(() => setCopied(false), 2000);
   };
 

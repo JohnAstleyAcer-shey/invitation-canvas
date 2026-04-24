@@ -79,7 +79,7 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
   const [updateCount, setUpdateCount] = useState(0);
   const [showDarkPreview, setShowDarkPreview] = useState(false);
   const [autoRefresh, setAutoRefresh] = useState(true);
-  const [viewMode, setViewMode] = useState<"pages" | "scroll">("pages");
+  // Page-by-page is the only mode (matches published output 1:1)
 
   // Page-by-page state
   const [currentPage, setCurrentPage] = useState(0);

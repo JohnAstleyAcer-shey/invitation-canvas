@@ -38,7 +38,7 @@ export function SocialShareSheet({ slug, title }: SocialShareSheetProps) {
   const handleShare = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({ title: `You're invited to ${title}!`, url });
+        await navigator.share({ title: `You're invited to ${title}!`, url: shareUrl });
         return;
       } catch {}
     }

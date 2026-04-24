@@ -152,16 +152,14 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
 
   return (
     <div className="flex flex-col h-full">
-      {/* Top progress bar (page mode) */}
-      {viewMode === "pages" && (
-        <div className="h-0.5 bg-border/50 relative">
-          <motion.div
-            className="h-full bg-primary/60"
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-          />
-        </div>
-      )}
+      {/* Top progress bar */}
+      <div className="h-0.5 bg-border/50 relative">
+        <motion.div
+          className="h-full bg-primary/60"
+          animate={{ width: `${progress}%` }}
+          transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        />
+      </div>
 
       {/* Live indicator bar */}
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-border bg-muted/20">
@@ -174,25 +172,12 @@ export function BlockLivePreview({ blocks, previewMode = "mobile", scrollSync, s
           <span className="text-[9px] text-muted-foreground font-medium">
             {isLive ? "Syncing..." : "Up to date"}
           </span>
-          {viewMode === "pages" && (
-            <span className="text-[9px] text-muted-foreground font-mono ml-1">
-              {currentPage + 1}/{visibleBlocks.length}
-            </span>
-          )}
+          <Badge variant="secondary" className="text-[8px] py-0 h-4 ml-1 bg-primary/10 text-primary gap-1">
+            <LayoutList className="h-2.5 w-2.5" />
+            Page {currentPage + 1}/{visibleBlocks.length}
+          </Badge>
         </div>
         <div className="flex items-center gap-1.5">
-          {/* View mode toggle */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button
-                onClick={() => setViewMode(v => v === "pages" ? "scroll" : "pages")}
-                className={`p-0.5 rounded transition-colors ${viewMode === "pages" ? "bg-primary/10 text-primary" : "hover:bg-accent text-muted-foreground/40"}`}
-              >
-                {viewMode === "pages" ? <LayoutList className="h-3 w-3" /> : <ScrollText className="h-3 w-3" />}
-              </button>
-            </TooltipTrigger>
-            <TooltipContent className="text-[10px]">{viewMode === "pages" ? "Page-by-page (published)" : "Scroll mode"}</TooltipContent>
-          </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={() => setShowDarkPreview(!showDarkPreview)} className="p-0.5 rounded hover:bg-accent transition-colors">

@@ -4,24 +4,24 @@ import { PenLine, Palette, Share2, ArrowRight, Check, Sparkles } from "lucide-re
 const steps = [
   {
     icon: PenLine,
-    title: "Create",
-    description: "Choose your event type and fill in the details — name, date, venue, message.",
+    title: "Tell Us About Your Event",
+    description: "Share your event details — name, date, venue, photos, and message — through a quick chat with our team.",
     color: "bg-primary/10",
-    highlights: ["5 event types", "3-step wizard", "Auto-generated links"],
+    highlights: ["Weddings, Debuts, Birthdays & more", "Personal consultation", "Bring your vision"],
   },
   {
     icon: Palette,
-    title: "Customize",
-    description: "Pick themes, colors, fonts, particles, music, and arrange your pages perfectly.",
+    title: "We Design It For You",
+    description: "Our designers craft a one-of-a-kind interactive invitation tailored to your theme — fully managed, no DIY required.",
     color: "bg-accent",
-    highlights: ["30+ color palettes", "Drag-and-drop blocks", "Live preview"],
+    highlights: ["Premium design", "Custom themes & music", "Pixel-perfect on every device"],
   },
   {
     icon: Share2,
-    title: "Share",
-    description: "Publish and share your invitation link — track RSVPs and views in real-time.",
+    title: "Share With Your Guests",
+    description: "Receive your unique invitation link and a private Customer Admin portal to track RSVPs and guest reactions in real time.",
     color: "bg-secondary",
-    highlights: ["One-click sharing", "Real-time analytics", "Guest management"],
+    highlights: ["One-click sharing", "Real-time RSVP tracking", "Customer Admin portal"],
   },
 ];
 

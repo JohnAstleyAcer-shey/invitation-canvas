@@ -224,8 +224,8 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.25 }}
           className="max-w-xl mx-auto text-base sm:text-lg text-muted-foreground mb-8 font-body px-4"
         >
-          Create stunning, interactive event invitations for Debuts, Weddings, Birthdays,
-          Christenings, and Corporate events — in minutes, not hours.
+          Premium digital invitations for Debuts, Weddings, Birthdays, Christenings, and Corporate events —
+          fully designed, hosted, and managed by our team.
         </motion.p>
 
         {/* Trust badges with stagger */}

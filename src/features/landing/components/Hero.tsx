@@ -13,8 +13,8 @@ const floatingCards = [
 
 const trustBadges = [
   { icon: Shield, label: "SSL Secured" },
-  { icon: Zap, label: "Instant Setup" },
-  { icon: Clock, label: "24/7 Support" },
+  { icon: Zap, label: "Fully Managed" },
+  { icon: Clock, label: "1–3 Day Delivery" },
 ];
 
 const stats = [

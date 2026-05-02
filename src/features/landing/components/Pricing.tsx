@@ -266,7 +266,7 @@ export function Pricing() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.3 }}
           >
-            Choose the perfect package for your event. All plans include free updates and secure hosting.
+            One-time pricing. Our team designs, builds, and publishes your invitation — you simply share the link with your guests.
           </motion.p>
         </motion.div>
 

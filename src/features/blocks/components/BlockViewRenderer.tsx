@@ -92,6 +92,50 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const { ref: parallaxRef, y: parallaxY } = useParallax(30);
 
+  // Real-data fallbacks: when block content arrays are empty, fall back to DB rows.
+  // Hooks are called unconditionally (Rules of Hooks) but each is gated by `enabled`
+  // inside its own implementation, so unused queries don't fire.
+  const invId = invitationId || block.invitation_id;
+  const needTimeline = block.block_type === "timeline" && !(c.events?.length);
+  const needGallery = block.block_type === "gallery" && !(c.images?.length);
+  const needDress = block.block_type === "dress_code" && !(c.colors?.length);
+  const needGifts = block.block_type === "gift_registry" && !(c.items?.length);
+  const needFaqs = block.block_type === "faq" && !(c.faqs?.length);
+  const needEntourage = block.block_type === "entourage" && !(c.people?.length);
+  const tlQuery = usePublicTimeline(needTimeline ? invId : "");
+  const galQuery = usePublicGallery(needGallery ? invId : "");
+  const dressQuery = usePublicDressCode(needDress ? invId : "");
+  const giftQuery = usePublicGiftItems(needGifts ? invId : "");
+  const faqQuery = usePublicFaqs(needFaqs ? invId : "");
+  const rosesQuery = usePublicRoses(needEntourage && c.entourageType === "roses" ? invId : "");
+  const candlesQuery = usePublicCandles(needEntourage && c.entourageType === "candles" ? invId : "");
+  const treasuresQuery = usePublicTreasures(needEntourage && c.entourageType === "treasures" ? invId : "");
+  const blueBillsQuery = usePublicBlueBills(needEntourage && c.entourageType === "blue_bills" ? invId : "");
+
+  if (needTimeline && tlQuery.data?.length) {
+    c.events = tlQuery.data.map((t: any) => ({ time: t.event_time, title: t.title, description: t.description, icon: t.icon }));
+  }
+  if (needGallery && galQuery.data?.length) {
+    c.images = galQuery.data.map((g: any) => ({ url: g.image_url, caption: g.caption }));
+  }
+  if (needDress && dressQuery.data?.length) {
+    c.colors = dressQuery.data.map((d: any) => ({ hex: d.color_hex, name: d.color_name, description: d.description }));
+  }
+  if (needGifts && giftQuery.data?.length) {
+    c.items = giftQuery.data.map((g: any) => ({ name: g.item_name, description: g.description, url: g.link_url, linkLabel: g.link_label, category: g.category }));
+  }
+  if (needFaqs && faqQuery.data?.length) {
+    c.faqs = faqQuery.data.map((f: any) => ({ question: f.question, answer: f.answer, category: f.category }));
+  }
+  if (needEntourage) {
+    const fromRoses = rosesQuery.data?.map((r: any) => ({ name: r.person_name, role: r.role_description, imageUrl: r.image_url })) || [];
+    const fromCandles = candlesQuery.data?.map((r: any) => ({ name: r.person_name, message: r.message, imageUrl: r.image_url })) || [];
+    const fromTreasures = treasuresQuery.data?.map((r: any) => ({ name: r.person_name, message: r.gift_description, imageUrl: r.image_url })) || [];
+    const fromBills = blueBillsQuery.data?.map((r: any) => ({ name: r.person_name, message: r.message, imageUrl: r.image_url })) || [];
+    const merged = [...fromRoses, ...fromCandles, ...fromTreasures, ...fromBills];
+    if (merged.length) c.people = merged;
+  }
+
   const wrapStyle: React.CSSProperties = {
     backgroundColor: s.backgroundColor || undefined,
     color: s.textColor || undefined,

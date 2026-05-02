@@ -251,13 +251,13 @@ export function Features() {
               </div>
               <div className="text-left">
                 <p className="font-display font-semibold">Ready to get started?</p>
-                <p className="text-sm text-muted-foreground">Create your first invitation in minutes</p>
+                <p className="text-sm text-muted-foreground">Tell us about your event — we'll handle the rest</p>
               </div>
             </div>
             <Button asChild className="rounded-full shadow-md">
-              <Link to="/auth">
-                Start Free <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              <a href="mailto:support@lynxinvitation.com?subject=I'd like to order an invitation">
+                Inquire Now <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
             </Button>
           </div>
         </motion.div>

@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView, useSpring, useMotionValue, useMotionValueEvent } from "framer-motion";
 import { MapPin, ExternalLink, Play, ChevronDown, Clock, Users, Gift, HelpCircle, Shirt, Mail, Quote as QuoteIcon, Instagram, Facebook, Twitter, Globe, Music, Disc3, Phone, Camera, Star, Heart, Calendar, Sparkles, DollarSign, QrCode, Cloud, Navigation, ChevronLeft, ChevronRight, X, Pause, Volume2, VolumeX, ArrowDown, Check, Loader2, Send, ImageIcon, Eye, Download, Maximize, User, PartyPopper, UtensilsCrossed, MessageSquare } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures, usePublicBlueBills,
+  usePublicGallery, usePublicDressCode, usePublicGiftItems, usePublicFaqs,
+} from "@/features/invitation/hooks/usePublicInvitation";
 import type { InvitationBlock } from "../types";
 
 // Enhanced animation variants — 30+ entrance types
@@ -86,6 +91,50 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
   const ref = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, amount: 0.15 });
   const { ref: parallaxRef, y: parallaxY } = useParallax(30);
+
+  // Real-data fallbacks: when block content arrays are empty, fall back to DB rows.
+  // Hooks are called unconditionally (Rules of Hooks) but each is gated by `enabled`
+  // inside its own implementation, so unused queries don't fire.
+  const invId = invitationId || block.invitation_id;
+  const needTimeline = block.block_type === "timeline" && !(c.events?.length);
+  const needGallery = block.block_type === "gallery" && !(c.images?.length);
+  const needDress = block.block_type === "dress_code" && !(c.colors?.length);
+  const needGifts = block.block_type === "gift_registry" && !(c.items?.length);
+  const needFaqs = block.block_type === "faq" && !(c.faqs?.length);
+  const needEntourage = block.block_type === "entourage" && !(c.people?.length);
+  const tlQuery = usePublicTimeline(needTimeline ? invId : "");
+  const galQuery = usePublicGallery(needGallery ? invId : "");
+  const dressQuery = usePublicDressCode(needDress ? invId : "");
+  const giftQuery = usePublicGiftItems(needGifts ? invId : "");
+  const faqQuery = usePublicFaqs(needFaqs ? invId : "");
+  const rosesQuery = usePublicRoses(needEntourage && c.entourageType === "roses" ? invId : "");
+  const candlesQuery = usePublicCandles(needEntourage && c.entourageType === "candles" ? invId : "");
+  const treasuresQuery = usePublicTreasures(needEntourage && c.entourageType === "treasures" ? invId : "");
+  const blueBillsQuery = usePublicBlueBills(needEntourage && c.entourageType === "blue_bills" ? invId : "");
+
+  if (needTimeline && tlQuery.data?.length) {
+    c.events = tlQuery.data.map((t: any) => ({ time: t.event_time, title: t.title, description: t.description, icon: t.icon }));
+  }
+  if (needGallery && galQuery.data?.length) {
+    c.images = galQuery.data.map((g: any) => ({ url: g.image_url, caption: g.caption }));
+  }
+  if (needDress && dressQuery.data?.length) {
+    c.colors = dressQuery.data.map((d: any) => ({ hex: d.color_hex, name: d.color_name, description: d.description }));
+  }
+  if (needGifts && giftQuery.data?.length) {
+    c.items = giftQuery.data.map((g: any) => ({ name: g.item_name, description: g.description, url: g.link_url, linkLabel: g.link_label, category: g.category }));
+  }
+  if (needFaqs && faqQuery.data?.length) {
+    c.faqs = faqQuery.data.map((f: any) => ({ question: f.question, answer: f.answer, category: f.category }));
+  }
+  if (needEntourage) {
+    const fromRoses = rosesQuery.data?.map((r: any) => ({ name: r.person_name, role: r.role_description, imageUrl: r.image_url })) || [];
+    const fromCandles = candlesQuery.data?.map((r: any) => ({ name: r.person_name, message: r.message, imageUrl: r.image_url })) || [];
+    const fromTreasures = treasuresQuery.data?.map((r: any) => ({ name: r.person_name, message: r.gift_description, imageUrl: r.image_url })) || [];
+    const fromBills = blueBillsQuery.data?.map((r: any) => ({ name: r.person_name, message: r.message, imageUrl: r.image_url })) || [];
+    const merged = [...fromRoses, ...fromCandles, ...fromTreasures, ...fromBills];
+    if (merged.length) c.people = merged;
+  }
 
   const wrapStyle: React.CSSProperties = {
     backgroundColor: s.backgroundColor || undefined,
@@ -856,7 +905,11 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
           <motion.h3 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
             className="font-display text-lg font-bold">{c.audioTitle || "Audio"}</motion.h3>
           {c.audioArtist && <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 0.6 }} viewport={{ once: true }} transition={{ delay: 0.25 }} className="text-sm mb-4">{c.audioArtist}</motion.p>}
-          {c.audioUrl && <motion.audio initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.35 }} src={c.audioUrl} controls autoPlay={c.audioAutoplay} className="w-full max-w-sm mx-auto" />}
+          {c.audioUrl ? (
+            <audio src={c.audioUrl} controls autoPlay={c.audioAutoplay} loop className="w-full max-w-sm mx-auto mt-2" preload="metadata" />
+          ) : (
+            <p className="text-xs opacity-40 mt-2">No audio URL configured.</p>
+          )}
         </Wrap>
       );
 
@@ -869,7 +922,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
             viewport={{ once: true }}
             transition={{ type: "spring", damping: 15 }}
             whileHover={{ y: -3, boxShadow: "0 12px 35px rgba(0,0,0,0.1)" }}
-            className="flex items-center gap-4 max-w-sm mx-auto p-5 rounded-2xl bg-current/5 shadow-sm transition-all duration-300"
+            className="flex items-center gap-4 max-w-md mx-auto p-5 rounded-2xl bg-current/5 shadow-sm transition-all duration-300"
           >
             <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-current/10 flex items-center justify-center">
               {c.musicCoverUrl ? <img src={c.musicCoverUrl} alt="" className="w-full h-full object-cover" loading="lazy" /> : (
@@ -880,8 +933,12 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
             </div>
             <div className="text-left flex-1 min-w-0">
               <p className="font-semibold text-base truncate">{c.musicTitle || "Song"}</p>
-              <p className="text-sm opacity-60 truncate">{c.musicArtist || "Artist"}</p>
-              {c.musicUrl && <audio src={c.musicUrl} controls autoPlay={c.musicAutoplay} className="w-full mt-2" style={{ height: 32 }} />}
+              <p className="text-sm opacity-60 truncate mb-2">{c.musicArtist || "Artist"}</p>
+              {c.musicUrl ? (
+                <audio src={c.musicUrl} controls autoPlay={c.musicAutoplay} loop className="w-full" style={{ height: 32 }} preload="metadata" />
+              ) : (
+                <p className="text-[10px] opacity-40">No music URL configured.</p>
+              )}
             </div>
           </motion.div>
         </Wrap>
@@ -978,16 +1035,29 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
         </Wrap>
       );
 
-    case "qr_code":
+    case "qr_code": {
+      const qrValue = c.qrData || (typeof window !== "undefined" ? window.location.href : "");
+      const qrSize = c.qrSize || 200;
       return (
         <Wrap>
-          <motion.div initial={{ scale: 0, rotate: -10 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}
-            className="mx-auto rounded-2xl bg-white p-6 inline-block shadow-lg hover:shadow-xl transition-shadow">
-            <QrCode className="opacity-30" style={{ width: c.qrSize || 200, height: c.qrSize || 200 }} />
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            whileInView={{ scale: 1, rotate: 0 }}
+            viewport={{ once: true }}
+            transition={{ type: "spring", damping: 12 }}
+            className="mx-auto rounded-2xl bg-white p-6 inline-block shadow-lg hover:shadow-xl transition-shadow"
+          >
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} size={qrSize} level="M" includeMargin={false} bgColor="#ffffff" fgColor="#000000" />
+            ) : (
+              <QrCode className="opacity-30" style={{ width: qrSize, height: qrSize }} />
+            )}
           </motion.div>
           {c.qrLabel && <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 0.7, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="text-sm mt-4 font-medium">{c.qrLabel}</motion.p>}
+          {qrValue && !c.qrData && <p className="text-[10px] opacity-40 mt-1">Scan to open this invitation</p>}
         </Wrap>
       );
+    }
 
     case "contact_card":
       return (

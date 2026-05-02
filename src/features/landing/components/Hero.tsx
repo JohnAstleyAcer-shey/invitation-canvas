@@ -13,8 +13,8 @@ const floatingCards = [
 
 const trustBadges = [
   { icon: Shield, label: "SSL Secured" },
-  { icon: Zap, label: "Instant Setup" },
-  { icon: Clock, label: "24/7 Support" },
+  { icon: Zap, label: "Fully Managed" },
+  { icon: Clock, label: "1–3 Day Delivery" },
 ];
 
 const stats = [
@@ -224,8 +224,8 @@ export function Hero() {
           transition={{ duration: 0.7, delay: 0.25 }}
           className="max-w-xl mx-auto text-base sm:text-lg text-muted-foreground mb-8 font-body px-4"
         >
-          Create stunning, interactive event invitations for Debuts, Weddings, Birthdays,
-          Christenings, and Corporate events — in minutes, not hours.
+          Premium digital invitations for Debuts, Weddings, Birthdays, Christenings, and Corporate events —
+          fully designed, hosted, and managed by our team.
         </motion.p>
 
         {/* Trust badges with stagger */}
@@ -402,7 +402,7 @@ export function Hero() {
           transition={{ delay: 1.4 }}
           className="mt-8 flex flex-wrap justify-center gap-3 px-4"
         >
-          {["Fully Managed Service", "Premium Quality", "Setup in 2 Minutes"].map((text, i) => (
+          {["Fully Managed Service", "Premium Quality", "Delivered in 1–3 Days"].map((text, i) => (
             <motion.div
               key={text}
               initial={{ opacity: 0, x: -10 }}

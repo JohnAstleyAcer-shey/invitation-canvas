@@ -80,17 +80,17 @@ const packages = [
 ];
 
 const faqs = [
-  { q: "Can I upgrade my plan later?", a: "Yes! You can upgrade at any time and only pay the difference." },
-  { q: "Is there a free trial?", a: "We offer a free starter plan with basic features so you can try before buying." },
-  { q: "What payment methods are accepted?", a: "We accept GCash, Maya, bank transfers, and major credit/debit cards." },
-  { q: "Can I get a refund?", a: "We offer a 7-day money-back guarantee if you're not satisfied." },
+  { q: "How do I get an invitation made?", a: "Just contact us with your event details. Our team handles the entire design, setup, and publishing for you — start to finish." },
+  { q: "Can I edit my invitation after it's published?", a: "All edits are handled by our team to keep the design pixel-perfect. Just message us with your changes and we'll update it within 24 hours." },
+  { q: "What payment methods do you accept?", a: "We accept GCash, Maya, bank transfers, and major credit / debit cards." },
+  { q: "How long does setup take?", a: "Most invitations are designed and delivered within 1–3 business days after we receive your event details and photos." },
 ];
 
 const guarantees = [
-  { icon: Shield, text: "7-day money-back guarantee" },
-  { icon: Check, text: "No hidden fees" },
-  { icon: Zap, text: "Instant activation" },
-  { icon: Clock, text: "Lifetime updates" },
+  { icon: Shield, text: "Fully managed service" },
+  { icon: Check, text: "Transparent pricing" },
+  { icon: Zap, text: "Delivered in 1–3 days" },
+  { icon: Clock, text: "Free updates after launch" },
 ];
 
 function PricingCard({ pkg, index }: { pkg: typeof packages[0]; index: number }) {
@@ -266,7 +266,7 @@ export function Pricing() {
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.3 }}
           >
-            Choose the perfect package for your event. All plans include free updates and secure hosting.
+            One-time pricing. Our team designs, builds, and publishes your invitation — you simply share the link with your guests.
           </motion.p>
         </motion.div>
 

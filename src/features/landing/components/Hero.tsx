@@ -402,7 +402,7 @@ export function Hero() {
           transition={{ delay: 1.4 }}
           className="mt-8 flex flex-wrap justify-center gap-3 px-4"
         >
-          {["Fully Managed Service", "Premium Quality", "Setup in 2 Minutes"].map((text, i) => (
+          {["Fully Managed Service", "Premium Quality", "Delivered in 1–3 Days"].map((text, i) => (
             <motion.div
               key={text}
               initial={{ opacity: 0, x: -10 }}

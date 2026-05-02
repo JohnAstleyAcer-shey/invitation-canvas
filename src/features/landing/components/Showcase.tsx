@@ -72,9 +72,9 @@ export function Showcase() {
               ))}
             </div>
             <Button asChild className="rounded-full shadow-md" size="lg">
-              <Link to="/auth">
-                Try It Free <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
+              <a href="mailto:support@lynxinvitation.com?subject=I'd like to order an invitation">
+                Inquire Now <ArrowRight className="ml-2 h-4 w-4" />
+              </a>
             </Button>
           </motion.div>
 

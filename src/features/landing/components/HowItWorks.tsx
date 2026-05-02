@@ -38,7 +38,7 @@ export function HowItWorks() {
         >
           <span className="inline-block text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-4">Simple Process</span>
           <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">How It Works</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">Three simple steps to create your perfect invitation — no design skills needed</p>
+          <p className="text-muted-foreground max-w-md mx-auto">A fully managed service — three simple steps from your idea to a live, shareable invitation.</p>
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-6 sm:gap-8 relative">

@@ -861,7 +861,11 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
           <motion.h3 initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.15 }}
             className="font-display text-lg font-bold">{c.audioTitle || "Audio"}</motion.h3>
           {c.audioArtist && <motion.p initial={{ opacity: 0 }} whileInView={{ opacity: 0.6 }} viewport={{ once: true }} transition={{ delay: 0.25 }} className="text-sm mb-4">{c.audioArtist}</motion.p>}
-          {c.audioUrl && <motion.audio initial={{ opacity: 0 }} whileInView={{ opacity: 1 }} viewport={{ once: true }} transition={{ delay: 0.35 }} src={c.audioUrl} controls autoPlay={c.audioAutoplay} className="w-full max-w-sm mx-auto" />}
+          {c.audioUrl ? (
+            <audio src={c.audioUrl} controls autoPlay={c.audioAutoplay} loop className="w-full max-w-sm mx-auto mt-2" preload="metadata" />
+          ) : (
+            <p className="text-xs opacity-40 mt-2">No audio URL configured.</p>
+          )}
         </Wrap>
       );
 
@@ -874,7 +878,7 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
             viewport={{ once: true }}
             transition={{ type: "spring", damping: 15 }}
             whileHover={{ y: -3, boxShadow: "0 12px 35px rgba(0,0,0,0.1)" }}
-            className="flex items-center gap-4 max-w-sm mx-auto p-5 rounded-2xl bg-current/5 shadow-sm transition-all duration-300"
+            className="flex items-center gap-4 max-w-md mx-auto p-5 rounded-2xl bg-current/5 shadow-sm transition-all duration-300"
           >
             <div className="w-20 h-20 rounded-xl overflow-hidden shrink-0 bg-current/10 flex items-center justify-center">
               {c.musicCoverUrl ? <img src={c.musicCoverUrl} alt="" className="w-full h-full object-cover" loading="lazy" /> : (
@@ -885,8 +889,12 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
             </div>
             <div className="text-left flex-1 min-w-0">
               <p className="font-semibold text-base truncate">{c.musicTitle || "Song"}</p>
-              <p className="text-sm opacity-60 truncate">{c.musicArtist || "Artist"}</p>
-              {c.musicUrl && <audio src={c.musicUrl} controls autoPlay={c.musicAutoplay} className="w-full mt-2" style={{ height: 32 }} />}
+              <p className="text-sm opacity-60 truncate mb-2">{c.musicArtist || "Artist"}</p>
+              {c.musicUrl ? (
+                <audio src={c.musicUrl} controls autoPlay={c.musicAutoplay} loop className="w-full" style={{ height: 32 }} preload="metadata" />
+              ) : (
+                <p className="text-[10px] opacity-40">No music URL configured.</p>
+              )}
             </div>
           </motion.div>
         </Wrap>

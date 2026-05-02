@@ -983,16 +983,29 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
         </Wrap>
       );
 
-    case "qr_code":
+    case "qr_code": {
+      const qrValue = c.qrData || (typeof window !== "undefined" ? window.location.href : "");
+      const qrSize = c.qrSize || 200;
       return (
         <Wrap>
-          <motion.div initial={{ scale: 0, rotate: -10 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}
-            className="mx-auto rounded-2xl bg-white p-6 inline-block shadow-lg hover:shadow-xl transition-shadow">
-            <QrCode className="opacity-30" style={{ width: c.qrSize || 200, height: c.qrSize || 200 }} />
+          <motion.div
+            initial={{ scale: 0, rotate: -10 }}
+            whileInView={{ scale: 1, rotate: 0 }}
+            viewport={{ once: true }}
+            transition={{ type: "spring", damping: 12 }}
+            className="mx-auto rounded-2xl bg-white p-6 inline-block shadow-lg hover:shadow-xl transition-shadow"
+          >
+            {qrValue ? (
+              <QRCodeSVG value={qrValue} size={qrSize} level="M" includeMargin={false} bgColor="#ffffff" fgColor="#000000" />
+            ) : (
+              <QrCode className="opacity-30" style={{ width: qrSize, height: qrSize }} />
+            )}
           </motion.div>
           {c.qrLabel && <motion.p initial={{ opacity: 0, y: 10 }} whileInView={{ opacity: 0.7, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }} className="text-sm mt-4 font-medium">{c.qrLabel}</motion.p>}
+          {qrValue && !c.qrData && <p className="text-[10px] opacity-40 mt-1">Scan to open this invitation</p>}
         </Wrap>
       );
+    }
 
     case "contact_card":
       return (

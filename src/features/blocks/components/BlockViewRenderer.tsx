@@ -1,8 +1,13 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence, useScroll, useTransform, useInView, useSpring, useMotionValue, useMotionValueEvent } from "framer-motion";
 import { MapPin, ExternalLink, Play, ChevronDown, Clock, Users, Gift, HelpCircle, Shirt, Mail, Quote as QuoteIcon, Instagram, Facebook, Twitter, Globe, Music, Disc3, Phone, Camera, Star, Heart, Calendar, Sparkles, DollarSign, QrCode, Cloud, Navigation, ChevronLeft, ChevronRight, X, Pause, Volume2, VolumeX, ArrowDown, Check, Loader2, Send, ImageIcon, Eye, Download, Maximize, User, PartyPopper, UtensilsCrossed, MessageSquare } from "lucide-react";
+import { QRCodeSVG } from "qrcode.react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import {
+  usePublicTimeline, usePublicRoses, usePublicCandles, usePublicTreasures, usePublicBlueBills,
+  usePublicGallery, usePublicDressCode, usePublicGiftItems, usePublicFaqs,
+} from "@/features/invitation/hooks/usePublicInvitation";
 import type { InvitationBlock } from "../types";
 
 // Enhanced animation variants — 30+ entrance types

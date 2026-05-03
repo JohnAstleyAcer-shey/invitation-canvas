@@ -87,7 +87,7 @@ export function TemplatePreviewDialog({ template, onClose, onApply }: Props) {
               transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
               className="absolute inset-0 overflow-y-auto"
             >
-              <BlockViewRenderer block={asBlock} />
+              <BlockViewRenderer blocks={[asBlock]} />
             </motion.div>
           </AnimatePresence>
         </div>

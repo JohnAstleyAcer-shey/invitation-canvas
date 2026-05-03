@@ -547,6 +547,7 @@ export type Database = {
           page_transition: string | null
           particle_effect: string | null
           updated_at: string
+          view_mode: string
         }
         Insert: {
           background_opacity?: number | null
@@ -570,6 +571,7 @@ export type Database = {
           page_transition?: string | null
           particle_effect?: string | null
           updated_at?: string
+          view_mode?: string
         }
         Update: {
           background_opacity?: number | null
@@ -593,6 +595,7 @@ export type Database = {
           page_transition?: string | null
           particle_effect?: string | null
           updated_at?: string
+          view_mode?: string
         }
         Relationships: [
           {

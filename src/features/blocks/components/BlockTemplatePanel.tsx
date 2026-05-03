@@ -152,6 +152,8 @@ export function BlockTemplatePanel({ onApplyTemplate }: BlockTemplatePanelProps)
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [previewTemplate, setPreviewTemplate] = useState<string | null>(null);
+  const [showCatalog, setShowCatalog] = useState(false);
+  const [catalogPreview, setCatalogPreview] = useState<TemplateDef | null>(null);
 
   const categories = ["all", ...Array.from(new Set(BUILT_IN_TEMPLATES.map(t => t.category)))];
 
@@ -161,6 +163,43 @@ export function BlockTemplatePanel({ onApplyTemplate }: BlockTemplatePanelProps)
     return true;
   });
 
+  const applyCatalogTemplate = (t: TemplateDef) => {
+    onApplyTemplate(t.blocks);
+    setShowCatalog(false);
+    setCatalogPreview(null);
+  };
+
+  if (showCatalog) {
+    return (
+      <div className="w-[420px] border-r border-border bg-card flex flex-col h-full">
+        <div className="p-3 border-b border-border flex items-center justify-between">
+          <div>
+            <h3 className="font-display font-bold text-sm flex items-center gap-1.5">
+              <BookOpen className="h-3.5 w-3.5" /> Template Catalog
+            </h3>
+            <p className="text-[10px] text-muted-foreground">60+ designs across 7 categories</p>
+          </div>
+          <Button size="sm" variant="ghost" className="h-7 text-[10px]" onClick={() => setShowCatalog(false)}>
+            Quick templates
+          </Button>
+        </div>
+        <div className="flex-1 min-h-0">
+          <TemplateGrid
+            compact
+            onPreview={(t) => setCatalogPreview(t)}
+            onApply={applyCatalogTemplate}
+            applyLabel="Apply"
+          />
+        </div>
+        <TemplatePreviewDialog
+          template={catalogPreview}
+          onClose={() => setCatalogPreview(null)}
+          onApply={applyCatalogTemplate}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="w-64 border-r border-border bg-card flex flex-col h-full">
       <div className="p-3 border-b border-border space-y-2">
@@ -168,6 +207,14 @@ export function BlockTemplatePanel({ onApplyTemplate }: BlockTemplatePanelProps)
           <h3 className="font-display font-bold text-sm">Templates</h3>
           <Badge variant="secondary" className="text-[9px]">{BUILT_IN_TEMPLATES.length}</Badge>
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          className="w-full h-8 text-[10px] rounded-lg gap-1.5"
+          onClick={() => setShowCatalog(true)}
+        >
+          <BookOpen className="h-3 w-3" /> Browse Catalog (60+)
+        </Button>
         <p className="text-[10px] text-muted-foreground">Start with a pre-made layout</p>
         <div className="relative">
           <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />

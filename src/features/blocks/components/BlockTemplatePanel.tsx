@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Sparkles, Heart, Cake, Baby, Building2, PartyPopper, ArrowRight, Search, Eye, Layers, Filter, Star, Zap } from "lucide-react";
+import { Sparkles, Heart, Cake, Baby, Building2, PartyPopper, ArrowRight, Search, Eye, Layers, Filter, Star, Zap, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { TemplateGrid } from "@/features/template-catalog/components/TemplateGrid";
+import { TemplatePreviewDialog } from "@/features/template-catalog/components/TemplatePreviewDialog";
+import type { TemplateDef } from "@/features/template-catalog/types";
 import type { BlockType, BlockContent, BlockStyle } from "../types";
 
 interface TemplateBlock {

@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { LayoutDashboard, Plus, BarChart3, Activity, BookTemplate, Settings, HelpCircle, LogOut } from "lucide-react";
+import { LayoutDashboard, Plus, BarChart3, Activity, BookTemplate, Settings, HelpCircle, LogOut, Sparkles } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import {
   Sidebar,
@@ -27,6 +27,7 @@ const mainNav = [
   { title: "Dashboard", url: "/admin", icon: LayoutDashboard, badge: null },
   { title: "New Invitation", url: "/admin/create", icon: Plus, badge: null },
   { title: "Templates", url: "/admin/templates", icon: BookTemplate, badge: null },
+  { title: "Template Catalog", url: "/admin/templates-catalog", icon: Sparkles, badge: "60+" },
   { title: "Analytics", url: "/admin/analytics", icon: BarChart3, badge: null },
   { title: "Activity Log", url: "/admin/activity", icon: Activity, badge: "Live" },
 ];

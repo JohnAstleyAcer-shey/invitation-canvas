@@ -3,35 +3,26 @@ import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowLeft, Monitor, Smartphone, Tablet, Eye, Layers, Undo2, Redo2,
-  ZoomIn, ZoomOut, Maximize2, PanelRightOpen, PanelRightClose,
-  Keyboard, Download, Upload, Trash2, Copy, ChevronsUpDown,
-  SplitSquareHorizontal, Grid3X3, LayoutList, Save, CheckCircle2, Loader2,
-  Palette, Wand2, RotateCcw, Fullscreen, Search, Bell, Clock, Hash, MousePointer,
-  Crosshair, Move, Lock, Unlock, AlignLeft, AlignCenter, AlignRight,
-  ChevronLeft, ChevronRight, Settings2, Sparkles, History, FileJson,
-  Command, Zap, LayoutTemplate, PanelLeft, Columns, Image, Type,
-  Timer, MapPin, Mail, Gift, HelpCircle, Music, MessageSquare, Code,
-  Share2, BookOpen, Star, Play, Phone, Camera, Shirt, Users,
-  Clipboard, ClipboardPaste, ChevronDown, BarChart3, Activity,
-  Bookmark, Pin, ArrowUpDown, Minimize2, RotateCw, Paintbrush,
+  Maximize2, Save, CheckCircle2, Loader2, Sparkles, Plus, Settings2,
+  Trash2, Copy, Search, Command, Keyboard, Download, Upload, Share2,
+  PanelLeft, X, MoreHorizontal, ChevronDown, Wand2, Grid3X3,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Progress } from "@/components/ui/progress";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
+import { useIsMobile } from "@/hooks/use-mobile";
 import { BlockSidebar } from "./BlockSidebar";
 import { BlockCanvas } from "./BlockCanvas";
 import { BlockSettings } from "./BlockSettings";
 import { BlockTemplatePanel } from "./BlockTemplatePanel";
-import { BlockLivePreview } from "./BlockLivePreview";
 import { useBlocks, useBlockHistory } from "../hooks/useBlocks";
-import { BLOCK_REGISTRY, BLOCK_CATEGORIES, getBlocksByCategory } from "../registry";
-import type { BlockType, BlockContent, BlockStyle, InvitationBlock } from "../types";
+import { BLOCK_REGISTRY } from "../registry";
+import type { BlockType, BlockContent, BlockStyle } from "../types";
 import { toast } from "sonner";
 
 interface BlockEditorProps {
@@ -40,290 +31,53 @@ interface BlockEditorProps {
   invitationSlug: string;
 }
 
-// Clipboard for copy/paste blocks
-interface ClipboardBlock {
-  block_type: BlockType;
-  content: BlockContent;
-  style: BlockStyle;
-}
+interface ClipboardBlock { block_type: BlockType; content: BlockContent; style: BlockStyle; }
+type Device = "mobile" | "tablet" | "desktop";
+type SidePanel = "blocks" | "templates" | null;
 
 export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: BlockEditorProps) {
   const { blocks, isLoading, addBlock, updateBlock, removeBlock, duplicateBlock, reorderBlocks, addBlocksFromTemplate, batchUpdateBlocks } = useBlocks(invitationId);
   const { canUndo, canRedo, undo, redo } = useBlockHistory(blocks);
+  const isMobile = useIsMobile();
+
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
-  const [multiSelectedIds, setMultiSelectedIds] = useState<Set<string>>(new Set());
-  const [previewMode, setPreviewMode] = useState<"mobile" | "tablet" | "desktop">("mobile");
-  const [showLivePreview, setShowLivePreview] = useState(false);
-  const [showSettings, setShowSettings] = useState(true);
-  const [zoom, setZoom] = useState(100);
-  const [sidebarPanel, setSidebarPanel] = useState<"blocks" | "templates" | "layers">("blocks");
-  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [previewMode, setPreviewMode] = useState<Device>(isMobile ? "mobile" : "desktop");
+  const [sidePanel, setSidePanel] = useState<SidePanel>(isMobile ? null : "blocks");
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
-  const [isFullscreen, setIsFullscreen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
-  const [editHistory, setEditHistory] = useState<string[]>([]);
+  const [showShortcuts, setShowShortcuts] = useState(false);
   const [showCommandBar, setShowCommandBar] = useState(false);
-  const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
-  const [scrollSyncEnabled, setScrollSyncEnabled] = useState(true);
-  const [scrollPosition, setScrollPosition] = useState(0);
   const [commandSearch, setCommandSearch] = useState("");
   const [clipboard, setClipboard] = useState<ClipboardBlock | null>(null);
-  const [copiedStyleBlock, setCopiedStyleBlock] = useState<BlockStyle | null>(null);
-  const [pinnedBlocks, setPinnedBlocks] = useState<Set<string>>(new Set());
-  const [showMinimap, setShowMinimap] = useState(false);
-  const [editorFocusMode, setEditorFocusMode] = useState(false);
-  const [showActivityLog, setShowActivityLog] = useState(false);
-  const [commandHighlightIdx, setCommandHighlightIdx] = useState(0);
   const commandInputRef = useRef<HTMLInputElement>(null);
-  const saveCountRef = useRef(0);
 
-  // Track save state from mutations
+  const selectedBlock = blocks.find(b => b.id === selectedBlockId) || null;
+
+  // Auto-open settings when block selected
+  useEffect(() => {
+    if (selectedBlock) setSettingsOpen(true);
+  }, [selectedBlockId]);
+
+  // Save state tracking
   useEffect(() => {
     if (updateBlock.isPending || addBlock.isPending || removeBlock.isPending || reorderBlocks.isPending) {
       setIsSaving(true);
-    } else {
-      if (isSaving) {
-        setLastSaved(new Date());
-        setIsSaving(false);
-        saveCountRef.current += 1;
-      }
+    } else if (isSaving) {
+      setLastSaved(new Date());
+      setIsSaving(false);
     }
   }, [updateBlock.isPending, addBlock.isPending, removeBlock.isPending, reorderBlocks.isPending]);
 
-  const selectedBlock = blocks.find(b => b.id === selectedBlockId);
-
-  // Block stats
-  const blockStats = useMemo(() => ({
-    total: blocks.length,
-    visible: blocks.filter(b => b.is_visible).length,
-    hidden: blocks.filter(b => !b.is_visible).length,
-    types: [...new Set(blocks.map(b => b.block_type))].length,
-    pinned: pinnedBlocks.size,
-  }), [blocks, pinnedBlocks]);
-
-  // Filtered blocks for search
-  const filteredBlocks = useMemo(() => {
-    if (!searchQuery) return blocks;
-    const q = searchQuery.toLowerCase();
-    return blocks.filter(b => {
-      const def = BLOCK_REGISTRY[b.block_type as keyof typeof BLOCK_REGISTRY];
-      return def?.label.toLowerCase().includes(q) || b.block_type.includes(q) ||
-        JSON.stringify(b.content).toLowerCase().includes(q);
-    });
-  }, [blocks, searchQuery]);
-
-  // Multi-selection helpers
-  const isMultiSelect = multiSelectedIds.size > 0;
-  const effectiveSelectedIds = isMultiSelect ? multiSelectedIds : (selectedBlockId ? new Set([selectedBlockId]) : new Set<string>());
-
-  const handleMultiSelect = useCallback((id: string, shiftKey: boolean) => {
-    if (shiftKey && selectedBlockId) {
-      // Range select
-      const startIdx = blocks.findIndex(b => b.id === selectedBlockId);
-      const endIdx = blocks.findIndex(b => b.id === id);
-      const [from, to] = [Math.min(startIdx, endIdx), Math.max(startIdx, endIdx)];
-      const rangeIds = blocks.slice(from, to + 1).map(b => b.id);
-      setMultiSelectedIds(new Set([...multiSelectedIds, ...rangeIds]));
-    } else {
-      setMultiSelectedIds(prev => {
-        const next = new Set(prev);
-        next.has(id) ? next.delete(id) : next.add(id);
-        return next;
-      });
-    }
-  }, [blocks, selectedBlockId, multiSelectedIds]);
-
-  // Batch operations for multi-select
-  const handleBatchDelete = useCallback(() => {
-    if (!confirm(`Delete ${multiSelectedIds.size} blocks?`)) return;
-    multiSelectedIds.forEach(id => removeBlock.mutate(id));
-    setMultiSelectedIds(new Set());
-    setSelectedBlockId(null);
-    toast.success(`${multiSelectedIds.size} blocks removed`);
-  }, [multiSelectedIds, removeBlock]);
-
-  const handleBatchToggleVisibility = useCallback((visible: boolean) => {
-    multiSelectedIds.forEach(id => updateBlock.mutate({ id, is_visible: visible }));
-    toast.success(`${multiSelectedIds.size} blocks ${visible ? "shown" : "hidden"}`);
-  }, [multiSelectedIds, updateBlock]);
-
-  const handleBatchDuplicate = useCallback(() => {
-    multiSelectedIds.forEach(id => duplicateBlock.mutate(id));
-    toast.success(`${multiSelectedIds.size} blocks duplicated`);
-  }, [multiSelectedIds, duplicateBlock]);
-
-  // Clipboard operations
-  const handleCopyBlock = useCallback(() => {
-    if (!selectedBlock) return;
-    setClipboard({
-      block_type: selectedBlock.block_type as BlockType,
-      content: structuredClone(selectedBlock.content) as BlockContent,
-      style: structuredClone(selectedBlock.style) as BlockStyle,
-    });
-    toast.success("Block copied to clipboard");
-    setEditHistory(prev => [...prev, `Copied ${selectedBlock.block_type}`].slice(-30));
-  }, [selectedBlock]);
-
-  const handlePasteBlock = useCallback(() => {
-    if (!clipboard) return;
-    addBlocksFromTemplate.mutate([clipboard]);
-    toast.success("Block pasted");
-    setEditHistory(prev => [...prev, `Pasted ${clipboard.block_type}`].slice(-30));
-  }, [clipboard, addBlocksFromTemplate]);
-
-  // Copy/paste style
-  const handleCopyStyle = useCallback(() => {
-    if (!selectedBlock) return;
-    setCopiedStyleBlock(structuredClone(selectedBlock.style) as BlockStyle);
-    toast.success("Style copied");
-  }, [selectedBlock]);
-
-  const handlePasteStyle = useCallback(() => {
-    if (!selectedBlockId || !copiedStyleBlock) return;
-    updateBlock.mutate({ id: selectedBlockId, style: copiedStyleBlock });
-    toast.success("Style pasted");
-  }, [selectedBlockId, copiedStyleBlock, updateBlock]);
-
-  // Command palette items
-  const commandItems = useMemo(() => {
-    const items: { label: string; action: () => void; icon: React.ReactNode; category: string; shortcut?: string }[] = [
-      // Block actions
-      ...Object.values(BLOCK_REGISTRY).map(def => ({
-        label: `Add ${def.label}`,
-        action: () => { addBlock.mutate({ blockType: def.type }); setShowCommandBar(false); },
-        icon: <Zap className="h-3.5 w-3.5" />,
-        category: "Add Block",
-      })),
-      // Clipboard
-      { label: "Copy Block", action: () => { handleCopyBlock(); setShowCommandBar(false); }, icon: <Clipboard className="h-3.5 w-3.5" />, category: "Clipboard", shortcut: "Ctrl+C" },
-      { label: "Paste Block", action: () => { handlePasteBlock(); setShowCommandBar(false); }, icon: <ClipboardPaste className="h-3.5 w-3.5" />, category: "Clipboard", shortcut: "Ctrl+V" },
-      { label: "Copy Style", action: () => { handleCopyStyle(); setShowCommandBar(false); }, icon: <Paintbrush className="h-3.5 w-3.5" />, category: "Clipboard", shortcut: "Ctrl+Shift+C" },
-      { label: "Paste Style", action: () => { handlePasteStyle(); setShowCommandBar(false); }, icon: <Paintbrush className="h-3.5 w-3.5" />, category: "Clipboard", shortcut: "Ctrl+Shift+V" },
-      // Editor actions
-      { label: "Toggle Live Preview", action: () => { setShowLivePreview(p => !p); setShowCommandBar(false); }, icon: <SplitSquareHorizontal className="h-3.5 w-3.5" />, category: "View", shortcut: "Ctrl+P" },
-      { label: "Mobile View", action: () => { setPreviewMode("mobile"); setShowCommandBar(false); }, icon: <Smartphone className="h-3.5 w-3.5" />, category: "View" },
-      { label: "Tablet View", action: () => { setPreviewMode("tablet"); setShowCommandBar(false); }, icon: <Tablet className="h-3.5 w-3.5" />, category: "View" },
-      { label: "Desktop View", action: () => { setPreviewMode("desktop"); setShowCommandBar(false); }, icon: <Monitor className="h-3.5 w-3.5" />, category: "View" },
-      { label: "Toggle Fullscreen", action: () => { setIsFullscreen(p => !p); setShowCommandBar(false); }, icon: <Fullscreen className="h-3.5 w-3.5" />, category: "View", shortcut: "F11" },
-      { label: "Toggle Sidebar", action: () => { setSidebarCollapsed(p => !p); setShowCommandBar(false); }, icon: <PanelLeft className="h-3.5 w-3.5" />, category: "View", shortcut: "Ctrl+[" },
-      { label: "Focus Mode", action: () => { setEditorFocusMode(p => !p); setShowCommandBar(false); }, icon: <Crosshair className="h-3.5 w-3.5" />, category: "View" },
-      { label: "Toggle Minimap", action: () => { setShowMinimap(p => !p); setShowCommandBar(false); }, icon: <BarChart3 className="h-3.5 w-3.5" />, category: "View" },
-      { label: "Zoom In", action: () => { setZoom(z => Math.min(z + 10, 150)); setShowCommandBar(false); }, icon: <ZoomIn className="h-3.5 w-3.5" />, category: "View", shortcut: "Ctrl+=" },
-      { label: "Zoom Out", action: () => { setZoom(z => Math.max(z - 10, 50)); setShowCommandBar(false); }, icon: <ZoomOut className="h-3.5 w-3.5" />, category: "View", shortcut: "Ctrl+-" },
-      { label: "Reset Zoom", action: () => { setZoom(100); setShowCommandBar(false); }, icon: <Maximize2 className="h-3.5 w-3.5" />, category: "View" },
-      { label: "Export Blocks", action: () => { handleExportBlocks(); setShowCommandBar(false); }, icon: <Download className="h-3.5 w-3.5" />, category: "File" },
-      { label: "Import Blocks", action: () => { handleImportBlocks(); setShowCommandBar(false); }, icon: <Upload className="h-3.5 w-3.5" />, category: "File" },
-      { label: "Show All Blocks", action: () => { handleShowAll(); setShowCommandBar(false); }, icon: <Eye className="h-3.5 w-3.5" />, category: "Edit" },
-      { label: "Hide All Blocks", action: () => { handleHideAll(); setShowCommandBar(false); }, icon: <Eye className="h-3.5 w-3.5" />, category: "Edit" },
-      { label: "Clear All Blocks", action: () => { handleClearAll(); setShowCommandBar(false); }, icon: <Trash2 className="h-3.5 w-3.5" />, category: "Edit" },
-      { label: "Select All Blocks", action: () => { setMultiSelectedIds(new Set(blocks.map(b => b.id))); setShowCommandBar(false); }, icon: <Layers className="h-3.5 w-3.5" />, category: "Edit", shortcut: "Ctrl+A" },
-      { label: "Deselect All", action: () => { setMultiSelectedIds(new Set()); setSelectedBlockId(null); setShowCommandBar(false); }, icon: <Minimize2 className="h-3.5 w-3.5" />, category: "Edit", shortcut: "Esc" },
-      { label: "Undo", action: () => { const r = undo(); if (r) batchUpdateBlocks.mutate(r); setShowCommandBar(false); }, icon: <Undo2 className="h-3.5 w-3.5" />, category: "Edit", shortcut: "Ctrl+Z" },
-      { label: "Redo", action: () => { const r = redo(); if (r) batchUpdateBlocks.mutate(r); setShowCommandBar(false); }, icon: <Redo2 className="h-3.5 w-3.5" />, category: "Edit", shortcut: "Ctrl+Y" },
-      { label: "Block Library", action: () => { setSidebarPanel("blocks"); setSidebarCollapsed(false); setShowCommandBar(false); }, icon: <Grid3X3 className="h-3.5 w-3.5" />, category: "Panels" },
-      { label: "Templates", action: () => { setSidebarPanel("templates"); setSidebarCollapsed(false); setShowCommandBar(false); }, icon: <LayoutTemplate className="h-3.5 w-3.5" />, category: "Panels" },
-      { label: "Layers", action: () => { setSidebarPanel("layers"); setSidebarCollapsed(false); setShowCommandBar(false); }, icon: <LayoutList className="h-3.5 w-3.5" />, category: "Panels" },
-      { label: "Activity Log", action: () => { setShowActivityLog(true); setShowCommandBar(false); }, icon: <Activity className="h-3.5 w-3.5" />, category: "Panels" },
-      { label: "Open Live Page", action: () => { window.open(`/invite/${invitationSlug}`, "_blank"); setShowCommandBar(false); }, icon: <Share2 className="h-3.5 w-3.5" />, category: "Navigation" },
-    ];
-
-    if (!commandSearch) return items.slice(0, 15);
-    const q = commandSearch.toLowerCase();
-    return items.filter(i => i.label.toLowerCase().includes(q) || i.category.toLowerCase().includes(q));
-  }, [commandSearch, addBlock, invitationSlug, undo, redo, batchUpdateBlocks, handleCopyBlock, handlePasteBlock, handleCopyStyle, handlePasteStyle, blocks]);
-
-  // Keyboard shortcuts
+  // Force mobile preview on small screens
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
-
-      if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
-        e.preventDefault();
-        if (isMultiSelect) { handleBatchDelete(); } else { removeBlock.mutate(selectedBlockId); setSelectedBlockId(null); }
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedBlockId) {
-        e.preventDefault();
-        if (isMultiSelect) { handleBatchDuplicate(); } else { duplicateBlock.mutate(selectedBlockId); }
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedBlock && !e.shiftKey) {
-        e.preventDefault();
-        handleCopyBlock();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "v" && clipboard && !e.shiftKey) {
-        e.preventDefault();
-        handlePasteBlock();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "C") {
-        e.preventDefault();
-        handleCopyStyle();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "V") {
-        e.preventDefault();
-        handlePasteStyle();
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
-        e.preventDefault();
-        setMultiSelectedIds(new Set(blocks.map(b => b.id)));
-      }
-      if (e.key === "Escape") {
-        setSelectedBlockId(null);
-        setMultiSelectedIds(new Set());
-        setShowShortcuts(false);
-        setShowSearch(false);
-        setShowCommandBar(false);
-        setShowActivityLog(false);
-      }
-      if (e.key === "ArrowUp" && e.altKey && selectedBlockId) {
-        e.preventDefault();
-        const idx = blocks.findIndex(b => b.id === selectedBlockId);
-        if (idx > 0) handleMoveUp(idx);
-      }
-      if (e.key === "ArrowDown" && e.altKey && selectedBlockId) {
-        e.preventDefault();
-        const idx = blocks.findIndex(b => b.id === selectedBlockId);
-        if (idx < blocks.length - 1) handleMoveDown(idx);
-      }
-      if (e.key === "ArrowUp" && !e.altKey && !e.ctrlKey) {
-        const idx = blocks.findIndex(b => b.id === selectedBlockId);
-        if (idx > 0) setSelectedBlockId(blocks[idx - 1].id);
-        else if (blocks.length) setSelectedBlockId(blocks[blocks.length - 1].id);
-      }
-      if (e.key === "ArrowDown" && !e.altKey && !e.ctrlKey) {
-        const idx = blocks.findIndex(b => b.id === selectedBlockId);
-        if (idx < blocks.length - 1) setSelectedBlockId(blocks[idx + 1].id);
-        else if (blocks.length) setSelectedBlockId(blocks[0].id);
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "p") { e.preventDefault(); setShowLivePreview(prev => !prev); }
-      if ((e.ctrlKey || e.metaKey) && e.key === "=") { e.preventDefault(); setZoom(z => Math.min(z + 10, 150)); }
-      if ((e.ctrlKey || e.metaKey) && e.key === "-") { e.preventDefault(); setZoom(z => Math.max(z - 10, 50)); }
-      if (e.key === "?" && !e.ctrlKey && !e.metaKey) setShowShortcuts(prev => !prev);
-      if (e.key === "h" && selectedBlockId && !e.ctrlKey && !e.metaKey) {
-        const block = blocks.find(b => b.id === selectedBlockId);
-        if (block) updateBlock.mutate({ id: selectedBlockId, is_visible: !block.is_visible });
-      }
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); const r = undo(); if (r) batchUpdateBlocks.mutate(r); }
-      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); const r = redo(); if (r) batchUpdateBlocks.mutate(r); }
-      if ((e.ctrlKey || e.metaKey) && e.key === "f") { e.preventDefault(); setShowSearch(prev => !prev); }
-      if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setShowCommandBar(prev => !prev); setCommandSearch(""); setCommandHighlightIdx(0); }
-      if (e.key === "F11" || ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key === "f")) { e.preventDefault(); setIsFullscreen(prev => !prev); }
-      if (e.key === "[" && (e.ctrlKey || e.metaKey)) { e.preventDefault(); setSidebarCollapsed(prev => !prev); }
-    };
-    window.addEventListener("keydown", handler);
-    return () => window.removeEventListener("keydown", handler);
-  }, [selectedBlockId, blocks, removeBlock, duplicateBlock, updateBlock, undo, redo, batchUpdateBlocks, isMultiSelect, handleBatchDelete, handleBatchDuplicate, handleCopyBlock, handlePasteBlock, clipboard, selectedBlock, handleCopyStyle, handlePasteStyle]);
-
-  // Focus command input when opened
-  useEffect(() => {
-    if (showCommandBar) setTimeout(() => commandInputRef.current?.focus(), 100);
-  }, [showCommandBar]);
+    if (isMobile && previewMode === "desktop") setPreviewMode("mobile");
+  }, [isMobile]);
 
   const handleAddBlock = useCallback((type: BlockType) => {
     addBlock.mutate({ blockType: type });
-    setEditHistory(prev => [...prev, `Added ${type}`].slice(-30));
-  }, [addBlock]);
+    if (isMobile) setSidePanel(null);
+  }, [addBlock, isMobile]);
 
   const handleUpdateBlock = useCallback((content?: BlockContent, style?: BlockStyle) => {
     if (!selectedBlockId) return;
@@ -348,14 +102,23 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
     addBlock.mutate({ blockType: type, insertAt: at });
   }, [addBlock]);
 
-  const handleClearAll = useCallback(() => {
-    if (!confirm("Remove all blocks? This cannot be undone.")) return;
-    blocks.forEach(b => removeBlock.mutate(b.id));
-    setSelectedBlockId(null);
-    setMultiSelectedIds(new Set());
-  }, [blocks, removeBlock]);
+  const handleCopyBlock = useCallback(() => {
+    if (!selectedBlock) return;
+    setClipboard({
+      block_type: selectedBlock.block_type as BlockType,
+      content: structuredClone(selectedBlock.content) as BlockContent,
+      style: structuredClone(selectedBlock.style) as BlockStyle,
+    });
+    toast.success("Block copied");
+  }, [selectedBlock]);
 
-  const handleExportBlocks = useCallback(() => {
+  const handlePasteBlock = useCallback(() => {
+    if (!clipboard) return;
+    addBlocksFromTemplate.mutate([clipboard]);
+    toast.success("Block pasted");
+  }, [clipboard, addBlocksFromTemplate]);
+
+  const handleExport = useCallback(() => {
     const data = blocks.map(b => ({ block_type: b.block_type, content: b.content, style: b.style, is_visible: b.is_visible }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -365,16 +128,15 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
     toast.success("Blocks exported");
   }, [blocks, invitationSlug]);
 
-  const handleImportBlocks = useCallback(() => {
+  const handleImport = useCallback(() => {
     const input = document.createElement("input");
     input.type = "file"; input.accept = ".json";
     input.onchange = async (e: any) => {
       const file = e.target.files?.[0];
       if (!file) return;
       try {
-        const text = await file.text();
-        const data = JSON.parse(text);
-        if (!Array.isArray(data)) throw new Error("Invalid format");
+        const data = JSON.parse(await file.text());
+        if (!Array.isArray(data)) throw new Error();
         addBlocksFromTemplate.mutate(data);
         toast.success("Blocks imported");
       } catch { toast.error("Invalid block file"); }
@@ -382,371 +144,252 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
     input.click();
   }, [addBlocksFromTemplate]);
 
-  const handleHideAll = useCallback(() => { blocks.forEach(b => updateBlock.mutate({ id: b.id, is_visible: false })); toast.success("All blocks hidden"); }, [blocks, updateBlock]);
-  const handleShowAll = useCallback(() => { blocks.forEach(b => updateBlock.mutate({ id: b.id, is_visible: true })); toast.success("All blocks visible"); }, [blocks, updateBlock]);
+  // Command palette items
+  const commandItems = useMemo(() => {
+    const items = [
+      ...Object.values(BLOCK_REGISTRY).map(def => ({
+        label: `Add ${def.label}`, category: "Add Block",
+        action: () => { addBlock.mutate({ blockType: def.type }); setShowCommandBar(false); },
+      })),
+      { label: "Open Block Library", category: "Panels", action: () => { setSidePanel("blocks"); setShowCommandBar(false); } },
+      { label: "Open Templates", category: "Panels", action: () => { setSidePanel("templates"); setShowCommandBar(false); } },
+      { label: "Mobile preview", category: "View", action: () => { setPreviewMode("mobile"); setShowCommandBar(false); } },
+      { label: "Tablet preview", category: "View", action: () => { setPreviewMode("tablet"); setShowCommandBar(false); } },
+      { label: "Desktop preview", category: "View", action: () => { setPreviewMode("desktop"); setShowCommandBar(false); } },
+      { label: "Export blocks", category: "File", action: () => { handleExport(); setShowCommandBar(false); } },
+      { label: "Import blocks", category: "File", action: () => { handleImport(); setShowCommandBar(false); } },
+      { label: "Open live page", category: "Navigation", action: () => { window.open(`/invite/${invitationSlug}`, "_blank"); setShowCommandBar(false); } },
+      { label: "Undo", category: "Edit", action: () => { const r = undo(); if (r) batchUpdateBlocks.mutate(r); setShowCommandBar(false); } },
+      { label: "Redo", category: "Edit", action: () => { const r = redo(); if (r) batchUpdateBlocks.mutate(r); setShowCommandBar(false); } },
+    ];
+    if (!commandSearch) return items.slice(0, 18);
+    const q = commandSearch.toLowerCase();
+    return items.filter(i => i.label.toLowerCase().includes(q));
+  }, [commandSearch, addBlock, undo, redo, batchUpdateBlocks, handleExport, handleImport, invitationSlug]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      if ((e.key === "Delete" || e.key === "Backspace") && selectedBlockId) {
+        e.preventDefault();
+        if (confirm("Delete this block?")) { removeBlock.mutate(selectedBlockId); setSelectedBlockId(null); }
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key === "d" && selectedBlockId) { e.preventDefault(); duplicateBlock.mutate(selectedBlockId); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "c" && selectedBlock) { e.preventDefault(); handleCopyBlock(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "v" && clipboard) { e.preventDefault(); handlePasteBlock(); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) { e.preventDefault(); const r = undo(); if (r) batchUpdateBlocks.mutate(r); }
+      if ((e.ctrlKey || e.metaKey) && (e.key === "y" || (e.key === "z" && e.shiftKey))) { e.preventDefault(); const r = redo(); if (r) batchUpdateBlocks.mutate(r); }
+      if ((e.ctrlKey || e.metaKey) && e.key === "k") { e.preventDefault(); setShowCommandBar(p => !p); setCommandSearch(""); }
+      if (e.key === "Escape") { setSelectedBlockId(null); setShowCommandBar(false); setShowShortcuts(false); setSettingsOpen(false); }
+      if (e.key === "?" && !e.ctrlKey && !e.metaKey) setShowShortcuts(p => !p);
+      if (e.key === "ArrowUp" && !e.altKey) {
+        const idx = blocks.findIndex(b => b.id === selectedBlockId);
+        if (idx > 0) setSelectedBlockId(blocks[idx - 1].id);
+      }
+      if (e.key === "ArrowDown" && !e.altKey) {
+        const idx = blocks.findIndex(b => b.id === selectedBlockId);
+        if (idx >= 0 && idx < blocks.length - 1) setSelectedBlockId(blocks[idx + 1].id);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [selectedBlockId, selectedBlock, blocks, removeBlock, duplicateBlock, undo, redo, batchUpdateBlocks, clipboard, handleCopyBlock, handlePasteBlock]);
+
+  useEffect(() => { if (showCommandBar) setTimeout(() => commandInputRef.current?.focus(), 80); }, [showCommandBar]);
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center space-y-4">
-          <div className="relative">
-            <div className="h-12 w-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
-            <Sparkles className="h-4 w-4 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
-          </div>
-          <div>
-            <p className="text-sm font-medium">Loading editor...</p>
-            <p className="text-[10px] text-muted-foreground">Preparing your blocks</p>
-          </div>
-        </motion.div>
+      <div className="flex items-center justify-center h-[60vh]">
+        <div className="text-center space-y-3">
+          <div className="h-12 w-12 border-2 border-primary/20 border-t-primary rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading editor…</p>
+        </div>
       </div>
     );
   }
 
-  return (
-    <div className={`flex flex-col ${isFullscreen ? "fixed inset-0 z-50 bg-background" : "h-[calc(100dvh-4rem)]"} overflow-hidden`}>
-      {/* Enhanced Toolbar */}
-      <div className="flex items-center justify-between px-2 sm:px-3 py-1.5 border-b border-border bg-card gap-1 sm:gap-2 overflow-x-auto">
-        {/* Left: Back + title + save status */}
-        <div className="flex items-center gap-2 min-w-0">
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" asChild className="h-7 w-7">
-                <Link to="/admin"><ArrowLeft className="h-3.5 w-3.5" /></Link>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Back to dashboard</TooltipContent>
-          </Tooltip>
-          <div className="min-w-0">
-            <h2 className="font-display font-bold text-xs truncate">{invitationTitle}</h2>
-            <div className="flex items-center gap-1.5">
-              <p className="text-[9px] text-muted-foreground truncate">/invite/{invitationSlug}</p>
-              {isSaving ? (
-                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-0.5 text-[8px] text-muted-foreground">
-                  <Loader2 className="h-2 w-2 animate-spin" /> Saving...
-                </motion.span>
-              ) : lastSaved ? (
-                <motion.span initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-0.5 text-[8px] text-green-600">
-                  <CheckCircle2 className="h-2 w-2" /> Saved
-                </motion.span>
-              ) : null}
-            </div>
+  // ---------------------- TOOLBAR (responsive) ----------------------
+  const Toolbar = (
+    <div className="flex items-center justify-between gap-2 px-2 sm:px-4 h-12 border-b border-border bg-card/95 backdrop-blur sticky top-0 z-30">
+      {/* Left */}
+      <div className="flex items-center gap-1.5 min-w-0 flex-1">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0" asChild>
+              <Link to="/admin"><ArrowLeft className="h-4 w-4" /></Link>
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Back</TooltipContent>
+        </Tooltip>
+
+        <Button variant="ghost" size="sm" className="h-8 px-2 lg:hidden" onClick={() => setSidePanel(sidePanel ? null : "blocks")}>
+          <PanelLeft className="h-4 w-4" />
+        </Button>
+
+        <div className="min-w-0 hidden sm:block">
+          <h2 className="font-display font-semibold text-sm truncate leading-tight">{invitationTitle}</h2>
+          <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
+            <span className="truncate">/invite/{invitationSlug}</span>
+            {isSaving ? (
+              <span className="flex items-center gap-0.5"><Loader2 className="h-2.5 w-2.5 animate-spin" /> Saving</span>
+            ) : lastSaved ? (
+              <span className="flex items-center gap-0.5 text-green-600"><CheckCircle2 className="h-2.5 w-2.5" /> Saved</span>
+            ) : null}
           </div>
-          <Separator orientation="vertical" className="h-5 mx-1" />
-          
-          {/* Stats badges */}
-          <div className="flex items-center gap-1">
-            <Badge variant="secondary" className="text-[9px] shrink-0">
-              <Layers className="h-2.5 w-2.5 mr-0.5" /> {blockStats.total}
-            </Badge>
-            {blockStats.hidden > 0 && (
-              <Badge variant="outline" className="text-[9px] shrink-0 text-muted-foreground">
-                <Eye className="h-2.5 w-2.5 mr-0.5" /> {blockStats.visible}
-              </Badge>
-            )}
-            {clipboard && (
-              <Badge variant="outline" className="text-[9px] shrink-0 text-primary">
-                <Clipboard className="h-2.5 w-2.5 mr-0.5" /> 1
-              </Badge>
-            )}
-            {isMultiSelect && (
-              <Badge className="text-[9px] shrink-0 bg-primary">
-                <CheckCircle2 className="h-2.5 w-2.5 mr-0.5" /> {multiSelectedIds.size}
-              </Badge>
-            )}
-          </div>
-        </div>
-
-        {/* Center: Controls */}
-        <div className="flex items-center gap-1">
-          {/* Undo / Redo */}
-          <div className="flex border border-border rounded-md overflow-hidden mr-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-none" onClick={() => { const r = undo(); if (r) batchUpdateBlocks.mutate(r); }} disabled={!canUndo}>
-                  <Undo2 className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6 rounded-none" onClick={() => { const r = redo(); if (r) batchUpdateBlocks.mutate(r); }} disabled={!canRedo}>
-                  <Redo2 className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Redo (Ctrl+Y)</TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Sidebar panel toggles */}
-          <div className="flex border border-border rounded-md overflow-hidden mr-1">
-            {([
-              { key: "blocks" as const, icon: Grid3X3, tip: "Block library" },
-              { key: "templates" as const, icon: ChevronsUpDown, tip: "Templates" },
-              { key: "layers" as const, icon: LayoutList, tip: "Layers" },
-            ]).map(({ key, icon: Icon, tip }) => (
-              <Tooltip key={key}>
-                <TooltipTrigger asChild>
-                  <Button variant={sidebarPanel === key ? "secondary" : "ghost"} size="icon" className="h-6 w-6 rounded-none"
-                    onClick={() => { setSidebarPanel(key); setSidebarCollapsed(false); }}>
-                    <Icon className="h-3 w-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>{tip}</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-
-          <Separator orientation="vertical" className="h-5" />
-
-          {/* Device preview */}
-          <div className="flex border border-border rounded-md overflow-hidden mx-1">
-            {(["mobile", "tablet", "desktop"] as const).map(mode => (
-              <Tooltip key={mode}>
-                <TooltipTrigger asChild>
-                  <Button variant={previewMode === mode ? "secondary" : "ghost"} size="icon" className="h-6 w-6 rounded-none"
-                    onClick={() => setPreviewMode(mode)}>
-                    {mode === "mobile" ? <Smartphone className="h-3 w-3" /> :
-                     mode === "tablet" ? <Tablet className="h-3 w-3" /> :
-                     <Monitor className="h-3 w-3" />}
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent className="capitalize">{mode}</TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
-
-          <Separator orientation="vertical" className="h-5" />
-
-          {/* Zoom */}
-          <div className="flex items-center gap-0.5 mx-1">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(z => Math.max(z - 10, 50))}>
-                  <ZoomOut className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom out (Ctrl+-)</TooltipContent>
-            </Tooltip>
-            <div className="relative w-12 h-4 flex items-center">
-              <Progress value={((zoom - 50) / 100) * 100} className="h-1" />
-              <span className="absolute inset-0 flex items-center justify-center text-[8px] font-mono">{zoom}%</span>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(z => Math.min(z + 10, 150))}>
-                  <ZoomIn className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Zoom in (Ctrl+=)</TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setZoom(100)}>
-                  <Maximize2 className="h-3 w-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Reset zoom</TooltipContent>
-            </Tooltip>
-          </div>
-        </div>
-
-        {/* Right: Actions */}
-        <div className="flex items-center gap-1">
-          {/* Command palette */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => { setShowCommandBar(true); setCommandSearch(""); setCommandHighlightIdx(0); }}>
-                <Command className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Command palette (Ctrl+K)</TooltipContent>
-          </Tooltip>
-
-          {/* Search */}
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant={showSearch ? "secondary" : "ghost"} size="icon" className="h-6 w-6" onClick={() => setShowSearch(!showSearch)}>
-                <Search className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Search blocks (Ctrl+F)</TooltipContent>
-          </Tooltip>
-
-          {/* Clipboard actions */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6">
-                <Clipboard className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuItem onClick={handleCopyBlock} disabled={!selectedBlock}>
-                <Clipboard className="h-3.5 w-3.5 mr-2" /> Copy Block <kbd className="ml-auto text-[9px] opacity-50">Ctrl+C</kbd>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePasteBlock} disabled={!clipboard}>
-                <ClipboardPaste className="h-3.5 w-3.5 mr-2" /> Paste Block <kbd className="ml-auto text-[9px] opacity-50">Ctrl+V</kbd>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleCopyStyle} disabled={!selectedBlock}>
-                <Paintbrush className="h-3.5 w-3.5 mr-2" /> Copy Style
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={handlePasteStyle} disabled={!copiedStyleBlock || !selectedBlockId}>
-                <Paintbrush className="h-3.5 w-3.5 mr-2" /> Paste Style
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant={showLivePreview ? "default" : "outline"} size="sm" className="h-6 text-[10px] gap-1"
-                onClick={() => setShowLivePreview(!showLivePreview)}>
-                <SplitSquareHorizontal className="h-3 w-3" />
-                <span className="hidden sm:inline">{showLivePreview ? "Hide" : "Preview"}</span>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Toggle live preview (Ctrl+P)</TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-5" />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsFullscreen(!isFullscreen)}>
-                <Fullscreen className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Fullscreen (F11)</TooltipContent>
-          </Tooltip>
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleShowAll}>
-                <Eye className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Show all blocks</TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-5" />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleExportBlocks}>
-                <Download className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Export blocks</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleImportBlocks}>
-                <Upload className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Import blocks</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleClearAll} disabled={!blocks.length}>
-                <Trash2 className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Clear all blocks</TooltipContent>
-          </Tooltip>
-
-          <Separator orientation="vertical" className="h-5" />
-
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setShowShortcuts(!showShortcuts)}>
-                <Keyboard className="h-3 w-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Keyboard shortcuts (?)</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="outline" size="sm" className="h-6 text-[10px]" asChild>
-                <a href={`/invite/${invitationSlug}`} target="_blank" rel="noopener">
-                  <Eye className="h-3 w-3 mr-1" /> Open
-                </a>
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Open live page</TooltipContent>
-          </Tooltip>
         </div>
       </div>
 
-      {/* Multi-select action bar */}
-      <AnimatePresence>
-        {isMultiSelect && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            className="border-b border-primary/30 bg-primary/5 overflow-hidden"
-          >
-            <div className="flex items-center gap-2 px-3 py-1.5">
-              <Badge className="text-[9px] bg-primary">{multiSelectedIds.size} selected</Badge>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => handleBatchToggleVisibility(true)}>
-                <Eye className="h-3 w-3 mr-1" /> Show
-              </Button>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => handleBatchToggleVisibility(false)}>
-                <Eye className="h-3 w-3 mr-1" /> Hide
-              </Button>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={handleBatchDuplicate}>
-                <Copy className="h-3 w-3 mr-1" /> Duplicate
-              </Button>
-              <Button variant="ghost" size="sm" className="h-6 text-[10px] text-destructive hover:text-destructive" onClick={handleBatchDelete}>
-                <Trash2 className="h-3 w-3 mr-1" /> Delete
-              </Button>
-              <div className="flex-1" />
-              <Button variant="ghost" size="sm" className="h-6 text-[10px]" onClick={() => setMultiSelectedIds(new Set())}>
-                Clear selection
-              </Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Center: device picker */}
+      <div className="hidden md:flex border border-border rounded-full overflow-hidden h-8 shrink-0">
+        {(["mobile", "tablet", "desktop"] as Device[]).map(mode => (
+          <Tooltip key={mode}>
+            <TooltipTrigger asChild>
+              <button onClick={() => setPreviewMode(mode)}
+                className={`px-3 flex items-center justify-center text-xs transition-colors ${previewMode === mode ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                {mode === "mobile" ? <Smartphone className="h-3.5 w-3.5" /> : mode === "tablet" ? <Tablet className="h-3.5 w-3.5" /> : <Monitor className="h-3.5 w-3.5" />}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="capitalize">{mode}</TooltipContent>
+          </Tooltip>
+        ))}
+      </div>
 
-      {/* Search bar */}
-      <AnimatePresence>
-        {showSearch && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-            className="border-b border-border bg-card overflow-hidden">
-            <div className="flex items-center gap-2 px-3 py-1.5">
-              <Search className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
-              <input autoFocus value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search blocks by type or content..."
-                className="flex-1 text-xs bg-transparent outline-none placeholder:text-muted-foreground" />
-              {searchQuery && <Badge variant="secondary" className="text-[9px]">{filteredBlocks.length}/{blocks.length}</Badge>}
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => { setShowSearch(false); setSearchQuery(""); }}>×</Button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Right */}
+      <div className="flex items-center gap-1 shrink-0">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!canUndo} onClick={() => { const r = undo(); if (r) batchUpdateBlocks.mutate(r); }}>
+              <Undo2 className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Undo</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8" disabled={!canRedo} onClick={() => { const r = redo(); if (r) batchUpdateBlocks.mutate(r); }}>
+              <Redo2 className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Redo</TooltipContent>
+        </Tooltip>
 
-      {/* Command Palette Dialog */}
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8 hidden sm:flex" onClick={() => setShowCommandBar(true)}>
+              <Command className="h-3.5 w-3.5" />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>Command palette (⌘K)</TooltipContent>
+        </Tooltip>
+
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" className="h-8 w-8"><MoreHorizontal className="h-4 w-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem onClick={() => setSidePanel("templates")}><Wand2 className="h-3.5 w-3.5 mr-2" /> Templates</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleCopyBlock} disabled={!selectedBlock}><Copy className="h-3.5 w-3.5 mr-2" /> Copy block</DropdownMenuItem>
+            <DropdownMenuItem onClick={handlePasteBlock} disabled={!clipboard}><Copy className="h-3.5 w-3.5 mr-2" /> Paste block</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleExport}><Download className="h-3.5 w-3.5 mr-2" /> Export blocks</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleImport}><Upload className="h-3.5 w-3.5 mr-2" /> Import blocks</DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => setShowShortcuts(true)}><Keyboard className="h-3.5 w-3.5 mr-2" /> Shortcuts</DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <Button variant="default" size="sm" className="h-8 rounded-full px-3 hidden sm:flex" asChild>
+          <a href={`/invite/${invitationSlug}`} target="_blank" rel="noopener">
+            <Eye className="h-3.5 w-3.5" /> Preview
+          </a>
+        </Button>
+      </div>
+    </div>
+  );
+
+  // ---------------------- DESKTOP LAYOUT ----------------------
+  if (!isMobile) {
+    return (
+      <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden bg-muted/10">
+        {Toolbar}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Side panel — desktop fixed */}
+          {sidePanel && (
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+              className="border-r border-border bg-card flex flex-col w-72 shrink-0 overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                <div className="flex border border-border rounded-md overflow-hidden">
+                  <button onClick={() => setSidePanel("blocks")}
+                    className={`px-3 py-1 text-xs font-medium ${sidePanel === "blocks" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                    Blocks
+                  </button>
+                  <button onClick={() => setSidePanel("templates")}
+                    className={`px-3 py-1 text-xs font-medium ${sidePanel === "templates" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                    Templates
+                  </button>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSidePanel(null)}><X className="h-3.5 w-3.5" /></Button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                {sidePanel === "blocks" ? (
+                  <BlockSidebar onAddBlock={handleAddBlock} isPending={addBlock.isPending} />
+                ) : (
+                  <BlockTemplatePanel invitationId={invitationId} onApplyTemplate={(tb) => { addBlocksFromTemplate.mutate(tb); setSidePanel("blocks"); }} />
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Canvas */}
+          <BlockCanvas
+            blocks={blocks}
+            invitationId={invitationId}
+            selectedBlockId={selectedBlockId}
+            onSelectBlock={setSelectedBlockId}
+            onReorder={(ids) => reorderBlocks.mutate(ids)}
+            onToggleVisibility={(id, visible) => updateBlock.mutate({ id, is_visible: visible })}
+            onDuplicate={(id) => duplicateBlock.mutate(id)}
+            onRemove={(id) => { removeBlock.mutate(id); if (selectedBlockId === id) setSelectedBlockId(null); }}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
+            onInsertBlock={handleInsertBlock}
+            previewMode={previewMode}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+
+          {/* Settings panel */}
+          {selectedBlock && settingsOpen && (
+            <BlockSettings
+              key={selectedBlock.id}
+              block={selectedBlock}
+              onUpdate={handleUpdateBlock}
+              onClose={() => { setSettingsOpen(false); setSelectedBlockId(null); }}
+            />
+          )}
+        </div>
+        {GlobalDialogs}
+      </div>
+    );
+  }
+
+  // ---------------------- MOBILE / TABLET LAYOUT ----------------------
+  const GlobalDialogs = (
+    <>
+      {/* Command Palette */}
       <Dialog open={showCommandBar} onOpenChange={setShowCommandBar}>
         <DialogContent className="sm:max-w-md p-0 gap-0 overflow-hidden">
           <div className="flex items-center gap-2 px-4 py-3 border-b border-border">
-            <Command className="h-4 w-4 text-muted-foreground shrink-0" />
-            <input ref={commandInputRef} value={commandSearch} onChange={e => { setCommandSearch(e.target.value); setCommandHighlightIdx(0); }}
-              placeholder="Type a command or search..."
-              className="flex-1 text-sm bg-transparent outline-none placeholder:text-muted-foreground"
-              onKeyDown={e => {
-                if (e.key === "Enter" && commandItems.length > 0) commandItems[commandHighlightIdx]?.action();
-                if (e.key === "ArrowDown") { e.preventDefault(); setCommandHighlightIdx(i => Math.min(i + 1, commandItems.length - 1)); }
-                if (e.key === "ArrowUp") { e.preventDefault(); setCommandHighlightIdx(i => Math.max(i - 1, 0)); }
-              }}
-            />
+            <Command className="h-4 w-4 text-muted-foreground" />
+            <input ref={commandInputRef} value={commandSearch} onChange={e => setCommandSearch(e.target.value)}
+              placeholder="Type a command…" className="flex-1 text-sm bg-transparent outline-none" />
             <kbd className="text-[9px] bg-muted px-1.5 py-0.5 rounded font-mono">ESC</kbd>
           </div>
           <ScrollArea className="max-h-72">
             <div className="p-2">
-              {commandItems.length === 0 && <p className="text-sm text-muted-foreground text-center py-6">No results found</p>}
-              {(() => {
+              {commandItems.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-6">No results</p>
+              ) : (() => {
                 let lastCat = "";
                 return commandItems.map((item, i) => {
                   const showCat = item.category !== lastCat;
@@ -754,12 +397,8 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
                   return (
                     <div key={i}>
                       {showCat && <p className="text-[9px] uppercase tracking-wider text-muted-foreground font-semibold px-2 pt-2 pb-1">{item.category}</p>}
-                      <button onClick={item.action}
-                        className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left ${i === commandHighlightIdx ? "bg-primary/10 text-primary" : "hover:bg-accent"}`}
-                        onMouseEnter={() => setCommandHighlightIdx(i)}>
-                        <span className="text-muted-foreground">{item.icon}</span>
-                        <span className="flex-1">{item.label}</span>
-                        {item.shortcut && <kbd className="text-[8px] bg-muted px-1 py-0.5 rounded font-mono opacity-50">{item.shortcut}</kbd>}
+                      <button onClick={item.action} className="w-full flex items-center gap-2 px-3 py-2 rounded-md text-sm hover:bg-accent text-left">
+                        {item.label}
                       </button>
                     </div>
                   );
@@ -767,323 +406,119 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
               })()}
             </div>
           </ScrollArea>
-          <div className="px-4 py-2 border-t border-border bg-muted/30">
-            <div className="flex items-center justify-between text-[9px] text-muted-foreground">
-              <span>{commandItems.length} results</span>
-              <div className="flex gap-2">
-                <span><kbd className="bg-muted px-1 rounded font-mono">↵</kbd> select</span>
-                <span><kbd className="bg-muted px-1 rounded font-mono">↑↓</kbd> navigate</span>
-              </div>
-            </div>
-          </div>
         </DialogContent>
       </Dialog>
 
-      {/* Keyboard shortcuts overlay */}
-      <AnimatePresence>
-        {showShortcuts && (
-          <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
-            className="absolute top-12 right-4 z-50 bg-popover border border-border rounded-xl shadow-xl p-4 w-80">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-display font-bold text-sm">Keyboard Shortcuts</h3>
-              <Button variant="ghost" size="icon" className="h-5 w-5" onClick={() => setShowShortcuts(false)}>×</Button>
-            </div>
-            <div className="space-y-1.5 text-xs max-h-72 overflow-y-auto">
-              {[
-                ["↑ / ↓", "Select prev/next block"],
-                ["Alt + ↑/↓", "Move block up/down"],
-                ["Delete", "Remove selected block"],
-                ["Ctrl + A", "Select all blocks"],
-                ["Ctrl + C", "Copy block"],
-                ["Ctrl + V", "Paste block"],
-                ["Ctrl + Shift+C", "Copy style"],
-                ["Ctrl + Shift+V", "Paste style"],
-                ["Ctrl + D", "Duplicate block"],
-                ["Ctrl + Z", "Undo"],
-                ["Ctrl + Y", "Redo"],
-                ["Ctrl + P", "Toggle live preview"],
-                ["Ctrl + F", "Search blocks"],
-                ["Ctrl + K", "Command palette"],
-                ["Ctrl + [", "Toggle sidebar"],
-                ["Ctrl + +/-", "Zoom in/out"],
-                ["F11", "Fullscreen"],
-                ["H", "Toggle block visibility"],
-                ["Escape", "Deselect / close"],
-                ["?", "Toggle shortcuts"],
-              ].map(([key, desc]) => (
-                <div key={key} className="flex items-center justify-between py-0.5">
-                  <span className="text-muted-foreground">{desc}</span>
-                  <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">{key}</kbd>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Activity Log Dialog */}
-      <Dialog open={showActivityLog} onOpenChange={setShowActivityLog}>
+      {/* Shortcuts */}
+      <Dialog open={showShortcuts} onOpenChange={setShowShortcuts}>
         <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2"><Activity className="h-4 w-4" /> Activity Log</DialogTitle>
-          </DialogHeader>
-          <ScrollArea className="max-h-60">
-            <div className="space-y-1">
-              {editHistory.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-6">No activity yet</p>
-              ) : (
-                editHistory.map((entry, i) => (
-                  <div key={i} className="flex items-center gap-2 text-xs py-1 px-2 rounded hover:bg-accent">
-                    <span className="w-5 text-[9px] text-muted-foreground text-right">{editHistory.length - i}</span>
-                    <span className="flex-1">{entry}</span>
-                  </div>
-                )).reverse()
-              )}
-            </div>
-          </ScrollArea>
-          <div className="text-[9px] text-muted-foreground text-center">
-            {saveCountRef.current} saves this session
+          <h3 className="font-display font-semibold text-base mb-2">Keyboard Shortcuts</h3>
+          <div className="space-y-1 text-xs max-h-72 overflow-y-auto">
+            {[
+              ["↑ / ↓", "Select prev/next block"],
+              ["Delete", "Remove selected"],
+              ["Ctrl+D", "Duplicate"],
+              ["Ctrl+C / V", "Copy / Paste block"],
+              ["Ctrl+Z / Y", "Undo / Redo"],
+              ["Ctrl+K", "Command palette"],
+              ["Esc", "Deselect / close"],
+              ["?", "Show shortcuts"],
+            ].map(([k, d]) => (
+              <div key={k} className="flex items-center justify-between py-1">
+                <span className="text-muted-foreground">{d}</span>
+                <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px] font-mono">{k}</kbd>
+              </div>
+            ))}
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Editor body */}
-      <div className="flex flex-1 overflow-hidden">
-        {/* Left sidebar with collapse */}
-        <AnimatePresence>
-          {!sidebarCollapsed && !editorFocusMode && (
-            <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: "auto", opacity: 1 }} exit={{ width: 0, opacity: 0 }} transition={{ duration: 0.2 }} className="overflow-hidden">
-              {sidebarPanel === "templates" ? (
-                <BlockTemplatePanel invitationId={invitationId} onApplyTemplate={(templateBlocks) => { addBlocksFromTemplate.mutate(templateBlocks); setSidebarPanel("blocks"); }} />
-              ) : sidebarPanel === "layers" ? (
-                <BlockLayersPanel
-                  blocks={blocks}
-                  selectedBlockId={selectedBlockId}
-                  multiSelectedIds={multiSelectedIds}
-                  onSelectBlock={setSelectedBlockId}
-                  onMultiSelect={handleMultiSelect}
-                  onToggleVisibility={(id, v) => updateBlock.mutate({ id, is_visible: v })}
-                  onRemove={id => { removeBlock.mutate(id); if (selectedBlockId === id) setSelectedBlockId(null); }}
-                  onDuplicate={id => duplicateBlock.mutate(id)}
-                  pinnedBlocks={pinnedBlocks}
-                  onTogglePin={id => setPinnedBlocks(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; })}
-                />
-              ) : (
-                <BlockSidebar onAddBlock={handleAddBlock} isPending={addBlock.isPending} />
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-
-        {/* Sidebar collapse toggle */}
-        {!editorFocusMode && (
-          <div className="flex flex-col justify-center border-r border-border">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-                  className="px-0.5 py-4 hover:bg-accent/50 transition-colors text-muted-foreground hover:text-foreground">
-                  {sidebarCollapsed ? <ChevronRight className="h-3 w-3" /> : <ChevronLeft className="h-3 w-3" />}
-                </button>
-              </TooltipTrigger>
-              <TooltipContent side="right">{sidebarCollapsed ? "Show sidebar" : "Hide sidebar"} (Ctrl+[)</TooltipContent>
-            </Tooltip>
-          </div>
-        )}
-
-        {/* Canvas + Live Preview split */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Canvas */}
-          <div className="flex-1 overflow-hidden" style={{ transform: `scale(${zoom / 100})`, transformOrigin: "top center" }}>
-            <BlockCanvas
-              blocks={searchQuery ? filteredBlocks : blocks}
-              selectedBlockId={selectedBlockId}
-              multiSelectedIds={multiSelectedIds}
-              onSelectBlock={setSelectedBlockId}
-              onMultiSelect={handleMultiSelect}
-              onReorder={(ids) => reorderBlocks.mutate(ids)}
-              onToggleVisibility={(id, visible) => updateBlock.mutate({ id, is_visible: visible })}
-              onDuplicate={(id) => duplicateBlock.mutate(id)}
-              onRemove={(id) => { removeBlock.mutate(id); if (selectedBlockId === id) setSelectedBlockId(null); }}
-              onMoveUp={handleMoveUp}
-              onMoveDown={handleMoveDown}
-              onInsertBlock={handleInsertBlock}
-              previewMode={previewMode === "tablet" ? "desktop" : previewMode}
-            />
-          </div>
-
-          {/* Minimap */}
-          <AnimatePresence>
-            {showMinimap && blocks.length > 0 && (
-              <motion.div initial={{ width: 0, opacity: 0 }} animate={{ width: 60, opacity: 1 }} exit={{ width: 0, opacity: 0 }}
-                className="border-l border-border bg-muted/20 overflow-hidden">
-                <div className="p-1 space-y-0.5">
-                  {blocks.map(b => {
-                    const isActive = b.id === selectedBlockId;
-                    return (
-                      <button key={b.id} onClick={() => setSelectedBlockId(b.id)}
-                        className={`w-full h-3 rounded-sm transition-colors ${isActive ? "bg-primary" : b.is_visible ? "bg-accent" : "bg-muted"}`}
-                        title={BLOCK_REGISTRY[b.block_type as keyof typeof BLOCK_REGISTRY]?.label} />
-                    );
-                  })}
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Live preview panel */}
-          <AnimatePresence>
-            {showLivePreview && (
-              <motion.div
-                initial={{ width: 0, opacity: 0 }}
-                animate={{ width: previewMode === "mobile" ? 375 : previewMode === "tablet" ? 500 : 600, opacity: 1 }}
-                exit={{ width: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="border-l border-border overflow-hidden flex flex-col bg-background">
-                <BlockLivePreview blocks={blocks} previewMode={previewMode} scrollSync={scrollSyncEnabled} scrollPosition={scrollPosition} onScroll={setScrollPosition} />
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-
-        {/* Right settings panel */}
-        {selectedBlock && showSettings && !editorFocusMode && (
-          <BlockSettings
-            key={selectedBlock.id}
-            block={selectedBlock}
-            onUpdate={handleUpdateBlock}
-            onClose={() => setSelectedBlockId(null)}
-            onCopyStyle={handleCopyStyle}
-            onPasteStyle={handlePasteStyle}
-            hasCopiedStyle={!!copiedStyleBlock}
-          />
-        )}
-      </div>
-
-      {/* Bottom status bar */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-        className="flex items-center justify-between px-3 py-1 border-t border-border bg-muted/30 text-[9px] text-muted-foreground">
-        <div className="flex items-center gap-3">
-          <span>{blockStats.total} blocks · {blockStats.visible} visible · {blockStats.types} types</span>
-          {selectedBlock && (
-            <span className="text-foreground font-medium">
-              Selected: {BLOCK_REGISTRY[selectedBlock.block_type as keyof typeof BLOCK_REGISTRY]?.label}
-            </span>
-          )}
-          {isMultiSelect && <span className="text-primary font-medium">{multiSelectedIds.size} multi-selected</span>}
-          {clipboard && <span className="text-primary">📋 {clipboard.block_type} in clipboard</span>}
-        </div>
-        <div className="flex items-center gap-3">
-          {canUndo && <span className="text-primary">Undo available</span>}
-          <button onClick={() => setEditorFocusMode(p => !p)} className="hover:text-foreground transition-colors">
-            {editorFocusMode ? "Exit Focus" : "Focus Mode"}
-          </button>
-          <button onClick={() => setShowMinimap(p => !p)} className="hover:text-foreground transition-colors">
-            Minimap {showMinimap ? "on" : "off"}
-          </button>
-          <span>{previewMode} view · {zoom}%</span>
-          {lastSaved && (
-            <span className="text-green-600 dark:text-green-400">
-              <CheckCircle2 className="h-2.5 w-2.5 inline mr-0.5" />
-              {lastSaved.toLocaleTimeString()}
-            </span>
-          )}
-          <Badge variant="outline" className="text-[8px] h-4">
-            <Keyboard className="h-2 w-2 mr-0.5" /> Ctrl+K
-          </Badge>
-        </div>
-      </motion.div>
-    </div>
+    </>
   );
-}
-
-// Enhanced Layers panel with multi-select and pin support
-function BlockLayersPanel({
-  blocks, selectedBlockId, multiSelectedIds, onSelectBlock, onMultiSelect,
-  onToggleVisibility, onRemove, onDuplicate, pinnedBlocks, onTogglePin,
-}: {
-  blocks: InvitationBlock[];
-  selectedBlockId: string | null;
-  multiSelectedIds: Set<string>;
-  onSelectBlock: (id: string | null) => void;
-  onMultiSelect: (id: string, shiftKey: boolean) => void;
-  onToggleVisibility: (id: string, visible: boolean) => void;
-  onRemove: (id: string) => void;
-  onDuplicate: (id: string) => void;
-  pinnedBlocks: Set<string>;
-  onTogglePin: (id: string) => void;
-}) {
-  const sortedBlocks = useMemo(() => {
-    const pinned = blocks.filter(b => pinnedBlocks.has(b.id));
-    const unpinned = blocks.filter(b => !pinnedBlocks.has(b.id));
-    return [...pinned, ...unpinned];
-  }, [blocks, pinnedBlocks]);
 
   return (
-    <div className="w-64 border-r border-border bg-card flex flex-col h-full">
-      <div className="p-3 border-b border-border">
-        <h3 className="font-display font-bold text-sm">Layers</h3>
-        <p className="text-[10px] text-muted-foreground">
-          {blocks.length} blocks · {blocks.filter(b => b.is_visible).length} visible
-          {pinnedBlocks.size > 0 && ` · ${pinnedBlocks.size} pinned`}
-        </p>
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-muted/10">
+      {Toolbar}
+
+      {/* Canvas - full screen on mobile/tablet */}
+      <BlockCanvas
+        blocks={blocks}
+        invitationId={invitationId}
+        selectedBlockId={selectedBlockId}
+        onSelectBlock={setSelectedBlockId}
+        onReorder={(ids) => reorderBlocks.mutate(ids)}
+        onToggleVisibility={(id, visible) => updateBlock.mutate({ id, is_visible: visible })}
+        onDuplicate={(id) => duplicateBlock.mutate(id)}
+        onRemove={(id) => { removeBlock.mutate(id); if (selectedBlockId === id) setSelectedBlockId(null); }}
+        onMoveUp={handleMoveUp}
+        onMoveDown={handleMoveDown}
+        onInsertBlock={handleInsertBlock}
+        previewMode={previewMode}
+        onOpenSettings={() => setSettingsOpen(true)}
+      />
+
+      {/* Floating action bar - mobile */}
+      <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 flex items-center gap-1 px-1.5 py-1.5 rounded-full bg-foreground text-background shadow-2xl">
+        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full text-background hover:bg-background/10 hover:text-background"
+          onClick={() => setSidePanel("blocks")}>
+          <Plus className="h-4 w-4" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full text-background hover:bg-background/10 hover:text-background"
+          onClick={() => setSidePanel("templates")}>
+          <Wand2 className="h-4 w-4" />
+        </Button>
+        <div className="h-6 w-px bg-background/20" />
+        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full text-background hover:bg-background/10 hover:text-background"
+          onClick={() => setSettingsOpen(true)} disabled={!selectedBlock}>
+          <Settings2 className="h-4 w-4" />
+        </Button>
+        <Button size="icon" variant="ghost" className="h-10 w-10 rounded-full text-background hover:bg-background/10 hover:text-background" asChild>
+          <a href={`/invite/${invitationSlug}`} target="_blank" rel="noopener"><Eye className="h-4 w-4" /></a>
+        </Button>
       </div>
-      <ScrollArea className="flex-1">
-        <div className="p-1">
-          {pinnedBlocks.size > 0 && <p className="text-[8px] uppercase tracking-wider text-primary font-semibold px-2 pt-1">📌 Pinned</p>}
-          {sortedBlocks.map((block, i) => {
-            const def = BLOCK_REGISTRY[block.block_type as keyof typeof BLOCK_REGISTRY];
-            const isSelected = selectedBlockId === block.id;
-            const isMulti = multiSelectedIds.has(block.id);
-            const isPinned = pinnedBlocks.has(block.id);
-            const realIdx = blocks.findIndex(b => b.id === block.id);
-            // Show separator between pinned/unpinned
-            const showUnpinnedLabel = i > 0 && isPinned === false && pinnedBlocks.has(sortedBlocks[i - 1]?.id);
-            return (
-              <div key={block.id}>
-                {showUnpinnedLabel && <p className="text-[8px] uppercase tracking-wider text-muted-foreground font-semibold px-2 pt-2">All Blocks</p>}
-                <motion.button
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: i * 0.015 }}
-                  className={`w-full flex items-center gap-2 px-2 py-1.5 rounded-md text-left text-xs transition-all group ${
-                    isSelected ? "bg-primary/10 text-primary ring-1 ring-primary/20" :
-                    isMulti ? "bg-primary/5 ring-1 ring-primary/10" :
-                    "hover:bg-accent/50"
-                  } ${!block.is_visible ? "opacity-40" : ""}`}
-                  onClick={(e) => {
-                    if (e.ctrlKey || e.metaKey || e.shiftKey) {
-                      onMultiSelect(block.id, e.shiftKey);
-                    } else {
-                      onSelectBlock(isSelected ? null : block.id);
-                    }
-                  }}>
-                  <span className="w-5 text-[9px] text-muted-foreground text-right shrink-0">{realIdx + 1}</span>
-                  {isPinned && <Pin className="h-2.5 w-2.5 text-primary shrink-0" />}
-                  <span className="flex-1 truncate font-medium">{def?.label || block.block_type}</span>
-                  <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button className="h-5 w-5 flex items-center justify-center rounded-sm hover:bg-accent shrink-0"
-                      onClick={e => { e.stopPropagation(); onTogglePin(block.id); }}>
-                      <Pin className={`h-2.5 w-2.5 ${isPinned ? "text-primary" : ""}`} />
-                    </button>
-                    <button className="h-5 w-5 flex items-center justify-center rounded-sm hover:bg-accent shrink-0"
-                      onClick={e => { e.stopPropagation(); onToggleVisibility(block.id, !block.is_visible); }}>
-                      {block.is_visible ? <Eye className="h-2.5 w-2.5" /> : <span className="text-[8px]">👁</span>}
-                    </button>
-                    <button className="h-5 w-5 flex items-center justify-center rounded-sm hover:bg-accent shrink-0"
-                      onClick={e => { e.stopPropagation(); onDuplicate(block.id); }}>
-                      <Copy className="h-2.5 w-2.5" />
-                    </button>
-                    <button className="h-5 w-5 flex items-center justify-center rounded-sm hover:bg-destructive/20 shrink-0"
-                      onClick={e => { e.stopPropagation(); onRemove(block.id); }}>
-                      <Trash2 className="h-2.5 w-2.5 text-destructive" />
-                    </button>
-                  </div>
-                </motion.button>
-              </div>
-            );
-          })}
-        </div>
-      </ScrollArea>
+
+      {/* Block library / templates as side sheet */}
+      <Sheet open={!!sidePanel} onOpenChange={(o) => !o && setSidePanel(null)}>
+        <SheetContent side="left" className="w-[88vw] sm:w-[420px] p-0 flex flex-col">
+          <SheetHeader className="px-4 py-3 border-b border-border">
+            <SheetTitle className="text-base flex items-center gap-2">
+              {sidePanel === "templates" ? <><Wand2 className="h-4 w-4" /> Templates</> : <><Grid3X3 className="h-4 w-4" /> Block Library</>}
+            </SheetTitle>
+            <div className="flex border border-border rounded-md overflow-hidden mt-1 self-start">
+              <button onClick={() => setSidePanel("blocks")}
+                className={`px-3 py-1 text-xs ${sidePanel === "blocks" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                Blocks
+              </button>
+              <button onClick={() => setSidePanel("templates")}
+                className={`px-3 py-1 text-xs ${sidePanel === "templates" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                Templates
+              </button>
+            </div>
+          </SheetHeader>
+          <div className="flex-1 overflow-hidden">
+            {sidePanel === "blocks" ? (
+              <BlockSidebar onAddBlock={handleAddBlock} isPending={addBlock.isPending} />
+            ) : sidePanel === "templates" ? (
+              <BlockTemplatePanel invitationId={invitationId} onApplyTemplate={(tb) => { addBlocksFromTemplate.mutate(tb); setSidePanel(null); }} />
+            ) : null}
+          </div>
+        </SheetContent>
+      </Sheet>
+
+      {/* Settings as bottom/right sheet on mobile/tablet */}
+      <Sheet open={settingsOpen && !!selectedBlock} onOpenChange={(o) => { setSettingsOpen(o); if (!o) setSelectedBlockId(null); }}>
+        <SheetContent side={isMobile ? "bottom" : "right"} className={isMobile ? "h-[85vh] p-0 flex flex-col" : "w-[420px] p-0 flex flex-col"}>
+          {selectedBlock && (
+            <BlockSettings
+              key={selectedBlock.id}
+              block={selectedBlock}
+              onUpdate={handleUpdateBlock}
+              onClose={() => { setSettingsOpen(false); setSelectedBlockId(null); }}
+            />
+          )}
+        </SheetContent>
+      </Sheet>
+
+      {GlobalDialogs}
     </div>
   );
 }

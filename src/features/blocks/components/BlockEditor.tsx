@@ -370,6 +370,69 @@ export function BlockEditor({ invitationId, invitationTitle, invitationSlug }: B
     </>
   );
 
+  // ---------------------- DESKTOP LAYOUT ----------------------
+  if (!isMobile) {
+    return (
+      <div className="flex flex-col h-[calc(100dvh-4rem)] overflow-hidden bg-muted/10">
+        {Toolbar}
+        <div className="flex flex-1 overflow-hidden">
+          {sidePanel && (
+            <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }}
+              className="border-r border-border bg-card flex flex-col w-72 shrink-0 overflow-hidden">
+              <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                <div className="flex border border-border rounded-md overflow-hidden">
+                  <button onClick={() => setSidePanel("blocks")}
+                    className={`px-3 py-1 text-xs font-medium ${sidePanel === "blocks" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                    Blocks
+                  </button>
+                  <button onClick={() => setSidePanel("templates")}
+                    className={`px-3 py-1 text-xs font-medium ${sidePanel === "templates" ? "bg-primary text-primary-foreground" : "hover:bg-accent"}`}>
+                    Templates
+                  </button>
+                </div>
+                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setSidePanel(null)}><X className="h-3.5 w-3.5" /></Button>
+              </div>
+              <div className="flex-1 overflow-hidden">
+                {sidePanel === "blocks" ? (
+                  <BlockSidebar onAddBlock={handleAddBlock} isPending={addBlock.isPending} />
+                ) : (
+                  <BlockTemplatePanel invitationId={invitationId} onApplyTemplate={(tb) => { addBlocksFromTemplate.mutate(tb); setSidePanel("blocks"); }} />
+                )}
+              </div>
+            </motion.div>
+          )}
+
+          <BlockCanvas
+            blocks={blocks}
+            invitationId={invitationId}
+            selectedBlockId={selectedBlockId}
+            onSelectBlock={setSelectedBlockId}
+            onReorder={(ids) => reorderBlocks.mutate(ids)}
+            onToggleVisibility={(id, visible) => updateBlock.mutate({ id, is_visible: visible })}
+            onDuplicate={(id) => duplicateBlock.mutate(id)}
+            onRemove={(id) => { removeBlock.mutate(id); if (selectedBlockId === id) setSelectedBlockId(null); }}
+            onMoveUp={handleMoveUp}
+            onMoveDown={handleMoveDown}
+            onInsertBlock={handleInsertBlock}
+            previewMode={previewMode}
+            onOpenSettings={() => setSettingsOpen(true)}
+          />
+
+          {selectedBlock && settingsOpen && (
+            <BlockSettings
+              key={selectedBlock.id}
+              block={selectedBlock}
+              onUpdate={handleUpdateBlock}
+              onClose={() => { setSettingsOpen(false); setSelectedBlockId(null); }}
+            />
+          )}
+        </div>
+        {GlobalDialogs}
+      </div>
+    );
+  }
+
+  // ---------------------- MOBILE / TABLET LAYOUT ----------------------
   return (
     <div className="flex flex-col h-[100dvh] overflow-hidden bg-muted/10">
       {Toolbar}

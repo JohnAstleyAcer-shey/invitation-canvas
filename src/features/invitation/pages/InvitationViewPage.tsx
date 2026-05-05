@@ -12,6 +12,7 @@ import { MusicPlayer } from "../components/MusicPlayer";
 import { ParticleCanvas } from "../components/ParticleCanvas";
 import { SocialShareSheet } from "../components/SocialShareSheet";
 import { PasswordGate } from "../components/sections/PasswordGate";
+import { EnvelopeCover, type EnvelopeSettings } from "../components/EnvelopeCover";
 import { InvitationSEO } from "@/components/SEOHead";
 import { InvitationViewSkeleton } from "@/components/LoadingSkeletons";
 import { supabase } from "@/integrations/supabase/client";
@@ -149,6 +150,7 @@ export default function InvitationViewPage() {
   const { data: invitation, isLoading, error } = usePublicInvitation(slug || "");
   const invId = invitation?.id ?? "";
   const [unlocked, setUnlocked] = useState(false);
+  const [envelopeOpened, setEnvelopeOpened] = useState(false);
 
   useViewTracking(invitation?.id);
 
@@ -215,16 +217,23 @@ export default function InvitationViewPage() {
 
   const blockLabels = blocks.map(getBlockLabel);
 
+  const inv = invitation as any;
+  const envelopeEnabled = !!inv.envelope_enabled;
+  const envelopeSettings: EnvelopeSettings = inv.envelope_settings || {};
+
   return (
     <InvitationThemeProvider theme={theme}>
       <InvitationSEO title={invitation.title} celebrantName={invitation.celebrant_name} eventDate={invitation.event_date} coverImage={invitation.cover_image_url} slug={invitation.slug} />
+      {envelopeEnabled && !envelopeOpened && (
+        <EnvelopeCover settings={envelopeSettings} onOpen={() => setEnvelopeOpened(true)} />
+      )}
       <ParticleCanvas effect={theme?.particle_effect} />
       <SocialShareSheet slug={invitation.slug} title={invitation.title} />
       <FloatingReactionButton invitationId={invId} />
       {theme?.music_url && (
-        <MusicPlayer url={theme.music_url} autoplay={theme.music_autoplay ?? false} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
+        <MusicPlayer url={theme.music_url} autoplay={(theme.music_autoplay ?? false) && (!envelopeEnabled || envelopeOpened)} loop={theme.music_loop ?? true} volume={theme.music_volume ?? 0.5} />
       )}
-      <StoryNavigation pageLabels={blockLabels}>{blockSections}</StoryNavigation>
+      <StoryNavigation pageLabels={blockLabels} transition={(theme?.page_transition as any) || "fade"}>{blockSections}</StoryNavigation>
     </InvitationThemeProvider>
   );
 }

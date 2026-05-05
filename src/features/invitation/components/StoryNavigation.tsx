@@ -5,30 +5,34 @@ import { AnimatePresence, motion } from "framer-motion";
 interface StoryNavigationProps {
   children: React.ReactNode[];
   pageLabels: string[];
+  transition?: "fade" | "slide" | "zoom" | "flip";
 }
 
-const pageVariants = {
-  enter: (direction: number) => ({
-    opacity: 0,
-    y: direction > 0 ? 80 : -80,
-    scale: 0.95,
-    filter: "blur(8px)",
-  }),
-  center: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    filter: "blur(0px)",
+const variantsMap = {
+  fade: {
+    enter: () => ({ opacity: 0, filter: "blur(10px)" }),
+    center: { opacity: 1, filter: "blur(0px)" },
+    exit: () => ({ opacity: 0, filter: "blur(10px)" }),
   },
-  exit: (direction: number) => ({
-    opacity: 0,
-    y: direction > 0 ? -80 : 80,
-    scale: 0.95,
-    filter: "blur(8px)",
-  }),
-};
+  slide: {
+    enter: (d: number) => ({ opacity: 0, y: d > 0 ? 120 : -120 }),
+    center: { opacity: 1, y: 0 },
+    exit: (d: number) => ({ opacity: 0, y: d > 0 ? -120 : 120 }),
+  },
+  zoom: {
+    enter: () => ({ opacity: 0, scale: 0.85, filter: "blur(8px)" }),
+    center: { opacity: 1, scale: 1, filter: "blur(0px)" },
+    exit: () => ({ opacity: 0, scale: 1.1, filter: "blur(8px)" }),
+  },
+  flip: {
+    enter: (d: number) => ({ opacity: 0, rotateX: d > 0 ? 60 : -60 }),
+    center: { opacity: 1, rotateX: 0 },
+    exit: (d: number) => ({ opacity: 0, rotateX: d > 0 ? -60 : 60 }),
+  },
+} as const;
 
-export function StoryNavigation({ children, pageLabels }: StoryNavigationProps) {
+export function StoryNavigation({ children, pageLabels, transition = "fade" }: StoryNavigationProps) {
+  const pageVariants = variantsMap[transition] || variantsMap.fade;
   const [current, setCurrent] = useState(0);
   const [direction, setDirection] = useState(1);
   const total = children.length;

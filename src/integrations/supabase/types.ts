@@ -653,6 +653,8 @@ export type Database = {
           created_at: string
           deleted_at: string | null
           entourage_title: string | null
+          envelope_enabled: boolean
+          envelope_settings: Json
           event_date: string | null
           event_end_date: string | null
           event_type: Database["public"]["Enums"]["event_type"]
@@ -679,6 +681,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           entourage_title?: string | null
+          envelope_enabled?: boolean
+          envelope_settings?: Json
           event_date?: string | null
           event_end_date?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]
@@ -705,6 +709,8 @@ export type Database = {
           created_at?: string
           deleted_at?: string | null
           entourage_title?: string | null
+          envelope_enabled?: boolean
+          envelope_settings?: Json
           event_date?: string | null
           event_end_date?: string | null
           event_type?: Database["public"]["Enums"]["event_type"]

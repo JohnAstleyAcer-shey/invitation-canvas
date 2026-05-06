@@ -21,6 +21,16 @@ export const BLOCK_TYPES = [
   "photo_upload_wall", "music_player", "seating_chart",
   "countdown_flip", "pricing_table", "weather_widget",
   "qr_code", "contact_card",
+  // Envelope as a block type (always pinned first)
+  "envelope_cover",
+  // Hybrid expansion: 25+ new high-value block types
+  "wax_seal", "ribbon_divider", "polaroid_strip", "vow_cards",
+  "ninang_ninong", "baptism_certificate", "champagne_toast",
+  "save_the_date", "prayer_card", "scripture_card", "name_reveal",
+  "monogram", "our_story", "hashtag_card", "livestream",
+  "parking_info", "transport_info", "hotel_card", "kids_section",
+  "calendar_add", "attire_inspo", "count_us_in", "when_where",
+  "ceremony_reception", "dance_floor",
 ] as const;
 
 export type BlockType = typeof BLOCK_TYPES[number];

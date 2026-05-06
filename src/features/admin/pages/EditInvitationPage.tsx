@@ -33,6 +33,7 @@ import {
 } from "../hooks/useInvitationData";
 import { PAGE_TYPE_LABELS, STYLE_VARIANT_LABELS, type EventType, type StyleVariant } from "../types";
 import { DragDropPageList } from "../components/DragDropPageList";
+import { EnvelopeTab } from "../components/EnvelopeTab";
 import { toast } from "sonner";
 
 // Color palette suggestions
@@ -342,10 +343,21 @@ export default function EditInvitationPage() {
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="theme">Theme</TabsTrigger>
+          <TabsTrigger value="envelope">Envelope</TabsTrigger>
           <TabsTrigger value="pages">Pages</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
           <TabsTrigger value="access">Access</TabsTrigger>
         </TabsList>
+
+        {/* ENVELOPE TAB */}
+        <TabsContent value="envelope" className="mt-6">
+          <EnvelopeTab
+            invitationId={id!}
+            enabled={!!(invitation as any).envelope_enabled}
+            settings={((invitation as any).envelope_settings || {}) as any}
+            onChange={(patch) => updateInvitation.mutate({ id: id!, ...(patch as any) })}
+          />
+        </TabsContent>
 
         {/* DETAILS TAB */}
         <TabsContent value="details" className="space-y-6 mt-6">

@@ -1085,6 +1085,278 @@ function BlockView({ block, index, totalBlocks, invitationId }: { block: Invitat
         </Wrap>
       );
 
+    case "envelope_cover":
+      return (
+        <Wrap>
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }} transition={{ type: "spring", damping: 14 }}
+            className="mx-auto max-w-md aspect-[16/10] rounded-md shadow-2xl relative overflow-hidden"
+            style={{ background: s.backgroundColor || "#f5f1e8" }}>
+            <div className="absolute inset-x-0 top-0 h-1/2" style={{ background: "rgba(0,0,0,0.06)", clipPath: "polygon(0 0, 100% 0, 50% 100%)" }} />
+            <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-14 h-14 rounded-full flex items-center justify-center shadow-lg"
+              style={{ background: "radial-gradient(circle at 35% 30%, #b88560ee, #6b3f25)" }}>
+              <span className="text-white/80 text-xs font-serif italic">✦</span>
+            </div>
+          </motion.div>
+          <p className="mt-6 font-display text-2xl">{c.title || "A Special Message Awaits..."}</p>
+          {c.body && <p className="mt-2 text-sm opacity-70">{c.body}</p>}
+          <button className="mt-4 px-6 py-2.5 text-xs font-semibold tracking-[0.3em] border rounded-full">{c.label || "CLICK TO OPEN"}</button>
+          <p className="mt-3 text-[10px] opacity-50">Envelope is also configured in the Envelope tab — guests will see the full opening animation.</p>
+        </Wrap>
+      );
+
+    case "wax_seal":
+      return (
+        <Wrap>
+          <motion.div initial={{ scale: 0, rotate: -45 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}
+            className="mx-auto w-20 h-20 rounded-full flex items-center justify-center shadow-xl text-white text-xl"
+            style={{ background: "radial-gradient(circle at 35% 30%, #b88560ee, #6b3f25)" }}>
+            {c.text || "✦"}
+          </motion.div>
+          {c.body && <p className="mt-4 text-sm opacity-70 italic">{c.body}</p>}
+        </Wrap>
+      );
+
+    case "ribbon_divider":
+      return (
+        <Wrap>
+          <div className="flex items-center gap-3 max-w-md mx-auto">
+            <div className="flex-1 h-px bg-current opacity-20" />
+            <Sparkles className="h-4 w-4 opacity-40" />
+            <div className="flex-1 h-px bg-current opacity-20" />
+          </div>
+          {c.text && <p className="mt-3 text-xs uppercase tracking-[0.3em] opacity-60">{c.text}</p>}
+        </Wrap>
+      );
+
+    case "polaroid_strip":
+      return (
+        <Wrap>
+          <div className="flex flex-wrap justify-center gap-4">
+            {(c.images || []).map((img: any, i: number) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20, rotate: 0 }} whileInView={{ opacity: 1, y: 0, rotate: i % 2 ? 4 : -4 }} viewport={{ once: true }}
+                transition={{ delay: i * 0.1, type: "spring" }} whileHover={{ rotate: 0, scale: 1.05 }}
+                className="bg-white p-2 pb-6 shadow-xl">
+                <img src={img.url} alt="" className="w-32 h-32 object-cover" loading="lazy" />
+                {img.caption && <p className="text-xs text-center mt-2 text-gray-700 font-mono">{img.caption}</p>}
+              </motion.div>
+            ))}
+          </div>
+        </Wrap>
+      );
+
+    case "vow_cards":
+      return (
+        <Wrap>
+          {c.title && <h3 className="font-display text-2xl mb-6">{c.title}</h3>}
+          <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+            {(c.columnContent || []).map((vow: string, i: number) => (
+              <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.2 }}
+                className="p-6 rounded-xl bg-current/5 text-left text-sm whitespace-pre-wrap leading-relaxed italic">
+                {vow}
+              </motion.div>
+            ))}
+          </div>
+        </Wrap>
+      );
+
+    case "ninang_ninong":
+      return (
+        <Wrap>
+          {c.title && <h3 className="font-display text-2xl mb-6">{c.title}</h3>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 max-w-xl mx-auto">
+            {(c.people || []).map((p: any, i: number) => (
+              <motion.div key={i} initial={{ opacity: 0, scale: 0.85 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }}
+                className="text-center">
+                {p.imageUrl ? <img src={p.imageUrl} className="w-16 h-16 rounded-full mx-auto object-cover ring-2 ring-current/20" alt="" /> : <div className="w-16 h-16 rounded-full mx-auto bg-current/10 flex items-center justify-center font-bold">{p.name?.charAt(0)}</div>}
+                <p className="text-sm mt-2 font-medium">{p.name}</p>
+                {p.role && <p className="text-[10px] opacity-60">{p.role}</p>}
+              </motion.div>
+            ))}
+          </div>
+        </Wrap>
+      );
+
+    case "baptism_certificate":
+      return (
+        <Wrap>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="max-w-md mx-auto p-8 border-4 border-double border-current/30 rounded">
+            <Star className="h-8 w-8 mx-auto mb-3 opacity-60" />
+            <h3 className="font-display text-2xl mb-3">{c.title || "Certificate of Baptism"}</h3>
+            <p className="text-sm whitespace-pre-wrap opacity-80 leading-relaxed">{c.body}</p>
+          </motion.div>
+        </Wrap>
+      );
+
+    case "champagne_toast":
+    case "dance_floor":
+      return (
+        <Wrap>
+          <motion.div initial={{ opacity: 0, y: 30 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+            <Sparkles className="h-10 w-10 mx-auto mb-4 opacity-70 animate-pulse" />
+            <h3 className="font-display text-3xl md:text-4xl mb-3">{c.title}</h3>
+            <p className="opacity-80">{c.body}</p>
+          </motion.div>
+        </Wrap>
+      );
+
+    case "save_the_date":
+      return (
+        <Wrap>
+          <motion.div initial={{ scale: 0.9, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }}>
+            <p className="text-xs tracking-[0.4em] opacity-60 mb-4">SAVE THE DATE</p>
+            <h3 className="font-display text-4xl md:text-6xl mb-4">{c.title}</h3>
+            {c.targetDate && <p className="text-lg opacity-80">{new Date(c.targetDate).toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}</p>}
+          </motion.div>
+        </Wrap>
+      );
+
+    case "prayer_card":
+    case "scripture_card":
+      return (
+        <Wrap>
+          <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}
+            className="max-w-md mx-auto p-6 rounded-2xl">
+            <QuoteIcon className="h-6 w-6 mx-auto mb-3 opacity-50" />
+            {c.title && <h4 className="font-display text-xl mb-3">{c.title}</h4>}
+            <p className="italic whitespace-pre-wrap leading-relaxed">{c.body}</p>
+            {c.author && <p className="text-xs opacity-60 mt-3">— {c.author}</p>}
+          </motion.div>
+        </Wrap>
+      );
+
+    case "name_reveal":
+      return (
+        <Wrap>
+          <motion.h2 initial={{ opacity: 0, letterSpacing: "1em", filter: "blur(20px)" }} whileInView={{ opacity: 1, letterSpacing: "0.05em", filter: "blur(0px)" }}
+            viewport={{ once: true }} transition={{ duration: 1.2, ease: [0.22, 1, 0.36, 1] }}
+            className="font-display text-5xl md:text-7xl">{c.text}</motion.h2>
+        </Wrap>
+      );
+
+    case "monogram":
+      return (
+        <Wrap>
+          <motion.div initial={{ scale: 0, rotate: -90 }} whileInView={{ scale: 1, rotate: 0 }} viewport={{ once: true }} transition={{ type: "spring", damping: 12 }}
+            className="mx-auto w-32 h-32 rounded-full border-2 border-current/40 flex items-center justify-center">
+            <span className="font-display text-3xl tracking-widest">{c.text}</span>
+          </motion.div>
+        </Wrap>
+      );
+
+    case "our_story":
+      return (
+        <Wrap>
+          {c.title && <h3 className="font-display text-2xl mb-6">{c.title}</h3>}
+          <div className="space-y-6 max-w-md mx-auto text-left">
+            {(c.events || []).map((ev: any, i: number) => (
+              <motion.div key={i} initial={{ opacity: 0, x: -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}
+                className="border-l-2 border-current/30 pl-4">
+                <p className="text-xs opacity-60 uppercase tracking-wider">{ev.time}</p>
+                <p className="font-semibold mt-1">{ev.title}</p>
+                {ev.description && <p className="text-sm opacity-70 mt-1">{ev.description}</p>}
+              </motion.div>
+            ))}
+          </div>
+        </Wrap>
+      );
+
+    case "hashtag_card":
+      return (
+        <Wrap>
+          <motion.h3 initial={{ scale: 0.8, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} viewport={{ once: true }}
+            className="font-display text-3xl md:text-5xl">{c.text}</motion.h3>
+          {c.body && <p className="mt-3 text-sm opacity-70">{c.body}</p>}
+        </Wrap>
+      );
+
+    case "livestream":
+    case "calendar_add":
+    case "count_us_in":
+      return (
+        <Wrap>
+          <h3 className="font-display text-2xl mb-3">{c.title}</h3>
+          {c.body && <p className="text-sm opacity-70 mb-4">{c.body}</p>}
+          <a href={c.url || "#"} target="_blank" rel="noopener" className="inline-flex items-center gap-2 px-6 py-3 rounded-full bg-current text-white font-medium">
+            {block.block_type === "livestream" ? <Play className="h-4 w-4" /> : block.block_type === "calendar_add" ? <Calendar className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+            <span style={{ color: "white" }}>{c.label || "Open"}</span>
+          </a>
+        </Wrap>
+      );
+
+    case "parking_info":
+    case "transport_info":
+    case "kids_section":
+      return (
+        <Wrap>
+          <div className="max-w-md mx-auto p-5 rounded-2xl bg-current/5 text-left">
+            <h3 className="font-display text-xl mb-2 flex items-center gap-2">
+              {block.block_type === "kids_section" ? <Users className="h-4 w-4" /> : <MapPin className="h-4 w-4" />} {c.title}
+            </h3>
+            <p className="text-sm opacity-80 whitespace-pre-wrap">{c.body}</p>
+          </div>
+        </Wrap>
+      );
+
+    case "hotel_card":
+      return (
+        <Wrap>
+          <div className="max-w-md mx-auto p-5 rounded-2xl bg-current/5">
+            <h3 className="font-display text-xl mb-2">{c.title}</h3>
+            <p className="font-semibold">{c.venueName}</p>
+            <p className="text-sm opacity-70">{c.venueAddress}</p>
+            {c.url && <a href={c.url} target="_blank" rel="noopener" className="inline-block mt-3 px-4 py-2 rounded-full border text-xs">{c.label || "Book a Room"}</a>}
+          </div>
+        </Wrap>
+      );
+
+    case "attire_inspo":
+      return (
+        <Wrap>
+          {c.title && <h3 className="font-display text-2xl mb-4">{c.title}</h3>}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {(c.images || []).map((img: any, i: number) => (
+              <motion.img key={i} src={img.url} alt="" loading="lazy" className="w-full aspect-[3/4] object-cover rounded-xl"
+                initial={{ opacity: 0, y: 15 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.05 }} />
+            ))}
+          </div>
+        </Wrap>
+      );
+
+    case "when_where":
+      return (
+        <Wrap>
+          <h3 className="font-display text-2xl mb-6">{c.title || "When & Where"}</h3>
+          <div className="grid sm:grid-cols-2 gap-4 max-w-md mx-auto">
+            <div className="p-4 rounded-2xl bg-current/5">
+              <Calendar className="h-5 w-5 mx-auto opacity-70" />
+              <p className="mt-2 text-sm">{c.targetDate ? new Date(c.targetDate).toLocaleString() : "Date TBA"}</p>
+            </div>
+            <div className="p-4 rounded-2xl bg-current/5">
+              <MapPin className="h-5 w-5 mx-auto opacity-70" />
+              <p className="mt-2 text-sm font-semibold">{c.venueName}</p>
+              <p className="text-xs opacity-70">{c.venueAddress}</p>
+            </div>
+          </div>
+        </Wrap>
+      );
+
+    case "ceremony_reception":
+      return (
+        <Wrap>
+          {c.title && <h3 className="font-display text-2xl mb-6">{c.title}</h3>}
+          <div className="grid md:grid-cols-2 gap-4 max-w-2xl mx-auto">
+            {(c.columnContent || []).map((col: string, i: number) => (
+              <motion.div key={i} initial={{ opacity: 0, x: i ? 20 : -20 }} whileInView={{ opacity: 1, x: 0 }} viewport={{ once: true }}
+                className="p-5 rounded-2xl bg-current/5">
+                <p className="text-xs uppercase tracking-widest opacity-60 mb-2">{i === 0 ? "Ceremony" : "Reception"}</p>
+                <p className="text-sm whitespace-pre-wrap">{col}</p>
+              </motion.div>
+            ))}
+          </div>
+        </Wrap>
+      );
+
     default:
       return null;
   }

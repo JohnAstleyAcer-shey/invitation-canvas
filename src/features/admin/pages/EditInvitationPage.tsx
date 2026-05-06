@@ -33,6 +33,7 @@ import {
 } from "../hooks/useInvitationData";
 import { PAGE_TYPE_LABELS, STYLE_VARIANT_LABELS, type EventType, type StyleVariant } from "../types";
 import { DragDropPageList } from "../components/DragDropPageList";
+import { EnvelopeTab } from "../components/EnvelopeTab";
 import { toast } from "sonner";
 
 // Color palette suggestions
@@ -342,10 +343,21 @@ export default function EditInvitationPage() {
           <TabsTrigger value="details">Details</TabsTrigger>
           <TabsTrigger value="content">Content</TabsTrigger>
           <TabsTrigger value="theme">Theme</TabsTrigger>
+          <TabsTrigger value="envelope">Envelope</TabsTrigger>
           <TabsTrigger value="pages">Pages</TabsTrigger>
           <TabsTrigger value="preview">Preview</TabsTrigger>
           <TabsTrigger value="access">Access</TabsTrigger>
         </TabsList>
+
+        {/* ENVELOPE TAB */}
+        <TabsContent value="envelope" className="mt-6">
+          <EnvelopeTab
+            invitationId={id!}
+            enabled={!!(invitation as any).envelope_enabled}
+            settings={((invitation as any).envelope_settings || {}) as any}
+            onChange={(patch) => updateInvitation.mutate({ id: id!, ...(patch as any) })}
+          />
+        </TabsContent>
 
         {/* DETAILS TAB */}
         <TabsContent value="details" className="space-y-6 mt-6">
@@ -706,7 +718,33 @@ export default function EditInvitationPage() {
               {/* Music */}
               <div className="glass-card p-4 space-y-3">
                 <div className="flex items-center gap-2"><Music className="h-4 w-4" /><Label className="font-display font-semibold">Background Music</Label></div>
-                <Input value={theme.music_url || ""} onChange={(e) => updateTheme.mutate({ music_url: e.target.value || null })} placeholder="Direct audio file URL (.mp3)" className="rounded-xl" />
+                <Input value={theme.music_url || ""} onChange={(e) => updateTheme.mutate({ music_url: e.target.value || null })} placeholder="Direct audio URL (.mp3) or upload below" className="rounded-xl" />
+                <div className="flex items-center gap-2 flex-wrap">
+                  <input
+                    type="file"
+                    accept="audio/*"
+                    id="music-upload"
+                    className="hidden"
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        const url = await uploadFile("audio-urls", file, `music/${id}`);
+                        await updateTheme.mutateAsync({ music_url: url });
+                        toast.success("Music uploaded");
+                      } catch (err: any) { toast.error(err.message); }
+                    }}
+                  />
+                  <Button type="button" variant="outline" size="sm" className="rounded-full" onClick={() => document.getElementById("music-upload")?.click()}>
+                    <Upload className="h-3 w-3 mr-1" /> Upload audio
+                  </Button>
+                  {theme.music_url && (
+                    <Button type="button" variant="ghost" size="sm" className="rounded-full text-destructive" onClick={() => updateTheme.mutate({ music_url: null })}>
+                      <Trash2 className="h-3 w-3 mr-1" /> Remove
+                    </Button>
+                  )}
+                </div>
+                {theme.music_url && (<audio src={theme.music_url} controls className="w-full h-9 rounded-lg" />)}
                 <div className="flex items-center gap-6">
                   <div className="flex items-center gap-2"><Switch checked={theme.music_autoplay || false} onCheckedChange={(v) => updateTheme.mutate({ music_autoplay: v })} /><span className="text-xs">Autoplay</span></div>
                   <div className="flex items-center gap-2"><Switch checked={theme.music_loop || false} onCheckedChange={(v) => updateTheme.mutate({ music_loop: v })} /><span className="text-xs">Loop</span></div>

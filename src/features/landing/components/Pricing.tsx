@@ -211,16 +211,18 @@ export function Pricing() {
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
   return (
-    <section id="pricing" className="py-20 sm:py-28 bg-secondary/30 relative overflow-hidden">
+    <section id="pricing" className="py-24 sm:py-32 bg-gradient-to-b from-background via-secondary/30 to-background relative overflow-hidden">
       {/* Background decoration */}
-      <div className="absolute inset-0 bg-grid opacity-20" />
+      <div className="absolute inset-0 bg-grid opacity-[0.06]" />
       <motion.div
-        animate={{ 
-          scale: [1, 1.2, 1],
-          opacity: [0.1, 0.2, 0.1]
-        }}
-        transition={{ duration: 10, repeat: Infinity }}
-        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl"
+        animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.18, 0.08] }}
+        transition={{ duration: 12, repeat: Infinity }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-primary/10 blur-3xl"
+      />
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 90, repeat: Infinity, ease: "linear" }}
+        className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1100px] h-[1100px] rounded-full border border-border/15"
       />
 
       <div className="section-container relative" ref={ref}>
@@ -229,36 +231,40 @@ export function Pricing() {
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12 sm:mb-16"
+          className="text-center mb-14 sm:mb-20"
         >
-          <motion.span 
-            className="inline-flex items-center gap-2 text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-4"
+          <motion.span
+            className="inline-flex items-center gap-2 text-[11px] font-semibold tracking-[0.25em] uppercase text-muted-foreground mb-5 px-4 py-1.5 rounded-full border border-border bg-card/60 backdrop-blur"
             initial={{ opacity: 0, scale: 0.9 }}
             animate={isInView ? { opacity: 1, scale: 1 } : {}}
             transition={{ delay: 0.1 }}
           >
-            <Zap className="h-3.5 w-3.5 animate-pulse" /> Limited Time Offer
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+            </span>
+            <Zap className="h-3 w-3" /> Limited Time · Up to 25% Off
           </motion.span>
-          <motion.h2 
-            className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4"
+          <motion.h2
+            className="font-display text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight mb-5"
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.2 }}
           >
-            Simple Pricing
+            Pricing for Every <span className="text-gradient italic">Celebration</span>
           </motion.h2>
-          <motion.p 
-            className="text-muted-foreground max-w-md mx-auto"
+          <motion.p
+            className="text-muted-foreground max-w-xl mx-auto text-base sm:text-lg leading-relaxed"
             initial={{ opacity: 0, y: 20 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
             transition={{ delay: 0.3 }}
           >
-            One-time pricing. Our team designs, builds, and publishes your invitation — you simply share the link with your guests.
+            One-time pricing — no subscriptions. Our team designs, builds, and publishes your invitation while you focus on your guests.
           </motion.p>
         </motion.div>
 
         {/* Pricing cards */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-5 sm:gap-6 lg:gap-7 items-stretch">
           {packages.map((pkg, i) => (
             <PricingCard key={pkg.name} pkg={pkg} index={i} />
           ))}

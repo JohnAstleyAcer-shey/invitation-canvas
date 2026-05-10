@@ -95,124 +95,111 @@ const guarantees = [
 
 function PricingCard({ pkg, index }: { pkg: typeof packages[0]; index: number }) {
   const [isHovered, setIsHovered] = useState(false);
+  const savings = pkg.originalPrice - pkg.price;
+  const savingsPct = Math.round((savings / pkg.originalPrice) * 100);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 30 }}
+      initial={{ opacity: 0, y: 40 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.08 }}
+      transition={{ duration: 0.55, delay: index * 0.08, ease: [0.22, 1, 0.36, 1] }}
       onHoverStart={() => setIsHovered(true)}
       onHoverEnd={() => setIsHovered(false)}
-      className={`glass-card p-5 sm:p-6 relative flex flex-col transition-all duration-500 overflow-hidden ${
-        pkg.popular ? "border-primary/30 ring-1 ring-primary/20 shadow-xl scale-[1.02]" : ""
+      className={`group relative flex flex-col rounded-3xl border bg-card/70 backdrop-blur-xl p-6 sm:p-7 transition-all duration-500 overflow-hidden ${
+        pkg.popular
+          ? "border-primary/40 ring-2 ring-primary/15 shadow-2xl lg:-translate-y-3 lg:scale-[1.03]"
+          : "border-border/60 hover:border-border hover:-translate-y-1 hover:shadow-xl"
       }`}
     >
-      {/* Background gradient */}
       <motion.div
-        className={`absolute inset-0 bg-gradient-to-br ${pkg.gradient}`}
+        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${pkg.gradient}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: isHovered || pkg.popular ? 1 : 0 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.4 }}
       />
+      {pkg.popular && (
+        <div className="pointer-events-none absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
+      )}
 
-      {/* Popular badge */}
       {pkg.popular && (
         <motion.div
           initial={{ opacity: 0, y: -10, scale: 0.8 }}
           animate={{ opacity: 1, y: 0, scale: 1 }}
           transition={{ type: "spring", delay: 0.3 }}
-          className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 bg-primary text-primary-foreground text-xs font-semibold px-4 py-1 rounded-full shadow-lg"
+          className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-foreground text-background text-[11px] font-semibold px-4 py-1.5 rounded-full shadow-lg z-10"
         >
           <Star className="h-3 w-3 fill-current" /> Most Popular
         </motion.div>
       )}
 
-      {/* Savings badge */}
-      <motion.div
-        initial={{ scale: 0, rotate: -10 }}
-        whileInView={{ scale: 1, rotate: 0 }}
-        viewport={{ once: true }}
-        transition={{ type: "spring", delay: 0.2 + index * 0.1 }}
-      >
-        <Badge variant="destructive" className="relative w-fit text-[10px] mb-3">
-          <Sparkles className="h-3 w-3 mr-1" />
-          Save ₱{(pkg.originalPrice - pkg.price).toLocaleString()}
+      <div className="relative flex items-start justify-between mb-4">
+        <div>
+          <h3 className="font-display text-2xl font-black tracking-tight">{pkg.name}</h3>
+          <p className="text-xs text-muted-foreground mt-1">{pkg.description}</p>
+        </div>
+        <Badge variant="secondary" className="text-[10px] font-bold bg-foreground/5 text-foreground border border-border/60">
+          −{savingsPct}%
         </Badge>
-      </motion.div>
-
-      {/* Header */}
-      <div className="relative">
-        <h3 className="font-display text-xl font-bold">{pkg.name}</h3>
-        <p className="text-xs text-muted-foreground mb-3">{pkg.description}</p>
       </div>
 
-      {/* Price */}
-      <div className="relative mb-5">
-        <span className="text-sm text-muted-foreground line-through">
-          ₱{pkg.originalPrice.toLocaleString()}
-        </span>
-        <motion.div 
-          className="font-display text-3xl sm:text-4xl font-black"
-          animate={isHovered ? { scale: 1.05 } : { scale: 1 }}
-          transition={{ type: "spring", stiffness: 300 }}
-        >
-          ₱{pkg.price.toLocaleString()}
-        </motion.div>
-        <span className="text-[10px] text-muted-foreground">one-time payment</span>
+      <div className="relative mb-6 pb-6 border-b border-border/50">
+        <div className="flex items-baseline gap-2 flex-wrap">
+          <motion.div
+            className="font-display text-4xl sm:text-5xl font-black tracking-tight"
+            animate={isHovered ? { scale: 1.04 } : { scale: 1 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            ₱{pkg.price.toLocaleString()}
+          </motion.div>
+          <span className="text-sm text-muted-foreground line-through">
+            ₱{pkg.originalPrice.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex items-center gap-1.5 mt-2 text-[11px] text-muted-foreground">
+          <Sparkles className="h-3 w-3" />
+          One-time payment · Save ₱{savings.toLocaleString()}
+        </div>
       </div>
 
-      {/* Features */}
-      <ul className="relative space-y-2.5 mb-6 flex-1">
+      <ul className="relative space-y-3 mb-7 flex-1">
         {pkg.features.map((f, i) => (
-          <motion.li 
-            key={f.text} 
-            className={`flex items-start gap-2.5 text-sm ${!f.included ? "opacity-40" : ""}`}
-            initial={{ opacity: 0, x: -10 }}
+          <motion.li
+            key={f.text}
+            className={`flex items-start gap-2.5 text-[13px] sm:text-sm ${!f.included ? "opacity-40" : ""}`}
+            initial={{ opacity: 0, x: -8 }}
             whileInView={{ opacity: f.included ? 1 : 0.4, x: 0 }}
             viewport={{ once: true }}
-            transition={{ delay: 0.3 + i * 0.05 }}
+            transition={{ delay: 0.25 + i * 0.04 }}
           >
-            <motion.div 
-              className={`w-4 h-4 rounded-full flex items-center justify-center mt-0.5 shrink-0 ${
-                f.included ? "bg-primary/10" : "bg-muted"
+            <span
+              className={`mt-0.5 w-4 h-4 rounded-full flex items-center justify-center shrink-0 ${
+                f.included ? "bg-foreground text-background" : "bg-muted text-muted-foreground"
               }`}
-              whileHover={f.included ? { scale: 1.2 } : {}}
             >
-              {f.included ? (
-                <Check className="h-2.5 w-2.5 text-foreground" />
-              ) : (
-                <X className="h-2.5 w-2.5 text-muted-foreground" />
-              )}
-            </motion.div>
-            <span>{f.text}</span>
+              {f.included ? <Check className="h-2.5 w-2.5" strokeWidth={3} /> : <X className="h-2.5 w-2.5" />}
+            </span>
+            <span className="leading-snug">{f.text}</span>
           </motion.li>
         ))}
       </ul>
 
-      {/* CTA Button - Contact instead of sign up */}
-      <motion.div
-        whileHover={{ scale: 1.02 }}
-        whileTap={{ scale: 0.98 }}
+      <Button
+        variant={pkg.popular ? "default" : "outline"}
+        className={`relative w-full rounded-full font-semibold transition-all ${
+          pkg.popular ? "shadow-lg hover:shadow-xl hover:scale-[1.02]" : "hover:bg-foreground hover:text-background"
+        }`}
+        size="lg"
+        onClick={() => (window.location.href = "mailto:support@lynxinvitation.com?subject=Interested in " + pkg.name + " Package")}
       >
-        <Button
-          variant={pkg.popular ? "default" : "outline"}
-          className={`relative w-full rounded-full transition-all overflow-hidden ${
-            pkg.popular ? "shadow-md hover:shadow-lg" : ""
-          }`}
-          size="lg"
-          onClick={() => window.location.href = "mailto:support@lynxinvitation.com?subject=Interested in " + pkg.name + " Package"}
-        >
-          <span className="relative">Inquire Now</span>
-          <ArrowRight className="ml-2 h-4 w-4 relative" />
-        </Button>
-      </motion.div>
+        Inquire Now
+        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+      </Button>
 
-      {/* Shine effect */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full"
+        className="pointer-events-none absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full"
         animate={isHovered ? { translateX: "100%" } : {}}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.8 }}
       />
     </motion.div>
   );

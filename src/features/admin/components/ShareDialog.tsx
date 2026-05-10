@@ -30,12 +30,12 @@ export function ShareDialog({ slug, title, open, onOpenChange }: ShareDialogProp
     { label: "SMS", icon: Phone, gradient: "from-sky-500 to-cyan-600", href: `sms:?body=${encodedTitle}%20${encodedUrl}` },
     { label: "Email", icon: Mail, gradient: "from-violet-500 to-purple-600", href: `mailto:?subject=${encodedTitle}&body=${encodedTitle}%20${encodedUrl}` },
     { label: "Facebook", icon: Facebook, gradient: "from-blue-600 to-blue-800", href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
-    { label: "Twitter / X", icon: Twitter, gradient: "from-slate-700 to-slate-900", href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` },
+    { label: "X / Twitter", icon: Twitter, gradient: "from-slate-700 to-slate-900", href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0 border-border/60">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:w-full max-w-md sm:max-w-md p-0 overflow-hidden gap-0 border-border/60 max-h-[90vh] overflow-y-auto">
         {/* Decorative header */}
         <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-primary/5 via-transparent to-accent/10 border-b border-border/50">
           <div className="absolute inset-0 bg-grid opacity-[0.04]" />
@@ -85,7 +85,7 @@ export function ShareDialog({ slug, title, open, onOpenChange }: ShareDialogProp
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
               Send via
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {channels.map((ch, i) => (
                 <motion.a
                   key={ch.label}
@@ -97,7 +97,7 @@ export function ShareDialog({ slug, title, open, onOpenChange }: ShareDialogProp
                   href={ch.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`group relative overflow-hidden flex items-center gap-2 px-3 py-3 rounded-xl text-white text-sm font-medium shadow-sm hover:shadow-md transition-all bg-gradient-to-br ${ch.gradient}`}
+                  className={`group relative overflow-hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl text-white text-xs sm:text-sm font-medium shadow-sm hover:shadow-md transition-all bg-gradient-to-br ${ch.gradient} min-w-0`}
                 >
                   <ch.icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{ch.label}</span>

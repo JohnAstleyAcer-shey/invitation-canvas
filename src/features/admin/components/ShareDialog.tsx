@@ -30,12 +30,12 @@ export function ShareDialog({ slug, title, open, onOpenChange }: ShareDialogProp
     { label: "SMS", icon: Phone, gradient: "from-sky-500 to-cyan-600", href: `sms:?body=${encodedTitle}%20${encodedUrl}` },
     { label: "Email", icon: Mail, gradient: "from-violet-500 to-purple-600", href: `mailto:?subject=${encodedTitle}&body=${encodedTitle}%20${encodedUrl}` },
     { label: "Facebook", icon: Facebook, gradient: "from-blue-600 to-blue-800", href: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}` },
-    { label: "Twitter / X", icon: Twitter, gradient: "from-slate-700 to-slate-900", href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` },
+    { label: "X / Twitter", icon: Twitter, gradient: "from-slate-700 to-slate-900", href: `https://twitter.com/intent/tweet?text=${encodedTitle}&url=${encodedUrl}` },
   ];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden gap-0 border-border/60">
+      <DialogContent className="w-[calc(100vw-2rem)] sm:w-full max-w-md sm:max-w-md p-0 overflow-hidden gap-0 border-border/60 max-h-[90vh] overflow-y-auto">
         {/* Decorative header */}
         <div className="relative px-6 pt-6 pb-5 bg-gradient-to-br from-primary/5 via-transparent to-accent/10 border-b border-border/50">
           <div className="absolute inset-0 bg-grid opacity-[0.04]" />

@@ -4,6 +4,8 @@ import { Hero } from "../components/Hero";
 import { HowItWorks } from "../components/HowItWorks";
 import { Features } from "../components/Features";
 import { Showcase } from "../components/Showcase";
+import { Carousel3D } from "../components/Carousel3D";
+import { MarqueeTicker } from "../components/MarqueeTicker";
 import { Pricing } from "../components/Pricing";
 import { Testimonials } from "../components/Testimonials";
 import { Footer } from "../components/Footer";
@@ -14,7 +16,9 @@ export default function LandingPage() {
     <div className="min-h-screen bg-background w-full overflow-x-hidden">
       <Navbar />
       <Hero />
+      <MarqueeTicker />
       <HowItWorks />
+      <Carousel3D />
       <Features />
       <Showcase />
       <Pricing />

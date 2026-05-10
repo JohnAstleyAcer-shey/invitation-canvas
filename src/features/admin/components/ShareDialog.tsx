@@ -85,7 +85,7 @@ export function ShareDialog({ slug, title, open, onOpenChange }: ShareDialogProp
             <label className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground mb-2 block">
               Send via
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 gap-2">
               {channels.map((ch, i) => (
                 <motion.a
                   key={ch.label}
@@ -97,7 +97,7 @@ export function ShareDialog({ slug, title, open, onOpenChange }: ShareDialogProp
                   href={ch.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`group relative overflow-hidden flex items-center gap-2 px-3 py-3 rounded-xl text-white text-sm font-medium shadow-sm hover:shadow-md transition-all bg-gradient-to-br ${ch.gradient}`}
+                  className={`group relative overflow-hidden flex items-center justify-center gap-2 px-2 py-2.5 rounded-xl text-white text-xs sm:text-sm font-medium shadow-sm hover:shadow-md transition-all bg-gradient-to-br ${ch.gradient} min-w-0`}
                 >
                   <ch.icon className="w-4 h-4 shrink-0" />
                   <span className="truncate">{ch.label}</span>

@@ -27,7 +27,7 @@ const features = [
   { icon: CalendarDays, title: "Multi-Event Support", description: "Debut, Wedding, Birthday, Christening, and Corporate — each with tailored sections", category: "management", isNew: false, color: "from-red-500/20 to-pink-500/20" },
   { icon: Music, title: "Background Music", description: "Add ambient music with autoplay, loop, and volume controls for immersive experiences", category: "engagement", isNew: false, color: "from-indigo-500/20 to-purple-500/20" },
   { icon: Shield, title: "Password Protection", description: "Secure your invitations with password gates for private events", category: "security", isNew: false, color: "from-slate-500/20 to-gray-500/20" },
-  { icon: Smartphone, title: "Mobile-First Design", description: "Pixel-perfect responsive layouts that look stunning on every screen size", category: "design", isNew: false, color: "from-teal-500/20 to-cyan-500/20" },
+  
   { icon: BarChart3, title: "Real-Time Analytics", description: "Track views, RSVPs, device types, and conversion rates with live dashboards", category: "management", isNew: true, color: "from-blue-500/20 to-indigo-500/20" },
   { icon: Globe, title: "Shareable Links", description: "Custom slugs, social sharing, QR codes, and clipboard copy — easy distribution", category: "engagement", isNew: false, color: "from-green-500/20 to-teal-500/20" },
   { icon: Zap, title: "Block Editor", description: "Drag-and-drop block-based editor with 30+ block types and live preview", category: "design", isNew: true, color: "from-yellow-500/20 to-amber-500/20" },

@@ -1,10 +1,7 @@
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import { ArrowRight, Heart, Mail, MapPin, Phone } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import logoDark from "@/assets/logo-dark.png";
-import logoLight from "@/assets/logo-light.png";
+import { Heart, Mail, MapPin, Sparkles, Users, Calendar, Star } from "lucide-react";
+import lynxSeal from "@/assets/lynx-seal.png.asset.json";
 
 const footerLinks = [
   {
@@ -36,48 +33,76 @@ const footerLinks = [
 const socialLinks = [
   { label: "Facebook", href: "#", emoji: "📘" },
   { label: "Instagram", href: "#", emoji: "📸" },
-  { label: "Twitter", href: "#", emoji: "🐦" },
   { label: "TikTok", href: "#", emoji: "🎵" },
+  { label: "Email", href: "mailto:support@lynxinvitation.com", emoji: "✉️" },
+];
+
+const stats = [
+  { icon: Sparkles, value: "327", label: "Invitations crafted" },
+  { icon: Users, value: "18.4k", label: "Guests welcomed" },
+  { icon: Calendar, value: "112", label: "Events this year" },
+  { icon: Star, value: "4.9 / 5", label: "Avg. client rating" },
 ];
 
 export function Footer() {
   return (
-    <footer className="border-t border-border bg-secondary/20">
-      {/* Newsletter */}
-      <div className="section-container py-10 sm:py-12">
+    <footer className="w-full border-t border-border bg-gradient-to-b from-secondary/20 via-background to-secondary/30 relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute inset-0 bg-grid opacity-[0.04] pointer-events-none" />
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 180, repeat: Infinity, ease: "linear" }}
+        className="absolute -bottom-1/2 left-1/2 -translate-x-1/2 w-[1200px] h-[1200px] rounded-full border border-border/10 pointer-events-none"
+      />
+
+      <div className="w-full px-4 sm:px-8 lg:px-16 xl:px-24 py-14 sm:py-20 relative">
+        {/* Stats strip */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6 p-6 rounded-2xl bg-primary/5 border border-border"
+          className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-14"
         >
-          <div className="flex-1 text-center sm:text-left">
-            <h3 className="font-display font-bold text-lg mb-1">Stay Updated</h3>
-            <p className="text-sm text-muted-foreground">Get tips, updates, and exclusive offers delivered to your inbox.</p>
-          </div>
-          <div className="flex gap-2 w-full sm:w-auto">
-            <Input placeholder="your@email.com" className="rounded-full max-w-xs" />
-            <Button className="rounded-full shrink-0">
-              Subscribe <ArrowRight className="ml-1 h-3.5 w-3.5" />
-            </Button>
-          </div>
+          {stats.map((s, i) => (
+            <motion.div
+              key={s.label}
+              initial={{ opacity: 0, y: 12 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: i * 0.06 }}
+              className="flex items-center gap-3 p-4 sm:p-5 rounded-2xl bg-card/60 backdrop-blur border border-border/60 hover:border-border transition-colors"
+            >
+              <div className="w-10 h-10 rounded-xl bg-foreground/5 flex items-center justify-center shrink-0">
+                <s.icon className="h-4 w-4" />
+              </div>
+              <div>
+                <div className="font-display text-lg sm:text-xl font-black tracking-tight">{s.value}</div>
+                <div className="text-[11px] text-muted-foreground">{s.label}</div>
+              </div>
+            </motion.div>
+          ))}
         </motion.div>
-      </div>
 
-      <div className="section-container pb-12 sm:pb-16">
-        <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-8 sm:gap-12 mb-10">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-12 mb-12">
           {/* Brand */}
-          <div className="lg:col-span-2">
-            <div className="flex items-center gap-2 mb-4">
-              <img src={logoDark} alt="LynxInvitation" className="hidden dark:block h-7 w-7" />
-              <img src={logoLight} alt="LynxInvitation" className="block dark:hidden h-7 w-7" />
-              <span className="font-display text-lg font-bold">LynxInvitation</span>
+          <div className="lg:col-span-5">
+            <div className="flex items-center gap-3 mb-5">
+              <motion.img
+                src={lynxSeal.url}
+                alt="LynxInvitation"
+                className="h-12 w-12 sm:h-14 sm:w-14 drop-shadow-xl"
+                whileHover={{ rotate: 8, scale: 1.05 }}
+                transition={{ type: "spring", stiffness: 260 }}
+              />
+              <div>
+                <div className="font-display text-xl font-black tracking-tight">LynxInvitation</div>
+                <div className="text-[10px] uppercase tracking-[0.25em] text-muted-foreground">Crafted Digital Invitations</div>
+              </div>
             </div>
-            <p className="text-sm text-muted-foreground max-w-xs leading-relaxed mb-6">
-              Create stunning digital invitations for every life celebration. Beautiful, interactive, and unforgettable.
+            <p className="text-sm text-muted-foreground max-w-md leading-relaxed mb-6">
+              A fully managed studio for digital invitations. We design, build, and publish elegant story-style experiences for every life celebration.
             </p>
-            
-            {/* Contact info */}
+
             <div className="space-y-2 text-sm text-muted-foreground">
               <div className="flex items-center gap-2">
                 <Mail className="h-3.5 w-3.5" />
@@ -88,14 +113,13 @@ export function Footer() {
                 <span>Manila, Philippines</span>
               </div>
             </div>
-            
-            {/* Social links */}
-            <div className="flex gap-2 mt-4">
+
+            <div className="flex gap-2 mt-5">
               {socialLinks.map((s) => (
                 <a
                   key={s.label}
                   href={s.href}
-                  className="w-9 h-9 rounded-xl bg-accent/50 flex items-center justify-center text-sm hover:bg-accent transition-colors hover:scale-110"
+                  className="w-9 h-9 rounded-xl bg-accent/50 flex items-center justify-center text-sm hover:bg-accent transition-all hover:scale-110"
                   aria-label={s.label}
                 >
                   {s.emoji}
@@ -105,26 +129,28 @@ export function Footer() {
           </div>
 
           {/* Links */}
-          {footerLinks.map((group) => (
-            <div key={group.title}>
-              <h4 className="font-display font-semibold text-sm mb-4">{group.title}</h4>
-              <ul className="space-y-2.5">
-                {group.links.map((link) => (
-                  <li key={link.label}>
-                    {link.href.startsWith("/") ? (
-                      <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        {link.label}
-                      </Link>
-                    ) : (
-                      <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
-                        {link.label}
-                      </a>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <div className="lg:col-span-7 grid grid-cols-2 sm:grid-cols-3 gap-8">
+            {footerLinks.map((group) => (
+              <div key={group.title}>
+                <h4 className="font-display font-semibold text-sm mb-4">{group.title}</h4>
+                <ul className="space-y-2.5">
+                  {group.links.map((link) => (
+                    <li key={link.label}>
+                      {link.href.startsWith("/") ? (
+                        <Link to={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                          {link.label}
+                        </Link>
+                      ) : (
+                        <a href={link.href} className="text-sm text-muted-foreground hover:text-foreground transition-colors">
+                          {link.label}
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* Bottom bar */}

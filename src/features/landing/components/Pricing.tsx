@@ -373,7 +373,7 @@ export function Pricing() {
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <div className="overflow-hidden">
+          <div className="overflow-x-hidden overflow-y-visible pt-6 pb-2 -mx-2">
             <motion.div
               className="flex"
               animate={{ x: `${-activeIdx * 100}%` }}

@@ -171,9 +171,6 @@ function PricingCard({ pkg, onSelect, isActive }: { pkg: Pkg; onSelect: (p: Pkg)
         )}
       </div>
       {pkg.popular && (
-        <div className="pointer-events-none absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
-      )}
-      {pkg.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-foreground text-background text-[11px] font-semibold px-4 py-1.5 rounded-full shadow-lg z-10">
           <Star className="h-3 w-3 fill-current" /> Most Popular
         </div>

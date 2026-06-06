@@ -97,7 +97,7 @@ export function Carousel3D() {
               return (
                 <motion.button
                   key={card.id}
-                  onClick={() => setActive(i)}
+                  onClick={() => (i === active ? openActive() : setActive(i))}
                   animate={{ x, z, rotateY: rotY, opacity, scale }}
                   transition={{ type: "spring", stiffness: 90, damping: 18 }}
                   className="absolute inset-0 rounded-[2rem] overflow-hidden text-left cursor-pointer"
@@ -147,7 +147,7 @@ export function Carousel3D() {
                 </motion.button>
               );
             })}
-          </motion.div>
+          </div>
 
           {/* Controls */}
           <button
@@ -190,8 +190,20 @@ export function Carousel3D() {
               />
             ))}
           </div>
+          <button
+            onClick={openActive}
+            className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition shadow-lg"
+          >
+            <Eye className="h-4 w-4" /> View {CARDS[active].title} Details
+          </button>
         </div>
       </div>
+
+      <ShowcaseDetailModal
+        project={openProject}
+        isOpen={!!openProject}
+        onClose={() => setOpenProject(null)}
+      />
     </section>
   );
 }

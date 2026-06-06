@@ -27,6 +27,9 @@ import CustomerDashboardPage from "./features/customer-portal/pages/CustomerDash
 import CustomerGuestsPage from "./features/customer-portal/pages/CustomerGuestsPage";
 import CustomerMessagesPage from "./features/customer-portal/pages/CustomerMessagesPage";
 import NotFound from "./pages/NotFound";
+import PrivacyPolicyPage from "./pages/legal/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/legal/TermsOfServicePage";
+import CookiePolicyPage from "./pages/legal/CookiePolicyPage";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -68,6 +71,9 @@ const App = () => (
               <Route path="guests" element={<CustomerGuestsPage />} />
               <Route path="messages" element={<CustomerMessagesPage />} />
             </Route>
+            <Route path="/privacy" element={<PrivacyPolicyPage />} />
+            <Route path="/terms" element={<TermsOfServicePage />} />
+            <Route path="/cookies" element={<CookiePolicyPage />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>

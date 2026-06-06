@@ -1,6 +1,8 @@
-import { useEffect, useState, useRef } from "react";
-import { motion, useMotionValue, useSpring, AnimatePresence } from "framer-motion";
-import { ChevronLeft, ChevronRight, Sparkles, Heart, Crown, Cake, Baby, Building2, Gem } from "lucide-react";
+import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { ChevronLeft, ChevronRight, Sparkles, Heart, Crown, Cake, Baby, Building2, Gem, Eye } from "lucide-react";
+import { ShowcaseDetailModal, type ShowcaseProject } from "./ShowcaseDetailModal";
+import { SHOWCASE_PROJECTS } from "../data/showcaseProjects";
 
 const CARDS = [
   { id: "debut",       title: "Debut",       subtitle: "Sweet Eighteen",   tag: "18 Roses · Candles",   icon: Crown,     gradient: "from-rose-500 via-pink-500 to-fuchsia-600",  emoji: "🌹" },
@@ -15,34 +17,22 @@ const CARDS = [
 export function Carousel3D() {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
+  const [openProject, setOpenProject] = useState<ShowcaseProject | null>(null);
   const total = CARDS.length;
 
   // Auto-rotate
   useEffect(() => {
-    if (paused) return;
+    if (paused || openProject) return;
     const t = setInterval(() => setActive((i) => (i + 1) % total), 3500);
     return () => clearInterval(t);
-  }, [paused, total]);
-
-  // Mouse-driven parallax
-  const ref = useRef<HTMLDivElement>(null);
-  const rotateX = useMotionValue(0);
-  const rotateY = useMotionValue(0);
-  const sx = useSpring(rotateX, { stiffness: 60, damping: 14 });
-  const sy = useSpring(rotateY, { stiffness: 60, damping: 14 });
-
-  const onMove = (e: React.MouseEvent) => {
-    const r = ref.current?.getBoundingClientRect();
-    if (!r) return;
-    const x = (e.clientX - r.left) / r.width - 0.5;
-    const y = (e.clientY - r.top) / r.height - 0.5;
-    rotateY.set(x * 18);
-    rotateX.set(-y * 12);
-  };
-  const onLeave = () => { rotateX.set(0); rotateY.set(0); };
+  }, [paused, total, openProject]);
 
   const next = () => setActive((i) => (i + 1) % total);
   const prev = () => setActive((i) => (i - 1 + total) % total);
+  const openActive = () => {
+    const project = SHOWCASE_PROJECTS[CARDS[active].id];
+    if (project) setOpenProject(project);
+  };
 
   return (
     <section id="showcase" className="relative py-24 sm:py-32 overflow-hidden">
@@ -81,18 +71,16 @@ export function Carousel3D() {
 
         {/* 3D Stage */}
         <div
-          ref={ref}
-          onMouseMove={onMove}
-          onMouseLeave={onLeave}
           onMouseEnter={() => setPaused(true)}
+          onMouseLeave={() => setPaused(false)}
           onTouchStart={() => setPaused(true)}
           onTouchEnd={() => setPaused(false)}
           className="relative h-[480px] sm:h-[560px] flex items-center justify-center"
           style={{ perspective: "1600px" }}
         >
-          <motion.div
+          <div
             className="relative w-[280px] sm:w-[320px] h-[420px] sm:h-[480px]"
-            style={{ transformStyle: "preserve-3d", rotateX: sx, rotateY: sy }}
+            style={{ transformStyle: "preserve-3d" }}
           >
             {CARDS.map((card, i) => {
               // Position around a horizontal arc
@@ -109,7 +97,7 @@ export function Carousel3D() {
               return (
                 <motion.button
                   key={card.id}
-                  onClick={() => setActive(i)}
+                  onClick={() => (i === active ? openActive() : setActive(i))}
                   animate={{ x, z, rotateY: rotY, opacity, scale }}
                   transition={{ type: "spring", stiffness: 90, damping: 18 }}
                   className="absolute inset-0 rounded-[2rem] overflow-hidden text-left cursor-pointer"
@@ -159,7 +147,7 @@ export function Carousel3D() {
                 </motion.button>
               );
             })}
-          </motion.div>
+          </div>
 
           {/* Controls */}
           <button
@@ -202,8 +190,20 @@ export function Carousel3D() {
               />
             ))}
           </div>
+          <button
+            onClick={openActive}
+            className="mt-2 inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-foreground text-background text-sm font-semibold hover:opacity-90 transition shadow-lg"
+          >
+            <Eye className="h-4 w-4" /> View {CARDS[active].title} Details
+          </button>
         </div>
       </div>
+
+      <ShowcaseDetailModal
+        project={openProject}
+        isOpen={!!openProject}
+        onClose={() => setOpenProject(null)}
+      />
     </section>
   );
 }

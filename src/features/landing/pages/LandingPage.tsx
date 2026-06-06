@@ -3,7 +3,7 @@ import { Navbar } from "../components/Navbar";
 import { Hero } from "../components/Hero";
 import { HowItWorks } from "../components/HowItWorks";
 import { Features } from "../components/Features";
-import { Showcase } from "../components/Showcase";
+
 import { Carousel3D } from "../components/Carousel3D";
 import { MarqueeTicker } from "../components/MarqueeTicker";
 import { Pricing } from "../components/Pricing";
@@ -20,7 +20,6 @@ export default function LandingPage() {
       <HowItWorks />
       <Carousel3D />
       <Features />
-      <Showcase />
       <Pricing />
       <Testimonials />
 

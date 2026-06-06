@@ -154,20 +154,22 @@ function PricingCard({ pkg, onSelect, isActive }: { pkg: Pkg; onSelect: (p: Pkg)
       onHoverEnd={() => setIsHovered(false)}
       animate={{ scale: isActive ? 1 : 0.92, opacity: isActive ? 1 : 0.55 }}
       transition={{ type: "spring", stiffness: 200, damping: 25 }}
-      className={`relative flex flex-col rounded-3xl border bg-card/70 backdrop-blur-xl p-6 sm:p-7 overflow-hidden h-full ${
+      className={`relative flex flex-col rounded-3xl border bg-card/70 backdrop-blur-xl p-6 sm:p-7 pt-9 h-full ${
         pkg.popular
           ? "border-primary/40 ring-2 ring-primary/15 shadow-2xl"
           : "border-border/60 hover:border-border hover:shadow-xl"
       }`}
     >
-      <motion.div
-        className={`pointer-events-none absolute inset-0 bg-gradient-to-br ${pkg.gradient}`}
-        animate={{ opacity: isHovered || pkg.popular ? 1 : 0 }}
-        transition={{ duration: 0.4 }}
-      />
-      {pkg.popular && (
-        <div className="pointer-events-none absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
-      )}
+      <div className={`pointer-events-none absolute inset-0 rounded-3xl overflow-hidden`}>
+        <motion.div
+          className={`absolute inset-0 bg-gradient-to-br ${pkg.gradient}`}
+          animate={{ opacity: isHovered || pkg.popular ? 1 : 0 }}
+          transition={{ duration: 0.4 }}
+        />
+        {pkg.popular && (
+          <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
+        )}
+      </div>
       {pkg.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-foreground text-background text-[11px] font-semibold px-4 py-1.5 rounded-full shadow-lg z-10">
           <Star className="h-3 w-3 fill-current" /> Most Popular
@@ -371,7 +373,7 @@ export function Pricing() {
           onMouseEnter={() => setIsPaused(true)}
           onMouseLeave={() => setIsPaused(false)}
         >
-          <div className="overflow-hidden">
+          <div className="overflow-x-hidden overflow-y-visible pt-6 pb-2 -mx-2">
             <motion.div
               className="flex"
               animate={{ x: `${-activeIdx * 100}%` }}

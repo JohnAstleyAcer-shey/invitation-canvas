@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from "react";
-import { motion, AnimatePresence, useInView } from "framer-motion";
-import { Check, Star, Zap, HelpCircle, X, Sparkles, ArrowRight, Shield, Clock, ChevronLeft, ChevronRight } from "lucide-react";
+import { useState, useRef } from "react";
+import { motion, AnimatePresence, useInView, LayoutGroup } from "framer-motion";
+import { Check, Star, Zap, HelpCircle, X, Sparkles, ArrowRight, Shield, Clock, Crown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -12,7 +12,8 @@ type Pkg = {
   popular: boolean;
   description: string;
   tagline: string;
-  gradient: string;
+  accent: string;
+  icon: typeof Sparkles;
   features: string[];
   videoFeatures?: string[];
 };
@@ -20,13 +21,14 @@ type Pkg = {
 const packages: Pkg[] = [
   {
     name: "Serenity",
-    type: "Wedding Website Package",
+    type: "Wedding Mini + Video",
     price: "₱1,499",
     originalPrice: "₱2,500",
     popular: false,
     description: "Mini Website + Animated Video Invitation",
-    tagline: "A sleek mini-website paired with a personalized animated video. Delivered in a premium online envelope—ready to share instantly.",
-    gradient: "from-slate-500/15 to-gray-500/10",
+    tagline: "A sleek mini-website paired with a personalized animated video. Delivered in a premium online envelope.",
+    accent: "from-slate-400 to-slate-600",
+    icon: Sparkles,
     features: [
       "Mini website",
       "RSVP tracking",
@@ -42,13 +44,14 @@ const packages: Pkg[] = [
   },
   {
     name: "Infinity",
-    type: "Wedding Website Package",
+    type: "Full Wedding Website",
     price: "₱1,899",
     originalPrice: "₱1,999",
     popular: true,
     description: "Full Wedding Website",
-    tagline: "Perfect for couples who want everything in one place—your love story, timeline, entourage, venue details, gallery, and more.",
-    gradient: "from-primary/15 to-primary/5",
+    tagline: "Perfect for couples who want everything in one place—story, timeline, entourage, venue, gallery, and more.",
+    accent: "from-foreground to-foreground",
+    icon: Crown,
     features: [
       "Customized full website",
       "RSVP tracking via Google Forms + Sheets",
@@ -72,13 +75,14 @@ const packages: Pkg[] = [
   },
   {
     name: "Legality",
-    type: "Debut Website Package",
+    type: "Full Debut Website",
     price: "₱1,799",
     originalPrice: "₱2,300",
     popular: false,
     description: "Full Debut Website",
-    tagline: "A complete digital debut experience. Showcase your 18 Roses, 18 Candles, 18 Treasures, and more—all in a stunning layout.",
-    gradient: "from-blue-500/15 to-cyan-500/10",
+    tagline: "A complete digital debut experience. Showcase your 18 Roses, 18 Candles, 18 Treasures, and more.",
+    accent: "from-blue-400 to-cyan-600",
+    icon: Star,
     features: [
       "Customized full debut website",
       "RSVP tracking",
@@ -103,13 +107,14 @@ const packages: Pkg[] = [
   },
   {
     name: "Felicity",
-    type: "Birthday Website Package",
+    type: "Full Birthday Website",
     price: "₱1,799",
     originalPrice: "₱2,300",
     popular: false,
     description: "Full Birthday Website",
-    tagline: "Perfect for all ages—1st, 18th, 21st, 30th, or 60th! Highlight memories, messages, galleries, timelines, and more.",
-    gradient: "from-purple-500/15 to-pink-500/10",
+    tagline: "Perfect for all ages—1st, 18th, 21st, 30th, or 60th! Highlight memories, messages, galleries, and more.",
+    accent: "from-purple-400 to-pink-600",
+    icon: Zap,
     features: [
       "Customized full birthday website",
       "RSVP tracking",
@@ -146,88 +151,6 @@ const guarantees = [
   { icon: Clock, text: "Free updates after launch" },
 ];
 
-function PricingCard({ pkg, onSelect, isActive }: { pkg: Pkg; onSelect: (p: Pkg) => void; isActive: boolean }) {
-  const [isHovered, setIsHovered] = useState(false);
-  return (
-    <motion.div
-      onHoverStart={() => setIsHovered(true)}
-      onHoverEnd={() => setIsHovered(false)}
-      animate={{ scale: isActive ? 1 : 0.92, opacity: isActive ? 1 : 0.55 }}
-      transition={{ type: "spring", stiffness: 200, damping: 25 }}
-      className={`relative flex flex-col rounded-3xl border bg-card/70 backdrop-blur-xl p-6 sm:p-7 pt-9 h-full ${
-        pkg.popular
-          ? "border-primary/40 ring-2 ring-primary/15 shadow-2xl"
-          : "border-border/60 hover:border-border hover:shadow-xl"
-      }`}
-    >
-      <div className={`pointer-events-none absolute inset-0 rounded-3xl overflow-hidden`}>
-        <motion.div
-          className={`absolute inset-0 bg-gradient-to-br ${pkg.gradient}`}
-          animate={{ opacity: isHovered || pkg.popular ? 1 : 0 }}
-          transition={{ duration: 0.4 }}
-        />
-        {pkg.popular && (
-          <div className="absolute -top-24 -right-24 w-56 h-56 rounded-full bg-primary/20 blur-3xl" />
-        )}
-      </div>
-      {pkg.popular && (
-        <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5 bg-foreground text-background text-[11px] font-semibold px-4 py-1.5 rounded-full shadow-lg z-10">
-          <Star className="h-3 w-3 fill-current" /> Most Popular
-        </div>
-      )}
-      <div className="absolute top-4 right-4 z-10">
-        <Badge variant="secondary" className="text-[10px] font-bold bg-foreground/5 text-foreground border border-border/60">
-          <Sparkles className="h-2.5 w-2.5 mr-1" /> On Sale
-        </Badge>
-      </div>
-
-      <div className="relative mt-4 mb-4">
-        <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-muted-foreground mb-1">{pkg.type}</p>
-        <h3 className="font-display text-2xl sm:text-3xl font-black tracking-tight">{pkg.name}</h3>
-        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">{pkg.tagline}</p>
-      </div>
-
-      <div className="relative mb-5 pb-5 border-b border-border/50">
-        <div className="flex items-baseline gap-2 flex-wrap">
-          <span className="text-sm text-muted-foreground line-through">{pkg.originalPrice}</span>
-          <motion.div
-            className="font-display text-4xl sm:text-5xl font-black tracking-tight"
-            animate={isHovered ? { scale: 1.04 } : { scale: 1 }}
-            transition={{ type: "spring", stiffness: 300 }}
-          >
-            {pkg.price}
-          </motion.div>
-        </div>
-        <p className="text-[11px] text-muted-foreground mt-1">one-time payment</p>
-      </div>
-
-      <ul className="relative space-y-2.5 mb-6 flex-1">
-        {pkg.features.slice(0, 6).map((f) => (
-          <li key={f} className="flex items-start gap-2.5 text-[13px]">
-            <span className="mt-0.5 w-4 h-4 rounded-full bg-foreground text-background flex items-center justify-center shrink-0">
-              <Check className="h-2.5 w-2.5" strokeWidth={3} />
-            </span>
-            <span className="leading-snug">{f}</span>
-          </li>
-        ))}
-        {pkg.features.length > 6 && (
-          <li className="text-[11px] text-muted-foreground pl-6.5 italic">+ {pkg.features.length - 6} more features</li>
-        )}
-      </ul>
-
-      <Button
-        variant={pkg.popular ? "default" : "outline"}
-        className={`relative w-full rounded-full font-semibold ${pkg.popular ? "shadow-lg" : "hover:bg-foreground hover:text-background"}`}
-        size="lg"
-        onClick={() => onSelect(pkg)}
-      >
-        {pkg.popular ? "See Everything Included" : "See Full Inclusions"}
-        <ArrowRight className="ml-2 h-4 w-4" />
-      </Button>
-    </motion.div>
-  );
-}
-
 function PlanDetails({ plan, onClose }: { plan: Pkg | null; onClose: () => void }) {
   return (
     <AnimatePresence>
@@ -250,14 +173,12 @@ function PlanDetails({ plan, onClose }: { plan: Pkg | null; onClose: () => void 
               <button onClick={onClose} className="absolute top-4 right-4 w-9 h-9 rounded-full hover:bg-accent flex items-center justify-center">
                 <X className="h-4 w-4" />
               </button>
-
               <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-muted-foreground mb-2">{plan.type}</p>
               <div className="flex items-center gap-3 mb-2 flex-wrap">
                 <h2 className="font-display text-3xl sm:text-4xl font-black tracking-tight">{plan.name}</h2>
                 {plan.popular && <Badge className="bg-foreground text-background"><Star className="h-3 w-3 mr-1 fill-current" /> Most Popular</Badge>}
               </div>
               <p className="text-muted-foreground mb-6">{plan.description}</p>
-
               <div className="flex items-center justify-between gap-4 p-5 rounded-xl bg-gradient-to-br from-foreground/[0.03] to-foreground/[0.06] border border-border mb-6">
                 <div>
                   <div className="flex items-baseline gap-2 flex-wrap">
@@ -270,9 +191,7 @@ function PlanDetails({ plan, onClose }: { plan: Pkg | null; onClose: () => void 
                   <Zap className="h-4 w-4" /> Limited Time
                 </div>
               </div>
-
               <p className="text-sm text-muted-foreground mb-6 leading-relaxed">{plan.tagline}</p>
-
               <h3 className="font-display font-bold text-lg mb-3">What's Included</h3>
               <div className="grid sm:grid-cols-2 gap-2 mb-6">
                 {plan.features.map((f) => (
@@ -282,7 +201,6 @@ function PlanDetails({ plan, onClose }: { plan: Pkg | null; onClose: () => void 
                   </div>
                 ))}
               </div>
-
               {plan.videoFeatures && plan.videoFeatures.length > 0 && (
                 <>
                   <h3 className="font-display font-bold text-lg mb-3">Animated Video Invitation Includes</h3>
@@ -296,7 +214,6 @@ function PlanDetails({ plan, onClose }: { plan: Pkg | null; onClose: () => void 
                   </div>
                 </>
               )}
-
               <div className="flex gap-2 pt-4 border-t border-border">
                 <Button
                   className="flex-1 rounded-full"
@@ -318,27 +235,17 @@ function PlanDetails({ plan, onClose }: { plan: Pkg | null; onClose: () => void 
 export function Pricing() {
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Pkg | null>(null);
-  const [activeIdx, setActiveIdx] = useState(() => packages.findIndex(p => p.popular) || 0);
-  const [isPaused, setIsPaused] = useState(false);
+  const [activeIdx, setActiveIdx] = useState(() => Math.max(0, packages.findIndex(p => p.popular)));
   const ref = useRef(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
-
-  // Auto-rotate
-  useEffect(() => {
-    if (isPaused || selectedPlan) return;
-    const t = setInterval(() => setActiveIdx((i) => (i + 1) % packages.length), 5000);
-    return () => clearInterval(t);
-  }, [isPaused, selectedPlan]);
-
-  const next = () => setActiveIdx((i) => (i + 1) % packages.length);
-  const prev = () => setActiveIdx((i) => (i - 1 + packages.length) % packages.length);
+  const active = packages[activeIdx];
 
   return (
     <section id="pricing" className="py-24 sm:py-32 bg-gradient-to-b from-background via-secondary/30 to-background relative overflow-hidden">
       <div className="absolute inset-0 bg-grid opacity-[0.06]" />
       <motion.div
-        animate={{ scale: [1, 1.2, 1], opacity: [0.08, 0.18, 0.08] }}
-        transition={{ duration: 12, repeat: Infinity }}
+        animate={{ scale: [1, 1.15, 1], opacity: [0.08, 0.15, 0.08] }}
+        transition={{ duration: 14, repeat: Infinity }}
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-primary/10 blur-3xl"
       />
 
@@ -361,120 +268,205 @@ export function Pricing() {
             Choose Your Perfect <span className="text-gradient italic">Package</span>
           </h2>
           <p className="text-muted-foreground max-w-xl mx-auto text-base sm:text-lg leading-relaxed">
-            Beautifully designed digital invitations at unbeatable prices. Our team handles everything—design, setup, and publishing.
+            Tap any package to explore the full inclusions and see it come to life.
           </p>
         </motion.div>
 
-        {/* Mobile/Tablet: Carousel */}
-        <div
-          className="lg:hidden relative"
-          onTouchStart={() => setIsPaused(true)}
-          onTouchEnd={() => setIsPaused(false)}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          <div className="overflow-x-hidden overflow-y-visible pt-6 pb-2 -mx-2">
-            <motion.div
-              className="flex"
-              animate={{ x: `${-activeIdx * 100}%` }}
-              transition={{ type: "spring", stiffness: 200, damping: 28 }}
-            >
-              {packages.map((pkg) => (
-                <div key={pkg.name} className="w-full shrink-0 px-2 sm:px-3 pt-4 pb-2">
-                  <PricingCard pkg={pkg} onSelect={setSelectedPlan} isActive />
-                </div>
-              ))}
-            </motion.div>
-          </div>
-          <div className="flex items-center justify-center gap-3 mt-6">
-            <button onClick={prev} className="w-9 h-9 rounded-full border border-border bg-card hover:bg-accent flex items-center justify-center">
-              <ChevronLeft className="h-4 w-4" />
-            </button>
-            <div className="flex gap-2">
-              {packages.map((_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setActiveIdx(i)}
-                  className={`transition-all rounded-full ${i === activeIdx ? "w-6 h-2 bg-foreground" : "w-2 h-2 bg-border"}`}
-                />
-              ))}
-            </div>
-            <button onClick={next} className="w-9 h-9 rounded-full border border-border bg-card hover:bg-accent flex items-center justify-center">
-              <ChevronRight className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-
-        {/* Desktop: 3D-ish carousel showing 3 cards with focus on active */}
-        <div
-          className="hidden lg:block relative"
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => setIsPaused(false)}
-        >
-          <div className="relative flex items-stretch justify-center gap-6 px-16 py-6 min-h-[600px]">
-            {packages.map((pkg, i) => {
-              const offset = i - activeIdx;
-              const distance = Math.abs(offset);
-              if (distance > 1) return null;
+        {/* Package selector pills */}
+        <LayoutGroup>
+          <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-3 mb-10">
+            {packages.map((p, i) => {
+              const Icon = p.icon;
+              const isActive = i === activeIdx;
               return (
-                <motion.div
-                  key={pkg.name}
-                  className="w-[340px] cursor-pointer"
-                  animate={{
-                    x: offset * 380,
-                    rotateY: offset * -8,
-                    zIndex: 10 - distance,
-                  }}
-                  transition={{ type: "spring", stiffness: 200, damping: 28 }}
-                  style={{ transformStyle: "preserve-3d", position: offset === 0 ? "relative" : "absolute" }}
-                  onClick={() => offset !== 0 && setActiveIdx(i)}
+                <button
+                  key={p.name}
+                  onClick={() => setActiveIdx(i)}
+                  className="relative px-4 sm:px-5 py-2.5 rounded-full text-xs sm:text-sm font-semibold transition-colors"
                 >
-                  <PricingCard pkg={pkg} onSelect={setSelectedPlan} isActive={offset === 0} />
-                </motion.div>
+                  {isActive && (
+                    <motion.span
+                      layoutId="pricing-pill"
+                      className="absolute inset-0 rounded-full bg-foreground shadow-lg"
+                      transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    />
+                  )}
+                  <span className={`relative flex items-center gap-2 ${isActive ? "text-background" : "text-muted-foreground hover:text-foreground"}`}>
+                    <Icon className="h-3.5 w-3.5" />
+                    {p.name}
+                    {p.popular && !isActive && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    )}
+                  </span>
+                </button>
               );
             })}
           </div>
 
-          {/* Controls */}
-          <button
-            onClick={prev}
-            className="absolute left-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border border-border bg-card/80 backdrop-blur hover:bg-accent flex items-center justify-center shadow-lg z-30"
-          >
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button
-            onClick={next}
-            className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full border border-border bg-card/80 backdrop-blur hover:bg-accent flex items-center justify-center shadow-lg z-30"
-          >
-            <ChevronRight className="h-5 w-5" />
-          </button>
-
-          <div className="flex items-center justify-center gap-2 mt-2">
-            {packages.map((p, i) => (
-              <button
-                key={p.name}
-                onClick={() => setActiveIdx(i)}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                  i === activeIdx ? "bg-foreground text-background" : "bg-card border border-border text-muted-foreground hover:text-foreground"
-                }`}
+          {/* Showcase card */}
+          <div className="relative max-w-5xl mx-auto">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={active.name}
+                initial={{ opacity: 0, y: 30, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -20, scale: 0.98 }}
+                transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+                className="relative rounded-[2rem] border border-border/60 bg-card/80 backdrop-blur-xl overflow-hidden shadow-2xl"
               >
-                {p.name}
-              </button>
-            ))}
+                {/* Animated accent gradient */}
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  className={`absolute -top-32 -right-32 w-[28rem] h-[28rem] rounded-full bg-gradient-to-br ${active.accent} opacity-20 blur-3xl pointer-events-none`}
+                />
+                <motion.div
+                  animate={{ x: ["-100%", "200%"] }}
+                  transition={{ duration: 3, repeat: Infinity, ease: "linear", repeatDelay: 4 }}
+                  className="absolute top-0 h-full w-1/3 bg-gradient-to-r from-transparent via-foreground/[0.04] to-transparent pointer-events-none"
+                />
+
+                <div className="grid lg:grid-cols-[1.1fr_1fr] gap-0">
+                  {/* Left: Hero info */}
+                  <div className="p-7 sm:p-10 lg:p-12 relative">
+                    {active.popular && (
+                      <motion.div
+                        initial={{ scale: 0, rotate: -8 }}
+                        animate={{ scale: 1, rotate: 0 }}
+                        transition={{ delay: 0.2, type: "spring", stiffness: 220 }}
+                        className="inline-flex items-center gap-1.5 bg-foreground text-background text-[11px] font-bold px-3 py-1.5 rounded-full mb-5 shadow-lg"
+                      >
+                        <Star className="h-3 w-3 fill-current" /> MOST POPULAR
+                      </motion.div>
+                    )}
+                    <p className="text-[10px] font-semibold tracking-[0.25em] uppercase text-muted-foreground mb-2">
+                      {active.type}
+                    </p>
+                    <motion.h3
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.05 }}
+                      className="font-display text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter mb-4"
+                    >
+                      {active.name}
+                    </motion.h3>
+                    <p className="text-muted-foreground leading-relaxed mb-7 text-sm sm:text-base max-w-md">
+                      {active.tagline}
+                    </p>
+
+                    {/* Price block */}
+                    <div className="mb-7 p-5 rounded-2xl bg-gradient-to-br from-foreground/[0.04] to-foreground/[0.01] border border-border/50">
+                      <div className="flex items-baseline gap-3 flex-wrap">
+                        <span className="text-base text-muted-foreground line-through">{active.originalPrice}</span>
+                        <motion.span
+                          key={active.price}
+                          initial={{ scale: 0.8, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: "spring", stiffness: 280 }}
+                          className="font-display text-5xl sm:text-6xl font-black tracking-tight"
+                        >
+                          {active.price}
+                        </motion.span>
+                        <Badge variant="secondary" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/20 text-[10px] font-bold">
+                          <Sparkles className="h-2.5 w-2.5 mr-1" /> ON SALE
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-2">one-time payment • no hidden fees</p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row gap-3">
+                      <Button
+                        size="lg"
+                        className="rounded-full font-semibold shadow-lg group"
+                        onClick={() => setSelectedPlan(active)}
+                      >
+                        See Full Inclusions
+                        <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
+                      </Button>
+                      <Button
+                        size="lg"
+                        variant="outline"
+                        className="rounded-full font-semibold hover:bg-foreground hover:text-background"
+                        onClick={() => (window.location.href = `mailto:support@lynxinvitation.com?subject=Interested in ${active.name} Package`)}
+                      >
+                        Get Started
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Right: Feature reel */}
+                  <div className="relative p-7 sm:p-10 lg:p-12 lg:border-l border-t lg:border-t-0 border-border/50 bg-gradient-to-br from-secondary/40 to-transparent">
+                    <p className="text-[10px] font-semibold tracking-[0.25em] uppercase text-muted-foreground mb-5">
+                      What's Inside
+                    </p>
+                    <ul className="space-y-2.5 max-h-[24rem] overflow-hidden relative">
+                      {active.features.slice(0, 10).map((f, i) => (
+                        <motion.li
+                          key={f}
+                          initial={{ opacity: 0, x: 20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.15 + i * 0.04 }}
+                          className="flex items-start gap-3 text-sm group"
+                        >
+                          <span className="mt-0.5 w-5 h-5 rounded-full bg-foreground text-background flex items-center justify-center shrink-0 group-hover:scale-110 transition-transform">
+                            <Check className="h-3 w-3" strokeWidth={3} />
+                          </span>
+                          <span className="leading-snug">{f}</span>
+                        </motion.li>
+                      ))}
+                      {active.features.length > 10 && (
+                        <motion.li
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          transition={{ delay: 0.6 }}
+                          className="text-xs text-muted-foreground italic pl-8"
+                        >
+                          + {active.features.length - 10} more inclusions
+                        </motion.li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                {/* Bottom progress strip showing other packages */}
+                <div className="border-t border-border/50 bg-background/40 backdrop-blur px-4 sm:px-8 py-4">
+                  <div className="flex items-center justify-between gap-3 flex-wrap">
+                    <p className="text-[10px] font-semibold tracking-[0.2em] uppercase text-muted-foreground">
+                      All Packages
+                    </p>
+                    <div className="flex gap-1.5 flex-1 max-w-md ml-auto">
+                      {packages.map((p, i) => (
+                        <button
+                          key={p.name}
+                          onClick={() => setActiveIdx(i)}
+                          className="flex-1 group"
+                          aria-label={p.name}
+                        >
+                          <div className={`h-1.5 rounded-full transition-all ${i === activeIdx ? "bg-foreground" : "bg-border group-hover:bg-muted-foreground/50"}`} />
+                          <p className={`mt-1.5 text-[10px] font-medium truncate text-center transition-colors ${i === activeIdx ? "text-foreground" : "text-muted-foreground"}`}>
+                            {p.name}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </AnimatePresence>
           </div>
-        </div>
+        </LayoutGroup>
 
         {/* Guarantees */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.6 }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
+          transition={{ delay: 0.4 }}
+          className="mt-12 flex flex-wrap items-center justify-center gap-3 sm:gap-4"
         >
           {guarantees.map((item) => (
             <div key={item.text} className="flex items-center gap-2 px-4 py-2 rounded-full bg-accent/50 text-xs text-muted-foreground">
-              <span className="w-5 h-5 rounded-full bg-green-500/10 flex items-center justify-center">
-                <item.icon className="h-3 w-3 text-green-600" />
+              <span className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                <item.icon className="h-3 w-3 text-emerald-600" />
               </span>
               {item.text}
             </div>
@@ -485,7 +477,7 @@ export function Pricing() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
-          transition={{ delay: 0.8 }}
+          transition={{ delay: 0.6 }}
           className="mt-14 max-w-2xl mx-auto"
         >
           <h3 className="font-display font-bold text-lg text-center mb-6 flex items-center justify-center gap-2">

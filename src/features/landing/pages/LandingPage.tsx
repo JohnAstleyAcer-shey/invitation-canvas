@@ -23,31 +23,29 @@ export default function LandingPage() {
       <Pricing />
       <Testimonials />
 
-      {/* CTA Section - Showcase focused, no login */}
-      <section className="py-20 sm:py-28 relative overflow-hidden">
-        <div className="absolute inset-0 bg-primary/5" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full bg-primary/5 blur-3xl" />
+      {/* CTA — editorial */}
+      <section className="py-24 sm:py-32 bg-foreground text-background border-b border-foreground">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="w-full max-w-[1920px] mx-auto px-4 sm:px-6 lg:px-10 text-center relative"
+          className="w-full max-w-3xl mx-auto px-6 text-center"
         >
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">
-            Ready to Create Something Beautiful?
+          <span className="inline-block border border-background/30 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-background/70 mb-8">
+            Begin the Conversation
+          </span>
+          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-5">
+            Ready to Create Something <span className="italic font-normal">Beautiful</span>?
           </h2>
-          <p className="text-muted-foreground max-w-lg mx-auto mb-8 text-base sm:text-lg">
-            LynxInvitation is a managed service. We handle everything — from design to deployment. Contact us to get started with your perfect invitation.
+          <p className="text-background/70 max-w-xl mx-auto mb-10 text-sm sm:text-base leading-relaxed">
+            LynxInvitation is a fully managed service. We handle everything — from design to deployment. Tell us about your celebration.
           </p>
-          <motion.a
+          <a
             href="mailto:support@lynxinvitation.com"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            className="inline-flex items-center gap-2 rounded-full bg-primary text-primary-foreground px-10 py-3.5 text-base font-semibold shadow-lg hover:shadow-xl transition-all"
+            className="inline-flex items-center gap-2 bg-background text-foreground px-8 py-3.5 text-[11px] font-bold uppercase tracking-[0.25em] hover:bg-background/90 transition-colors"
           >
-            <MessageCircle className="h-4 w-4" />
-            Contact Us
-          </motion.a>
+            <MessageCircle className="h-3.5 w-3.5" /> Contact Us
+          </a>
         </motion.div>
       </section>
 

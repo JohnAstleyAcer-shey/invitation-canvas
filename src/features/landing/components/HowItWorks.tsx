@@ -1,100 +1,94 @@
 import { motion } from "framer-motion";
-import { PenLine, Palette, Share2, ArrowRight, Check, Sparkles } from "lucide-react";
+import { PenLine, Palette, Share2 } from "lucide-react";
 
 const steps = [
   {
     icon: PenLine,
     title: "Tell Us About Your Event",
     description: "Share your event details — name, date, venue, photos, and message — through a quick chat with our team.",
-    color: "bg-primary/10",
     highlights: ["Weddings, Debuts, Birthdays & more", "Personal consultation", "Bring your vision"],
   },
   {
     icon: Palette,
     title: "We Design It For You",
     description: "Our designers craft a one-of-a-kind interactive invitation tailored to your theme — fully managed, no DIY required.",
-    color: "bg-accent",
     highlights: ["Premium design", "Custom themes & music", "Pixel-perfect on every device"],
   },
   {
     icon: Share2,
     title: "Share With Your Guests",
     description: "Receive your unique invitation link and a private Customer Admin portal to track RSVPs and guest reactions in real time.",
-    color: "bg-secondary",
     highlights: ["One-click sharing", "Real-time RSVP tracking", "Customer Admin portal"],
   },
 ];
 
 export function HowItWorks() {
   return (
-    <section id="how-it-works" className="py-20 sm:py-28 relative">
+    <section id="how-it-works" className="py-24 sm:py-32 bg-background border-b border-border">
       <div className="section-container">
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-12 sm:mb-20"
+          className="text-center mb-16"
         >
-          <span className="inline-block text-xs font-semibold tracking-widest uppercase text-muted-foreground mb-4">Simple Process</span>
-          <h2 className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-4">How It Works</h2>
-          <p className="text-muted-foreground max-w-md mx-auto">A fully managed service — three simple steps from your idea to a live, shareable invitation.</p>
+          <span className="inline-block border border-border px-4 py-1.5 text-[10px] font-semibold uppercase tracking-[0.25em] text-muted-foreground mb-6">
+            Simple Process
+          </span>
+          <h2 className="font-display text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-5">
+            How It <span className="italic font-normal">Works</span>
+          </h2>
+          <p className="text-muted-foreground max-w-xl mx-auto text-sm sm:text-base leading-relaxed">
+            A fully managed service — three considered steps from your idea to a live, shareable invitation.
+          </p>
         </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-6 sm:gap-8 relative">
-          {/* Connector line */}
-          <div className="hidden md:block absolute top-16 left-[20%] right-[20%] h-px bg-gradient-to-r from-transparent via-border to-transparent" />
-
+        <div className="grid md:grid-cols-3 gap-px bg-border border border-border max-w-6xl mx-auto">
           {steps.map((step, i) => (
             <motion.div
               key={step.title}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ duration: 0.5, delay: i * 0.15 }}
-              className="text-center relative group"
+              transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="bg-background p-10 group"
             >
-              <motion.div
-                whileHover={{ scale: 1.08, rotate: 3 }}
-                transition={{ type: "spring", stiffness: 300 }}
-                className={`inline-flex items-center justify-center w-20 h-20 sm:w-28 sm:h-28 rounded-full ${step.color} border border-border mb-6 relative z-10 transition-shadow duration-300 group-hover:shadow-xl`}
-              >
-                <step.icon className="h-7 w-7 sm:h-9 sm:w-9 text-foreground" />
-              </motion.div>
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-3 text-xs font-bold text-muted-foreground bg-background px-3 py-0.5 rounded-full border border-border z-20">
-                0{i + 1}
+              <div className="flex items-start justify-between mb-8">
+                <span className="font-display text-5xl font-bold italic text-foreground/15">
+                  0{i + 1}
+                </span>
+                <div className="w-12 h-12 border border-border flex items-center justify-center group-hover:bg-foreground group-hover:text-background transition-colors">
+                  <step.icon className="h-5 w-5" />
+                </div>
               </div>
-              <h3 className="font-display text-xl font-semibold mb-2">{step.title}</h3>
-              <p className="text-muted-foreground text-sm max-w-[260px] mx-auto mb-4">{step.description}</p>
-              
-              {/* Highlights */}
-              <div className="flex flex-col items-center gap-1.5">
+              <h3 className="font-display text-2xl font-bold italic mb-3">{step.title}</h3>
+              <p className="text-sm text-muted-foreground leading-relaxed mb-6">
+                {step.description}
+              </p>
+              <div className="pt-6 border-t border-border space-y-2">
                 {step.highlights.map((h) => (
-                  <div key={h} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                    <Check className="h-3 w-3 text-foreground" />
+                  <div key={h} className="flex items-start gap-2 text-xs text-foreground/70">
+                    <span className="mt-1.5 w-1 h-1 rounded-full bg-foreground shrink-0" />
                     <span>{h}</span>
                   </div>
                 ))}
               </div>
-
-              {i < 2 && (
-                <ArrowRight className="hidden md:block absolute top-16 -right-4 h-5 w-5 text-muted-foreground/30" />
-              )}
             </motion.div>
           ))}
         </div>
 
-        {/* Bottom CTA */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          initial={{ opacity: 0 }}
+          whileInView={{ opacity: 1 }}
           viewport={{ once: true }}
-          className="text-center mt-12 sm:mt-16"
+          className="border-y border-border py-6 flex flex-wrap items-center justify-center gap-x-8 gap-y-3 mt-16 max-w-3xl mx-auto"
         >
-          <div className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/5 border border-border text-sm">
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-muted-foreground">Average setup time: <strong className="text-foreground">under 5 minutes</strong></span>
-          </div>
+          <span className="w-1 h-1 rounded-full bg-foreground" />
+          <span className="text-[10px] font-bold uppercase tracking-[0.25em] text-foreground/70">
+            Average Setup Time — Under 5 Minutes
+          </span>
+          <span className="w-1 h-1 rounded-full bg-foreground" />
         </motion.div>
       </div>
     </section>
